@@ -17,16 +17,6 @@ import Link from "next/link";
 import LoginGithub from "@/components/LoginGithub";
 import { registerWithCreds } from "@/actions/auth";
 import { toast } from "react-hot-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -67,9 +57,11 @@ const SignUp = () => {
     try {
       await registerWithCreds(formData);
     } catch (error) {
-      toast.error("Something went wrong!");
+      const message =
+        error instanceof Error ? error.message : "Registration failed";
+      toast.error(message);
       form.setError("root", {
-        message: "Registration failed",
+        message,
       });
     }
   }
@@ -132,7 +124,13 @@ const SignUp = () => {
               )}
             />
 
-            <AuthButton />
+            {form.formState.errors.root && (
+              <p className="text-sm text-red-400">
+                {form.formState.errors.root.message}
+              </p>
+            )}
+
+            <AuthButton label="Create account" />
           </form>
           <LoginGithub />
         </Form>

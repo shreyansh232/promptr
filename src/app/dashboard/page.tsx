@@ -1,10 +1,8 @@
-import React from 'react';
 import ChatInterface from './_components/ChatInterface';
-import analyzePrompt from '@/utils/analyzePrompt';
 import { auth } from 'auth';
 import {redirect } from "next/navigation";
 
-const MainPage: React.FC = async () => {
+const MainPage = async () => {
   const session = await auth();
 
   if(!session?.user){
@@ -16,7 +14,7 @@ const MainPage: React.FC = async () => {
       <h1 className="text-2xl font-bold text-center my-4">
         AI-based Prompt Engineering Learning Platform
       </h1>
-      <ChatInterface onAnalyzePrompt={analyzePrompt} />
+      <ChatInterface />
     </div>
   );
 };

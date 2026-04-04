@@ -45,3 +45,9 @@ yarn-error.log*
 # idea files
 .idea
 .codegpt
+
+# python virtualenv
+venv/
+backend/venv/
+__pycache__/
+*.py[cod]

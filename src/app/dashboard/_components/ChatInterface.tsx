@@ -1,22 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Settings2, ChevronRight, ChevronLeft, Zap } from "lucide-react";
+import { Send, Zap } from "lucide-react";
 import MainSidebar from "./Sidebar";
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarProvider,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-} from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface UserInfo {
   level: string;
@@ -47,11 +40,6 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   user_type: UserInfo;
-}
-
-interface ImprovedPrompt {
-  title: string;
-  prompt: string;
 }
 
 interface PromptAnalysis {
@@ -68,10 +56,6 @@ interface PromptAnalysis {
   }[];
 }
 
-interface ChatInterfaceProps {
-  onAnalyzePrompt: (prompt: string, userInfo: UserInfo) => Promise<string>;
-}
-
 interface Track {
   id: string;
   title: string;
@@ -84,7 +68,26 @@ interface Lesson {
   completed: boolean;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAnalyzePrompt }) => {
+const tracks: Track[] = [
+  {
+    id: "1",
+    title: "Fundamentals",
+    lessons: [
+      { id: "1-1", title: "Introduction to Prompts", completed: false },
+      { id: "1-2", title: "Basic Prompt Structure", completed: false },
+    ],
+  },
+  {
+    id: "2",
+    title: "Advanced Techniques",
+    lessons: [
+      { id: "2-1", title: "Chain of Thought", completed: false },
+      { id: "2-2", title: "Zero-shot Prompting", completed: false },
+    ],
+  },
+];
+
+const ChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(true);
@@ -96,27 +99,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAnalyzePrompt }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [promptStrength, setPromptStrength] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [tracks, setTracks] = useState<Track[]>([
-    {
-      id: "1",
-      title: "Fundamentals",
-      lessons: [
-        { id: "1-1", title: "Introduction to Prompts", completed: false },
-        { id: "1-2", title: "Basic Prompt Structure", completed: false },
-      ],
-    },
-    {
-      id: "2",
-      title: "Advanced Techniques",
-      lessons: [
-        { id: "2-1", title: "Chain of Thought", completed: false },
-        { id: "2-2", title: "Zero-shot Prompting", completed: false },
-      ],
-    },
-  ]);
 
   const { data: session } = useSession();
   const userInitial = session?.user?.name?.[0];
+  const router = useRouter();
 
   useEffect(() => {
     if (userInfo) {
@@ -197,7 +183,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAnalyzePrompt }) => {
     setIsTyping(true);
 
     try {
-      const response = await fetch("http://localhost:8000/analyze-prompt", {
+      const response = await fetch("/api/analyze-prompt", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -387,9 +373,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAnalyzePrompt }) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem
-                    onClick={() => (window.location.href = "/profile")}
-                  >
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
                     View Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => signOut()}>
@@ -457,7 +441,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAnalyzePrompt }) => {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Type your prompt here..."
                 className="focus:border-second flex-1 rounded-full border-gray-700 bg-gray-800 p-7 text-gray-100 placeholder-gray-400"
-                onKeyPress={(e) =>
+                onKeyDown={(e) =>
                   e.key === "Enter" && !e.shiftKey && handleSendMessage()
                 }
               />

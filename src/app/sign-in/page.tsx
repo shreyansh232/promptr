@@ -62,11 +62,7 @@ const SignIn = () => {
         </div>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6"
-            action={loginWithCreds}
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="email"
@@ -98,16 +94,13 @@ const SignIn = () => {
               )}
             />
 
-            <div className="flex items-center justify-between">
-              <Link
-                href="/forgot-password"
-                className="hover:text-second text-sm text-indigo-600"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            {form.formState.errors.root && (
+              <p className="text-sm text-red-400">
+                {form.formState.errors.root.message}
+              </p>
+            )}
 
-            <AuthButton />
+            <AuthButton label="Sign in" />
           </form>
           <LoginGithub />
         </Form>

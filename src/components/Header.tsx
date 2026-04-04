@@ -38,12 +38,12 @@ export async function Header() {
         </Link>
 
         <nav className="hidden space-x-6 md:flex">
-          <NavLink href="/chat">Chat</NavLink>
-          <NavLink href="/features">Features</NavLink>
-          <NavLink href="/pricing">Pricing</NavLink>
-          <NavLink href="/about">About</NavLink>
-          <NavLink href="/open-source">Open source</NavLink>
-          <NavLink href="/docs">Docs</NavLink>
+          <NavLink href="/">Home</NavLink>
+          <NavLink href="/#features">Features</NavLink>
+          <NavLink href="/problems/1">Practice</NavLink>
+          <NavLink href={session?.user ? "/dashboard" : "/sign-in"}>
+            {session?.user ? "Dashboard" : "Sign In"}
+          </NavLink>
         </nav>
 
         <div className="flex items-center space-x-4">

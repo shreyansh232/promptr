@@ -5,7 +5,6 @@ import { db } from "db";
 import { revalidatePath } from "next/cache";
 import { hash } from "bcryptjs";
 
-
 const getUserByEmail = async (email: string) => {
   try {
     const user = await db.user.findUnique({
@@ -31,67 +30,79 @@ export const logout = async () => {
 };
 
 export const loginWithCreds = async (formData: FormData): Promise<void> => {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-  
-    if (!email || !password) {
-      throw new Error("Please provide both email and password");
-    }
-  
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: true,
-        redirectTo: "/dashboard"
-      });
-      
-      revalidatePath("/");
-    } catch (error) {
-      throw error;
-    }
-  };
+  const email = formData.get("email");
+  const password = formData.get("password");
 
-  interface UserInfo {
-    level: string
-    expertise: string
-    learningStyle: string
-    goals: string[]
+  if (typeof email !== "string" || typeof password !== "string") {
+    throw new Error("Please provide both email and password");
   }
 
-  export const registerWithCreds = async (formData: FormData): Promise<void> => {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const name = formData.get('name') as string;
-    // const level = (formData.get('level') as string) || "beginner"; 
-    // const expertise = formData.get('expertise') as string || "general"; 
-    // const learningStyle = formData.get('learningStyle') as string || "visual"; 
-    // const goals = formData.getAll('goals') as string[];
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPassword = password.trim();
 
-    try {
-      const existingUser = await getUserByEmail(email);
-    
-      if (existingUser) {
-        throw new Error("Email already exists");
-      }
+  if (!normalizedEmail || !normalizedPassword) {
+    throw new Error("Please provide both email and password");
+  }
 
-      const user = await db.user.create({
-        data: {
-          name,
-          email,
-          hashedPassword: await hash(password, 10),
+  await signIn("credentials", {
+    email: normalizedEmail,
+    password: normalizedPassword,
+    redirect: true,
+    redirectTo: "/dashboard",
+  });
+
+  revalidatePath("/");
+};
+
+export const registerWithCreds = async (formData: FormData): Promise<void> => {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const name = formData.get("name");
+
+  if (
+    typeof email !== "string" ||
+    typeof password !== "string" ||
+    typeof name !== "string"
+  ) {
+    throw new Error("Please complete all required fields");
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPassword = password.trim();
+  const normalizedName = name.trim();
+
+  if (!normalizedEmail || !normalizedPassword || !normalizedName) {
+    throw new Error("Please complete all required fields");
+  }
+
+  const existingUser = await getUserByEmail(normalizedEmail);
+
+  if (existingUser) {
+    throw new Error("Email already exists");
+  }
+
+  await db.user.create({
+    data: {
+      name: normalizedName,
+      email: normalizedEmail,
+      hashedPassword: await hash(normalizedPassword, 10),
+      profile: {
+        create: {
+          level: "beginner",
+          expertise: "general",
+          learningStyle: "visual",
+          goals: [],
         },
-      });
+      },
+    },
+  });
 
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: true,
-        redirectTo: "/dashboard"
-      });
-    
-      revalidatePath("/");
-    } catch (error) {
-      throw error;
-    }
-  };  
+  await signIn("credentials", {
+    email: normalizedEmail,
+    password: normalizedPassword,
+    redirect: true,
+    redirectTo: "/dashboard",
+  });
+
+  revalidatePath("/");
+};
