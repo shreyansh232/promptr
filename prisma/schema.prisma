@@ -39,6 +39,10 @@ model UserProfile {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   userId        String   @unique @db.ObjectId
   level         String   @default("beginner")
+  subLevel      Int      @default(1)
+  elo           Int      @default(1000)
+  problemsSolved Int     @default(0)
+  streak        Int      @default(0)
   expertise     String   @default("general")
   learningStyle String   @default("visual")
   goals         String[] @default([])

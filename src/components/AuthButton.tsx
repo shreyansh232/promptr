@@ -1,19 +1,16 @@
 import React from "react";
-import { useFormStatus } from "react-dom";
 
 interface AuthButtonProps {
   label?: string;
+  pending?: boolean;
 }
 
-const AuthButton = ({ label = "Submit" }: AuthButtonProps) => {
-  const { pending } = useFormStatus();
+const AuthButton = ({ label = "Submit", pending = false }: AuthButtonProps) => {
   return (
     <button
       disabled={pending}
       type="submit"
-      className={`${
-        pending ? "bg-second" : "bg-second"
-      } rounded-md w-full px-12 py-3 text-sm font-medium text-black`}
+      className="w-full rounded-full bg-[#ff8a3d] px-5 py-3.5 text-sm font-semibold text-[#111111] transition hover:bg-[#ff9b5b] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Loading..." : label}
     </button>

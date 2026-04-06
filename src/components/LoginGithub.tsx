@@ -5,15 +5,15 @@ import { Github } from "lucide-react";
 
 const LoginGithub = () => {
   return (
-    <div className="mt-2">
+    <div className="mt-3">
       <Button
         variant="outline"
         type="button"
-        className="w-full border-black text-black"
+        className="w-full rounded-full border-white/15 bg-transparent py-6 text-[#f7f2ea] hover:bg-white/10 hover:text-[#f7f2ea]"
         onClick={() => login("github")}
       >
         <Github className="mr-2 h-4 w-4" />
-        Login with Github
+        Continue with GitHub
       </Button>
     </div>
   );

@@ -1,19 +1,32 @@
-import ChatInterface from './_components/ChatInterface';
-import { auth } from 'auth';
-import {redirect } from "next/navigation";
+import ChatInterface from "./_components/ChatInterface";
+import { auth } from "auth";
+import { redirect } from "next/navigation";
+import { db } from "db";
 
 const MainPage = async () => {
   const session = await auth();
 
-  if(!session?.user){
-    redirect("/sign-in")
+  if (!session?.user) {
+    redirect("/sign-in");
+  }
+
+  // Check if user has completed onboarding
+  const user = await db.user.findUnique({
+    where: { email: session.user.email as string },
+    include: { profile: true },
+  });
+
+  if (
+    !user ||
+    !user?.profile ||
+    !user?.profile?.expertise ||
+    user?.profile?.expertise === "general"
+  ) {
+    redirect("/onboarding");
   }
 
   return (
-    <div className="container mx-auto px-4">
-      <h1 className="text-2xl font-bold text-center my-4">
-        AI-based Prompt Engineering Learning Platform
-      </h1>
+    <div className="min-h-screen bg-[#0d0d0d]">
       <ChatInterface />
     </div>
   );

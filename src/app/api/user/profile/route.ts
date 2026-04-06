@@ -4,6 +4,10 @@ import { db } from "db";
 
 const defaultProfile = {
   level: "beginner",
+  subLevel: 1,
+  elo: 1000,
+  problemsSolved: 0,
+  streak: 0,
   expertise: "general",
   learningStyle: "visual",
   goals: [] as string[],
@@ -16,25 +20,81 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
+    let user = await db.user.findUnique({
       where: { email: session.user.email },
       include: { profile: true },
     });
 
+    // Auto-create user if missing (e.g. after DB reset)
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      user = await db.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name ?? null,
+          image: session.user.image ?? null,
+          profile: {
+            create: {
+              level: defaultProfile.level,
+              subLevel: defaultProfile.subLevel,
+              elo: defaultProfile.elo,
+              problemsSolved: defaultProfile.problemsSolved,
+              streak: defaultProfile.streak,
+              expertise: defaultProfile.expertise,
+              learningStyle: defaultProfile.learningStyle,
+              goals: defaultProfile.goals,
+            },
+          },
+        },
+        include: { profile: true },
+      });
     }
 
-    const profile = user.profile ?? defaultProfile;
+    // Auto-create profile if user exists but has no profile
+    if (!user.profile) {
+      const profile = await db.userProfile.create({
+        data: {
+          userId: user.id,
+          level: defaultProfile.level,
+          subLevel: defaultProfile.subLevel,
+          elo: defaultProfile.elo,
+          problemsSolved: defaultProfile.problemsSolved,
+          streak: defaultProfile.streak,
+          expertise: defaultProfile.expertise,
+          learningStyle: defaultProfile.learningStyle,
+          goals: defaultProfile.goals,
+        },
+      });
+
+      return NextResponse.json({
+        level: profile.level,
+        subLevel: profile.subLevel ?? 1,
+        elo: profile.elo ?? 1000,
+        problemsSolved: profile.problemsSolved ?? 0,
+        streak: profile.streak ?? 0,
+        expertise: profile.expertise,
+        learningStyle: profile.learningStyle,
+        goals: profile.goals ?? [],
+      });
+    }
+
+    const profile = user.profile;
 
     return NextResponse.json({
       level: profile.level,
+      subLevel: profile.subLevel ?? 1,
+      elo: profile.elo ?? 1000,
+      problemsSolved: profile.problemsSolved ?? 0,
+      streak: profile.streak ?? 0,
       expertise: profile.expertise,
       learningStyle: profile.learningStyle,
       goals: profile.goals ?? [],
     });
   } catch (error) {
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Profile GET error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error", details: String(error) },
+      { status: 500 },
+    );
   }
 }
 
@@ -68,7 +128,9 @@ export async function POST(req: Request) {
         ? data.learningStyle.trim()
         : defaultProfile.learningStyle;
     const goals = Array.isArray(data.goals)
-      ? data.goals.filter((goal: unknown): goal is string => typeof goal === "string")
+      ? data.goals.filter(
+          (goal: unknown): goal is string => typeof goal === "string",
+        )
       : defaultProfile.goals;
 
     const profile = await db.userProfile.upsert({
@@ -92,12 +154,19 @@ export async function POST(req: Request) {
       success: true,
       data: {
         level: profile.level,
+        subLevel: profile.subLevel ?? 1,
+        elo: profile.elo ?? 1000,
+        problemsSolved: profile.problemsSolved ?? 0,
+        streak: profile.streak ?? 0,
         expertise: profile.expertise,
         learningStyle: profile.learningStyle,
         goals: profile.goals,
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

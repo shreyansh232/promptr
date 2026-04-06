@@ -1,25 +1,25 @@
 import { cn } from "@/lib/utils";
 
-export const BentoGrid = ({
+export function BentoGrid({
   className,
   children,
 }: {
   className?: string;
   children?: React.ReactNode;
-}) => {
+}) {
   return (
     <div
       className={cn(
-        "mx-auto grid max-w-7xl grid-cols-1 gap-4 md:auto-rows-[18rem] md:grid-cols-3",
+        "mx-auto grid max-w-7xl grid-cols-1 gap-6 md:auto-rows-[33rem] md:grid-cols-3",
         className,
       )}
     >
       {children}
     </div>
   );
-};
+}
 
-export const BentoGridItem = ({
+export function BentoGridItem({
   className,
   title,
   description,
@@ -27,28 +27,34 @@ export const BentoGridItem = ({
   icon,
 }: {
   className?: string;
-  title?: string | React.ReactNode;
-  description?: string | React.ReactNode;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   header?: React.ReactNode;
   icon?: React.ReactNode;
-}) => {
+}) {
   return (
-    <div
+    <article
       className={cn(
-        "group/bento shadow-input row-span-1 flex flex-col justify-between space-y-4 rounded-xl border border-neutral-200 bg-white p-4 transition duration-200 hover:shadow-xl dark:border-white/[0.2] dark:bg-black dark:shadow-none",
+        "group relative flex min-h-[24rem] flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0d14] p-5 shadow-[0_22px_60px_rgba(0,0,0,0.42)] transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_26px_70px_rgba(0,0,0,0.48)] md:min-h-0",
         className,
       )}
     >
-      {header}
-      <div className="transition duration-200 group-hover/bento:translate-x-2">
-        {icon}
-        <div className="mt-2 mb-2 font-sans font-bold text-white dark:text-neutral-200">
+      <div className="relative min-h-[17rem] flex-1 overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0a0c14]/90 p-4 md:min-h-0">
+        {header}
+      </div>
+      <div className="relative mt-5 space-y-3">
+        {icon && (
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-[#8d81ff]">
+            {icon}
+          </div>
+        )}
+        <div className="text-3xl font-semibold tracking-tight text-white">
           {title}
         </div>
-        <div className="font-sans text-xs font-normal text-white dark:text-neutral-300">
+        <div className="max-w-xl text-sm leading-6 text-slate-300">
           {description}
         </div>
       </div>
-    </div>
+    </article>
   );
-};
+}

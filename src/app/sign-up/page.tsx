@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import AuthButton from "@/components/AuthButton";
+import AuthShell from "@/components/AuthShell";
 import {
   Form,
   FormControl,
@@ -13,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import LoginGithub from "@/components/LoginGithub";
 import { registerWithCreds } from "@/actions/auth";
 import { toast } from "react-hot-toast";
@@ -46,13 +46,9 @@ const SignUp = () => {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const formData = new FormData();
-    Object.entries(values).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((item) => formData.append(key, item));
-      } else {
-        formData.append(key, value);
-      }
-    });
+    formData.append("name", values.name);
+    formData.append("email", values.email);
+    formData.append("password", values.password);
 
     try {
       await registerWithCreds(formData);
@@ -67,84 +63,80 @@ const SignUp = () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center text-white">
-      <div className="w-full max-w-xl rounded-3xl bg-black/50 p-20 shadow-lg border border-second">
-        <div className="mb-8 text-center">
-          <h2 className="text-4xl bg-gradient-to-r from-[#FFA9AE] via-[#8D81FF] to-[#69E1FE] bg-clip-text font-semibold text-transparent">
-            Create Account
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Join us to start your learning journey
-          </p>
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {form.formState.errors.root && (
-              <p className="text-sm text-red-400">
-                {form.formState.errors.root.message}
-              </p>
+    <AuthShell
+      mode="sign-up"
+      title="Create an account for guided prompt practice."
+      subtitle="Set up a focused workspace where each challenge starts with a problem statement and ends with a sharper prompt."
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-[#6a6255]">Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter your name"
+                    {...field}
+                    className="h-12 rounded-xl border-white/10 bg-[#0d0d0d] px-4 text-[#f5efe6] placeholder:text-[#4a453d]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-[#6a6255]">Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter your email"
+                    {...field}
+                    className="h-12 rounded-xl border-white/10 bg-[#0d0d0d] px-4 text-[#f5efe6] placeholder:text-[#4a453d]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-[#6a6255]">Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Enter your password"
+                    {...field}
+                    className="h-12 rounded-xl border-white/10 bg-[#0d0d0d] px-4 text-[#f5efe6] placeholder:text-[#4a453d]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <AuthButton label="Create account" />
-          </form>
-          <LoginGithub />
-        </Form>
+          {form.formState.errors.root && (
+            <p className="text-sm text-red-400">
+              {form.formState.errors.root.message}
+            </p>
+          )}
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link href="/sign-in" className="hover:text-second text-indigo-600">
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+          <AuthButton
+            label="Create account"
+            pending={form.formState.isSubmitting}
+          />
+        </form>
+        <LoginGithub />
+      </Form>
+    </AuthShell>
   );
 };
 export default SignUp;

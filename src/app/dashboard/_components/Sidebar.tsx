@@ -1,186 +1,212 @@
-import React from "react";
-import { motion } from "framer-motion";
+"use client";
+
+import Link from "next/link";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Zap,
-  BookOpen,
-  Settings,
-  LogOut,
-} from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  LockClosedIcon,
+  ArrowRightStartOnRectangleIcon,
+} from "@heroicons/react/24/outline";
+import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-
-interface Track {
-  id: string;
-  title: string;
-  lessons: Lesson[];
-}
-
-interface Lesson {
-  id: string;
-  title: string;
-  completed: boolean;
-}
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
 
 interface MainSidebarProps {
-  tracks: Track[];
-  isSidebarOpen: boolean;
-  setIsSidebarOpen: (isOpen: boolean) => void;
+  userLevel?: string | null;
+  isExpanded: boolean;
+  onToggle: () => void;
 }
 
-const MainSidebar: React.FC<MainSidebarProps> = ({
-  tracks,
-  isSidebarOpen,
-  setIsSidebarOpen,
-}) => {
-  const { data: session } = useSession();
-  const userInitial = session?.user?.name?.[0] || "?";
+interface UserStats {
+  elo: number;
+  subLevel: number;
+  problemsSolved: number;
+  streak: number;
+}
 
-  const calculateTrackProgress = (track: Track) => {
-    const completedLessons = track.lessons.filter(
-      (lesson) => lesson.completed,
-    ).length;
-    return (completedLessons / track.lessons.length) * 100;
-  };
+const levels = [
+  {
+    id: "beginner",
+    label: "Beginner",
+    description: "Task, context, output",
+    eloRange: "0–1199",
+  },
+  {
+    id: "intermediate",
+    label: "Intermediate",
+    description: "Constraints & structure",
+    eloRange: "1200–1499",
+  },
+  {
+    id: "expert",
+    label: "Expert",
+    description: "Robustness & evaluation",
+    eloRange: "1500+",
+  },
+];
+
+const levelOrder = ["beginner", "intermediate", "expert"];
+
+function getLevelIndex(level: string): number {
+  const normalized = level === "advanced" ? "expert" : level;
+  return levelOrder.indexOf(normalized ?? "beginner");
+}
+
+export default function MainSidebar({
+  userLevel,
+  isExpanded,
+  onToggle,
+}: MainSidebarProps) {
+  const { data: session } = useSession();
+  const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? "P";
+  const currentIndex = getLevelIndex(userLevel ?? "beginner");
+  const [stats, setStats] = useState<UserStats>({
+    elo: 1000,
+    subLevel: 1,
+    problemsSolved: 0,
+    streak: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (!res.ok) return;
+        const data = await res.json();
+        setStats({
+          elo: data.elo ?? 1000,
+          subLevel: data.subLevel ?? 1,
+          problemsSolved: data.problemsSolved ?? 0,
+          streak: data.streak ?? 0,
+        });
+      } catch {
+        // ignore
+      }
+    };
+    void fetchStats();
+  }, []);
 
   return (
-    <motion.div
-      initial={false}
-      animate={{
-        width: isSidebarOpen ? "350px" : "60px",
-        transition: { duration: 0.3 },
-      }}
-      className="h-full w-full overflow-hidden bg-gray-900 rounded-xl"
-    >
-      <Sidebar className={`h-full ${isSidebarOpen ? "w-[350px]" : "w-[60px]"} border-r border-gray-700 rounded-xl`}>
-        <SidebarHeader className="bg-gray-800 p-4">
-          <div className="flex items-center justify-between">
-            {isSidebarOpen && (
-              <h2 className="bg-gradient-to-r from-[#FFA9AE] via-[#8D81FF] to-[#69E1FE] bg-clip-text text-lg font-semibold text-transparent">
-                Learning Tracks
-              </h2>
+    <>
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[260px] flex-col border-r border-white/10 bg-[#0d0d0d] transition-transform duration-300 lg:relative lg:translate-x-0 ${
+          isExpanded
+            ? "translate-x-0"
+            : "-translate-x-full lg:w-[60px] lg:translate-x-0"
+        }`}
+      >
+        {/* Header with toggle */}
+        <div className="flex items-center justify-between px-4 py-4">
+          {isExpanded && (
+            <Link href="/" className="text-sm font-semibold text-[#f5efe6]">
+              Promptr
+            </Link>
+          )}
+          <button
+            onClick={onToggle}
+            className="ml-auto rounded-md p-1.5 text-[#6a6255] hover:bg-white/5 hover:text-[#a0978a]"
+          >
+            {isExpanded ? (
+              <ChevronLeftIcon className="h-4 w-4" />
+            ) : (
+              <ChevronRightIcon className="h-4 w-4" />
             )}
+          </button>
+        </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="text-white hover:bg-gray-700"
-            >
-              {isSidebarOpen ? <ChevronLeft /> : <ChevronRight />}
-            </Button>
-          </div>
-        </SidebarHeader>
-
-        <SidebarContent className="bg-gray-900 py-4">
-          {tracks.map((track) => (
-            <SidebarGroup key={track.id}>
-              {isSidebarOpen && (
-                <SidebarGroupLabel className="px-4 text-sm font-semibold text-indigo-400">
-                  {track.title}
-                </SidebarGroupLabel>
-              )}
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {track.lessons.map((lesson) => (
-                    <SidebarMenuItem key={lesson.id}>
-                      <SidebarMenuButton
-                        className={`flex items-center space-x-2 ${
-                          !isSidebarOpen ? "justify-center" : ""
-                        }`}
-                      >
-                        <div
-                          className={`h-2 w-2 rounded-full ${
-                            lesson.completed ? "bg-green-500" : "bg-gray-500"
-                          }`}
-                        />
-                        {isSidebarOpen && (
-                          <span className="text-sm text-gray-300">
-                            {lesson.title}
-                          </span>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-                {isSidebarOpen && (
-                  <div className="mt-2 px-4">
-                    <Progress
-                      value={calculateTrackProgress(track)}
-                      className="h-1"
-                    />
-                  </div>
-                )}
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
-        </SidebarContent>
-
-        <SidebarFooter className="bg-gray-800 p-4 text-white">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton className="flex items-center space-x-2">
-                <Zap className="h-4 w-4 text-indigo-400" />
-                {isSidebarOpen && <span className="text-sm">Quick Start</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton className="flex items-center space-x-2">
-                <BookOpen className="h-4 w-4 text-indigo-400" />
-                {isSidebarOpen && <span className="text-sm">Resources</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton className="flex items-center space-x-2">
-                <Settings className="h-4 w-4 text-indigo-400" />
-                {isSidebarOpen && <span className="text-sm">Settings</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt="User Avatar" />
-                <span className="bg-second flex h-full w-full items-center justify-center rounded-full text-xs font-medium text-white">
-                  {userInitial}
-                </span>
-              </Avatar>
-              {isSidebarOpen && (
-                <span className="text-sm font-medium text-gray-300">
-                  {session?.user?.name}
-                </span>
-              )}
+        {/* Levels */}
+        {isExpanded && (
+          <div className="flex-1 px-4 py-2">
+            <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.28em] text-[#4a453d]">
+              Progression
             </div>
-            {isSidebarOpen && (
-              <Button
-                variant="link"
-                size="icon"
-                onClick={() => signOut()}
-                className="text-gray-400 hover:text-white"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+            <div className="space-y-1">
+              {levels.map((level, index) => {
+                const isUnlocked = index <= currentIndex;
+                const isActive = index === currentIndex;
+
+                return (
+                  <div
+                    key={level.id}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
+                      isActive
+                        ? "bg-white/5 text-[#f5efe6]"
+                        : isUnlocked
+                          ? "text-[#6a6255]"
+                          : "text-[#3a3530]"
+                    }`}
+                  >
+                    {isUnlocked ? (
+                      <div
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          isActive ? "bg-[#ff8a3d]" : "bg-[#4a453d]"
+                        }`}
+                      />
+                    ) : (
+                      <LockClosedIcon className="h-3 w-3" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>{level.label}</span>
+                        <span className="text-[10px] text-[#4a453d]">
+                          {level.eloRange}
+                        </span>
+                      </div>
+                      {isUnlocked && (
+                        <div className="text-[10px] text-[#4a453d]">
+                          {level.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* User */}
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-3">
+            {isExpanded && (
+              <>
+                <Avatar className="h-8 w-8 shrink-0 border border-white/10 bg-white/5">
+                  <AvatarImage src="" alt="User Avatar" />
+                  <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-[#f5efe6]">
+                    {userInitial}
+                  </span>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-medium text-[#f5efe6]">
+                    {session?.user?.name ?? "Prompt learner"}
+                  </div>
+                  <div className="text-[10px] text-[#6a6255]">
+                    {stats.problemsSolved} solved · {stats.streak} streak
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => signOut()}
+                  className="h-7 w-7 shrink-0 rounded-full text-[#4a453d] hover:bg-white/10 hover:text-[#f5efe6]"
+                >
+                  <ArrowRightStartOnRectangleIcon className="h-3.5 w-3.5" />
+                </Button>
+              </>
             )}
           </div>
-        </SidebarFooter>
-      </Sidebar>
-    </motion.div>
-  );
-};
+        </div>
+      </aside>
 
-export default MainSidebar;
+      {/* Overlay for mobile */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+    </>
+  );
+}
