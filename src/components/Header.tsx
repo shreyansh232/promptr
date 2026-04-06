@@ -21,9 +21,6 @@ export async function Header() {
           <NavLink href="/#features">Features</NavLink>
           <NavLink href="/#faq">FAQ</NavLink>
           <NavLink href="/problems/1">Practice</NavLink>
-          <NavLink href={session?.user ? "/dashboard" : "/sign-in"}>
-            {session?.user ? "Dashboard" : "Sign in"}
-          </NavLink>
         </nav>
 
         <div className="flex items-center space-x-3">
