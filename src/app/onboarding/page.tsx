@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import toast from "react-hot-toast";
 
 const steps = ["Level", "Industry", "Application", "Learning Style"];
 
@@ -27,6 +28,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     level: "",
     industry: "",
@@ -45,22 +47,36 @@ export default function OnboardingPage() {
     }
 
     // Save profile
+    setIsSaving(true);
     try {
-      await fetch("/api/user/profile", {
+      const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           level: formData.level,
           expertise: formData.industry,
+          application: formData.application,
           learningStyle: formData.learningStyle,
           goals: ["Write clearer prompts"],
         }),
       });
-    } catch {
-      // ignore
-    }
 
-    router.push("/dashboard");
+      if (!response.ok) {
+        throw new Error("Failed to save profile");
+      }
+
+      // Ensure the server-side router and cache are fresh before redirecting
+      router.refresh();
+
+      // Small delay to ensure DB persistence and cache revalidation
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      router.push("/dashboard");
+    } catch {
+      toast.error("Failed to save your profile. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const isNextDisabled =
@@ -224,10 +240,12 @@ export default function OnboardingPage() {
             </Button>
             <Button
               onClick={handleNext}
-              disabled={isNextDisabled}
+              disabled={isNextDisabled || isSaving}
               className="rounded-full bg-[#ff8a3d] px-8 py-6 text-base text-[#111111] hover:bg-[#ff9b5b] disabled:opacity-40"
             >
-              {currentStep === steps.length - 1 ? (
+              {isSaving ? (
+                "Saving..."
+              ) : currentStep === steps.length - 1 ? (
                 <>
                   Open workspace
                   <ArrowRight className="ml-2 h-4 w-4" />

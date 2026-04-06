@@ -13,45 +13,159 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole{
+enum UserRole {
   ADMIN
   USER
 }
 
- 
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SubmissionStatus {
+  PASSED
+  FAILED
+}
+
 model User {
-  id            String          @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String?         @unique
-  hashedPassword String?
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  role          UserRole?       @default(ADMIN)
-  profile       UserProfile?    // Add this relation
-  Authenticator Authenticator[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id              String               @id @default(auto()) @map("_id") @db.ObjectId
+  name            String?
+  email           String?              @unique
+  hashedPassword  String?
+  emailVerified   DateTime?
+  image           String?
+  accounts        Account[]
+  sessions        Session[]
+  role            UserRole?            @default(USER)
+  profile         UserProfile?
+  submissions       Submission[]
+  evaluationReports AiEvaluationReport[]
+  battlesCreated    Battle[]             @relation("BattleCreator")
+  battlesJoined     Battle[]             @relation("BattleOpponent")
+  battleParticipations BattleParticipant[]
+  Authenticator     Authenticator[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 }
 
 model UserProfile {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String   @unique @db.ObjectId
-  level         String   @default("beginner")
-  subLevel      Int      @default(1)
-  elo           Int      @default(1000)
-  problemsSolved Int     @default(0)
-  streak        Int      @default(0)
-  expertise     String   @default("general")
-  learningStyle String   @default("visual")
-  goals         String[] @default([])
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @unique @db.ObjectId
+  level             String   @default("beginner")
+  subLevel          Int      @default(1)
+  elo               Int      @default(1000)
+  problemsSolved    Int      @default(0)
+  streak            Int      @default(0)
+  expertise         String   @default("general")
+  application       String   @default("")
+  learningStyle     String   @default("visual")
+  goals             String[] @default([])
+  credits           Int      @default(50)
+  lastCreditRefresh DateTime? @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
- 
+model Problem {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  difficulty  Difficulty   @default(EASY)
+  eloGate     Int          @default(0)
+  goal        String?
+  proTips     String[]     @default([])
+  examples    Json?
+  testCases   TestCase[]
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model TestCase {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  problemId      String  @db.ObjectId
+  input          String
+  expectedOutput String
+  description    String?
+  problem        Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model Submission {
+  id          String               @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String               @db.ObjectId
+  problemId   String               @db.ObjectId
+  prompt      String
+  score       Int
+  allPassed   Boolean
+  feedback    String
+  status      SubmissionStatus
+  reports     AiEvaluationReport[]
+  createdAt   DateTime             @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model AiEvaluationReport {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  submissionId String   @db.ObjectId
+  userId       String   @db.ObjectId
+  reason       String
+  createdAt    DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum BattleStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+}
+
+enum BattleResult {
+  WIN
+  LOSS
+  DRAW
+}
+
+model Battle {
+  id           String              @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  description  String
+  goal         String?
+  testCases    Json                // Store test cases as JSON array
+  status       BattleStatus        @default(WAITING)
+  createdBy    String              @db.ObjectId
+  opponentId   String?             @db.ObjectId
+  participants BattleParticipant[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  creator      User                @relation("BattleCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  opponent     User?               @relation("BattleOpponent", fields: [opponentId], references: [id], onDelete: SetNull)
+}
+
+model BattleParticipant {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  battleId     String        @db.ObjectId
+  userId       String        @db.ObjectId
+  prompt       String?
+  tokenCount   Int?
+  score        Int?
+  passed       Boolean?
+  result       BattleResult?
+  eloChange    Int?
+  submittedAt  DateTime?
+  battle       Battle        @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([battleId, userId])
+}
+
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String  @db.ObjectId
@@ -65,35 +179,35 @@ model Account {
   scope             String?
   id_token          String? @db.String
   session_state     String?
- 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@unique([provider, providerAccountId])
 }
- 
+
 model Session {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionToken String   @unique
   userId       String   @db.ObjectId
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
- 
+
 model VerificationToken {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   identifier String
   token      String
   expires    DateTime
- 
+
   @@unique([identifier, token])
 }
- 
+
 // Optional for WebAuthn support
 model Authenticator {
   credentialID         String  @id @map("_id")
@@ -104,8 +218,8 @@ model Authenticator {
   credentialDeviceType String
   credentialBackedUp   Boolean
   transports           String?
- 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@unique([userId, credentialID])
 }

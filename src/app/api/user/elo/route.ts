@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { db } from "db";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const SUB_LEVELS_PER_TIER = 5;
 const ELO_PER_WIN = 25;
 const ELO_PER_LOSS = -10;
-const PASS_THRESHOLD = 90;
 
 const TIER_ELO_RANGES: Record<string, { min: number; max: number }> = {
   beginner: { min: 0, max: 1199 },
@@ -44,6 +44,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limit check
+    const limit = checkRateLimit(
+      `elo:${session.user.email}`,
+      RATE_LIMITS.elo.maxRequests,
+      RATE_LIMITS.elo.windowMs,
+    );
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((limit.resetAt - Date.now()) / 1000),
+            ),
+          },
+        },
+      );
+    }
+
     const user = await db.user.findUnique({
       where: { email: session.user.email },
       select: { id: true },
@@ -53,7 +73,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { score } = await req.json();
+    const { score, allPassed, problemId } = await req.json();
     if (typeof score !== "number") {
       return NextResponse.json({ error: "Score required" }, { status: 400 });
     }
@@ -66,10 +86,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    const passed = score >= PASS_THRESHOLD;
-    const eloChange = passed ? ELO_PER_WIN : ELO_PER_LOSS;
+    // Check if this problem was already solved by this user
+    let alreadySolved = false;
+    if (problemId) {
+      const existingSuccess = await db.submission.findFirst({
+        where: {
+          userId: user.id,
+          problemId: problemId,
+          status: "PASSED",
+        },
+      });
+      if (existingSuccess) {
+        alreadySolved = true;
+      }
+    }
+
+    // If all test cases passed, it's a clear win. Otherwise use score >= 90 as fallback.
+    const passed = allPassed === true || score >= 90;
+    
+    // Only grant ELO if the problem wasn't already solved
+    const eloChange = (passed && !alreadySolved) ? ELO_PER_WIN : (passed ? 0 : ELO_PER_LOSS);
+    
     const newElo = Math.max(100, (profile.elo ?? 1000) + eloChange);
-    const newProblemsSolved = passed
+    const newProblemsSolved = (passed && !alreadySolved)
       ? (profile.problemsSolved ?? 0) + 1
       : (profile.problemsSolved ?? 0);
     const newStreak = passed ? (profile.streak ?? 0) + 1 : 0;
@@ -95,8 +134,10 @@ export async function POST(req: Request) {
       problemsSolved: newProblemsSolved,
       streak: newStreak,
       passed,
+      alreadySolved,
     });
   } catch (error) {
+    console.error("ELO Update Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

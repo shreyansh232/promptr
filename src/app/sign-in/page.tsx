@@ -42,12 +42,21 @@ const SignIn = () => {
     formData.append("password", values.password);
 
     try {
-      await loginWithCreds(formData);
-    } catch {
-      toast.error("Something went wrong!");
-      form.setError("root", {
-        message: "Invalid credentials",
-      });
+      const result = await loginWithCreds(formData);
+      if (result?.error) {
+        toast.error(result.error);
+        form.setError("root", {
+          message: result.error,
+        });
+      }
+    } catch (error) {
+      // Ignore Next.js redirect errors as they are expected
+      if (!(error instanceof Error && error.message === "NEXT_REDIRECT")) {
+        toast.error("Something went wrong!");
+        form.setError("root", {
+          message: "An unexpected error occurred",
+        });
+      }
     }
   }
 

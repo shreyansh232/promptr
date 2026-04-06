@@ -7,10 +7,12 @@ import {
   LockClosedIcon,
   ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import { Swords } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface MainSidebarProps {
   userLevel?: string | null;
@@ -23,6 +25,7 @@ interface UserStats {
   subLevel: number;
   problemsSolved: number;
   streak: number;
+  credits: number;
 }
 
 const levels = [
@@ -59,6 +62,7 @@ export default function MainSidebar({
   onToggle,
 }: MainSidebarProps) {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? "P";
   const currentIndex = getLevelIndex(userLevel ?? "beginner");
   const [stats, setStats] = useState<UserStats>({
@@ -66,6 +70,7 @@ export default function MainSidebar({
     subLevel: 1,
     problemsSolved: 0,
     streak: 0,
+    credits: 50,
   });
 
   useEffect(() => {
@@ -79,6 +84,7 @@ export default function MainSidebar({
           subLevel: data.subLevel ?? 1,
           problemsSolved: data.problemsSolved ?? 0,
           streak: data.streak ?? 0,
+          credits: data.credits ?? 50,
         });
       } catch {
         // ignore
@@ -167,6 +173,32 @@ export default function MainSidebar({
           </div>
         )}
 
+        {/* Navigation */}
+        {isExpanded && (
+          <div className="space-y-1 px-4 py-2">
+            {pathname !== "/dashboard" && (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[#f5efe6] transition hover:bg-white/10"
+              >
+                <div className="h-4 w-4 rounded-full bg-[#ff8a3d]/20 flex items-center justify-center">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[#ff8a3d]" />
+                </div>
+                Practice Mode
+              </Link>
+            )}
+            {pathname !== "/battles" && (
+              <Link
+                href="/battles"
+                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[#f5efe6] transition hover:bg-white/10"
+              >
+                <Swords className="h-4 w-4 text-[#ff8a3d]" />
+                Prompt Battles
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* User */}
         <div className="px-4 py-4">
           <div className="flex items-center gap-3">
@@ -179,8 +211,14 @@ export default function MainSidebar({
                   </span>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium text-[#f5efe6]">
-                    {session?.user?.name ?? "Prompt learner"}
+                  <div className="flex items-center justify-between">
+                    <div className="truncate text-xs font-medium text-[#f5efe6]">
+                      {session?.user?.name ?? "Prompt learner"}
+                    </div>
+                    <div className="flex items-center gap-1 rounded-full bg-[#ff8a3d]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#ff8a3d]">
+                      <span>⚡️</span>
+                      <span>{stats.credits}</span>
+                    </div>
                   </div>
                   <div className="text-[10px] text-[#6a6255]">
                     {stats.problemsSolved} solved · {stats.streak} streak

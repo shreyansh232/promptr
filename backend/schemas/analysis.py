@@ -58,3 +58,25 @@ class PracticeProblem(BaseModel):
 
 class PracticeProblemsResponse(BaseModel):
     problems: list[PracticeProblem]
+
+
+class TestCaseEvaluationRequest(BaseModel):
+    prompt: str
+    testCases: list[PracticeTestCase]
+
+
+class TestCaseResult(BaseModel):
+    score: int
+    passed: bool
+    reasoning: str
+    missing_elements: list[str] = []
+    strengths: list[str] = []
+    testCase: str = ""
+
+
+class TestCaseEvaluationResponse(BaseModel):
+    overallScore: int
+    passed: bool
+    testCasesPassed: int
+    testCasesTotal: int
+    results: list[TestCaseResult]

@@ -4,6 +4,7 @@ import { signIn, signOut } from "auth";
 import { db } from "db";
 import { revalidatePath } from "next/cache";
 import { hash } from "bcryptjs";
+import { AuthError } from "next-auth";
 
 const getUserByEmail = async (email: string) => {
   try {
@@ -29,29 +30,44 @@ export const logout = async () => {
   revalidatePath("/");
 };
 
-export const loginWithCreds = async (formData: FormData): Promise<void> => {
+export const loginWithCreds = async (
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean }> => {
   const email = formData.get("email");
   const password = formData.get("password");
 
   if (typeof email !== "string" || typeof password !== "string") {
-    throw new Error("Please provide both email and password");
+    return { error: "Please provide both email and password" };
   }
 
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedPassword = password.trim();
 
   if (!normalizedEmail || !normalizedPassword) {
-    throw new Error("Please provide both email and password");
+    return { error: "Please provide both email and password" };
   }
 
-  await signIn("credentials", {
-    email: normalizedEmail,
-    password: normalizedPassword,
-    redirect: true,
-    redirectTo: "/dashboard",
-  });
+  try {
+    await signIn("credentials", {
+      email: normalizedEmail,
+      password: normalizedPassword,
+      redirect: true,
+      redirectTo: "/dashboard",
+    });
+    return { success: true };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "Invalid credentials" };
+        default:
+          return { error: "Something went wrong during sign in" };
+      }
+    }
 
-  revalidatePath("/");
+    // Re-throw the error so Next.js can handle redirects (which are technically errors)
+    throw error;
+  }
 };
 
 export const registerWithCreds = async (formData: FormData): Promise<void> => {

@@ -20,7 +20,8 @@ export async function Header() {
         <nav className="hidden items-center gap-8 md:flex">
           <NavLink href="/#features">Features</NavLink>
           <NavLink href="/#faq">FAQ</NavLink>
-          <NavLink href="/problems/1">Practice</NavLink>
+          <NavLink href="/battles">Battles</NavLink>
+          <NavLink href="/dashboard">Practice</NavLink>
         </nav>
 
         <div className="flex items-center space-x-3">

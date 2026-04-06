@@ -29,7 +29,7 @@ if not API_KEY:
     )
 
 client = OpenAI(api_key=API_KEY)
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-5.4-nano"
 
 ANALYSIS_RESPONSE_SHAPE = {
     "label": "MODERATE",
@@ -277,6 +277,22 @@ def _build_problems_prompt(user_info: UserType) -> str:
     goals = _format_goals(user_info.goals)
     response_shape = json.dumps(PRACTICE_PROBLEMS_RESPONSE_SHAPE, indent=2)
 
+    application_context = ""
+    if user_info.application and user_info.application.strip():
+        application_context = f"""
+        - Application: {user_info.application}
+
+        CRITICAL: The problem MUST be grounded in the learner's application area: "{user_info.application}".
+        All examples, test cases, and scenarios should relate to this use case.
+        For instance, if their application is "writing reports", create problems about prompts for report generation, data summarization, or business writing.
+        If their application is "coding", create problems about code explanation, code review prompts, or debugging assistants.
+        Never use generic or unrelated examples (like cooking, travel, or fitness) when a specific application is provided.
+        """
+    else:
+        application_context = """
+        - Application: Not specified (use general prompt engineering scenarios)
+        """
+
     return dedent(
         f"""
         You are Promptr Coach creating practice drills for a prompt engineering learner.
@@ -383,16 +399,16 @@ def _build_problems_prompt(user_info: UserType) -> str:
 
         Learner profile:
         - Level: {level}
-        - Expertise: {user_info.expertise}
+        - Industry/Expertise: {user_info.expertise}
+        {application_context}
         - Learning style: {user_info.learning_style}
         - Goals: {goals}
 
-        Create 1 practice problem tailored to this learner's profile.
-
-        The problem MUST:
-        1. Teach or test a specific concept from the knowledge base above.
-        2. Match the learner's level (beginner = clarity/specificity, intermediate = reasoning/few-shot, expert = robustness/advanced techniques).
-        3. Include at least one anti-pattern from the knowledge base for the learner to fix or avoid.
+        Create 1 unique practice problem tailored to this learner's profile.
+        
+        CRITICAL: The problem must be NEW and DIFFERENT from common or previously seen problems. 
+        Avoid generic "Product Description" or "Code Explanation" problems unless they are highly specific to a niche within the learner's application area.
+        Focus on complex, real-world edge cases or specific workflows within "{user_info.application}".
 
         === PROBLEM DESCRIPTION FORMAT (follow strictly) ===
 
@@ -429,7 +445,32 @@ def _build_problems_prompt(user_info: UserType) -> str:
         - At least 2 test cases with input, expected output description, and what's being tested
         - 3-4 pro tips for writing good prompts (reference specific techniques from the knowledge base)
 
-        Keep it practical and industry-specific.
+        === TEST CASE RULES (follow strictly) ===
+
+        Test case inputs must be CLEAN and SELF-CONTAINED. They should contain ONLY the raw input data.
+
+        BAD test case input (confusing meta-text — do NOT write this):
+        "Task: You will generate a prompt. Then that prompt will be applied to the following code. Code: function sum() {{ ... }}"
+
+        GOOD test case input (clean, just the data):
+        "function sum(nums) {{ return nums.reduce((a, b) => a + b, 0); }}"
+
+        Rules for test cases:
+        - The input field should contain ONLY the raw data (code snippet, text, query, etc.) — no instructions, no meta-commentary.
+        - The description field should explain WHAT is being tested (e.g., "Tests whether the prompt handles async code correctly").
+        - The expectedOutput field should describe the expected STRUCTURE and CONTENT of the output, not the literal output text.
+        - Each test case should test a DIFFERENT aspect (e.g., one tests format compliance, another tests edge case handling).
+        - Keep test case inputs short and realistic — they are the actual data the user's prompt will receive.
+
+        === EXAMPLE FIELD RULES ===
+
+        The example section shows the user what a good response looks like.
+
+        - The example input should be a realistic, short piece of data (code, text, etc.) relevant to the learner's application area.
+        - The example output should demonstrate the expected structure and quality.
+        - The example explanation should briefly state WHY this output is good.
+
+        Keep everything practical and industry-specific.
 
         Return valid JSON only. No markdown fences. Use this exact shape:
         {response_shape}
@@ -437,11 +478,12 @@ def _build_problems_prompt(user_info: UserType) -> str:
     ).strip()
 
 
-def _send_prompt(prompt: str) -> str:
+def _send_prompt(prompt: str, timeout: int = 60) -> str:
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
+        timeout=timeout,
     )
     return response.choices[0].message.content or ""
 
@@ -480,3 +522,169 @@ def generate_practice_problems(user_info: UserType) -> PracticeProblemsResponse:
         return PracticeProblemsResponse.model_validate(_parse_gemini_json(raw_response))
     except (json.JSONDecodeError, KeyError, ValueError):
         return PROBLEMS_FALLBACK
+
+
+def generate_battle_content(title: str, description: str) -> dict:
+    """Generate dynamic goal and test cases for a user-created battle."""
+    prompt = dedent(
+        f"""
+        You are a battle architect for a prompt engineering platform.
+        A user is creating a head-to-head battle with this title and description:
+        
+        Title: {title}
+        Description: {description}
+        
+        Your task:
+        1. Refine the goal into a concise, actionable one-sentence "Your Goal" statement.
+        2. Create 2 challenging and diverse test cases.
+        
+        Test Case Rules:
+        - input: ONLY raw data (no instructions).
+        - expectedOutput: Clear description of what the response should contain/structure.
+        - description: What this specific case tests (e.g. "Edge case", "Format check").
+        
+        Return valid JSON only:
+        {{
+            "goal": "...",
+            "testCases": [
+                {{"input": "...", "expectedOutput": "...", "description": "..."}},
+                {{"input": "...", "expectedOutput": "...", "description": "..."}}
+            ]
+        }}
+        """
+    ).strip()
+
+    raw_response = _send_prompt(prompt)
+    try:
+        return _parse_gemini_json(raw_response)
+    except (json.JSONDecodeError, KeyError, ValueError):
+        # Basic fallback if AI fails
+        return {
+            "goal": f"Create a prompt that satisfies the criteria for: {title}",
+            "testCases": [
+                {
+                    "input": "Sample input related to " + title,
+                    "expectedOutput": "A correct response based on the description",
+                    "description": "General test case",
+                },
+                {
+                    "input": "Another input for " + title,
+                    "expectedOutput": "A robust response handling more detail",
+                    "description": "Robustness test",
+                },
+            ],
+        }
+
+
+# ============================================================
+# PROMPT EVALUATION ENGINE
+# ============================================================
+
+
+def _build_evaluation_prompt(
+    user_prompt: str,
+    test_input: str,
+    expected_output: str,
+    test_description: str,
+) -> str:
+    return dedent(
+        f"""
+        You are an objective evaluator for a prompt engineering practice platform.
+
+        A user wrote this prompt:
+        ---USER PROMPT---
+        {user_prompt}
+        ---END USER PROMPT---
+
+        The prompt was given this input:
+        ---INPUT---
+        {test_input}
+        ---END INPUT---
+
+        The expected output should:
+        {expected_output}
+
+        Test context: {test_description}
+
+        Evaluate whether the user's prompt, when given the input above, would likely produce
+        an output that satisfies the expected output criteria.
+
+        Score the prompt on this test case from 0 to 100:
+        - 90-100: The prompt is very likely to produce output matching the expected criteria
+        - 70-89: The prompt would likely produce mostly correct output but may miss some aspects
+        - 50-69: The prompt might produce partially correct output but is missing key instructions
+        - 0-49: The prompt is unlikely to produce output meeting the expected criteria
+
+        Return valid JSON only. No markdown fences. Use this exact shape:
+        {{
+            "score": 75,
+            "passed": true,
+            "reasoning": "Brief explanation of why the prompt would or would not produce the expected output.",
+            "missing_elements": ["List any specific instructions or constraints the prompt is missing"],
+            "strengths": ["List what the prompt does well for this test case"]
+        }}
+        """
+    ).strip()
+
+
+def evaluate_prompt_against_test_case(
+    user_prompt: str,
+    test_input: str,
+    expected_output: str,
+    test_description: str,
+) -> dict:
+    """Evaluate a user's prompt against a single test case using LLM-as-judge."""
+    raw_response = _send_prompt(
+        _build_evaluation_prompt(
+            user_prompt, test_input, expected_output, test_description
+        )
+    )
+
+    try:
+        result = _parse_gemini_json(raw_response)
+        return {
+            "score": result.get("score", 50),
+            "passed": result.get("passed", False),
+            "reasoning": result.get("reasoning", ""),
+            "missing_elements": result.get("missing_elements", []),
+            "strengths": result.get("strengths", []),
+        }
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return {
+            "score": 50,
+            "passed": False,
+            "reasoning": "Could not evaluate. Please try again.",
+            "missing_elements": [],
+            "strengths": [],
+        }
+
+
+def evaluate_prompt_full(
+    user_prompt: str,
+    test_cases: list[dict],
+) -> dict:
+    """Evaluate a user's prompt against all test cases and return aggregate results."""
+    results = []
+    total_score = 0
+
+    for tc in test_cases:
+        result = evaluate_prompt_against_test_case(
+            user_prompt=user_prompt,
+            test_input=tc.get("input", ""),
+            expected_output=tc.get("expectedOutput", ""),
+            test_description=tc.get("description", ""),
+        )
+        result["testCase"] = tc.get("description", "")
+        results.append(result)
+        total_score += result["score"]
+
+    avg_score = round(total_score / len(test_cases)) if test_cases else 0
+    passed_count = sum(1 for r in results if r["passed"])
+
+    return {
+        "overallScore": avg_score,
+        "passed": avg_score >= 90,
+        "testCasesPassed": passed_count,
+        "testCasesTotal": len(test_cases),
+        "results": results,
+    }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { db } from "db";
+import { getUserCredits } from "@/lib/credits";
+import { revalidatePath } from "next/cache";
 
 const defaultProfile = {
   level: "beginner",
@@ -11,6 +13,7 @@ const defaultProfile = {
   expertise: "general",
   learningStyle: "visual",
   goals: [] as string[],
+  credits: 50,
 };
 
 export async function GET() {
@@ -40,8 +43,11 @@ export async function GET() {
               problemsSolved: defaultProfile.problemsSolved,
               streak: defaultProfile.streak,
               expertise: defaultProfile.expertise,
+              application: "",
               learningStyle: defaultProfile.learningStyle,
               goals: defaultProfile.goals,
+              credits: defaultProfile.credits,
+              lastCreditRefresh: new Date(),
             },
           },
         },
@@ -60,39 +66,51 @@ export async function GET() {
           problemsSolved: defaultProfile.problemsSolved,
           streak: defaultProfile.streak,
           expertise: defaultProfile.expertise,
+          application: "",
           learningStyle: defaultProfile.learningStyle,
           goals: defaultProfile.goals,
+          credits: defaultProfile.credits,
+          lastCreditRefresh: new Date(),
         },
       });
 
       return NextResponse.json({
+        id: user.id,
         level: profile.level,
         subLevel: profile.subLevel ?? 1,
         elo: profile.elo ?? 1000,
         problemsSolved: profile.problemsSolved ?? 0,
         streak: profile.streak ?? 0,
         expertise: profile.expertise,
+        application: profile.application ?? "",
         learningStyle: profile.learningStyle,
         goals: profile.goals ?? [],
+        credits: profile.credits ?? 50,
       });
     }
 
+    // Use the utility to get potentially refreshed credits
+    const creditData = await getUserCredits(user.id);
     const profile = user.profile;
 
     return NextResponse.json({
+      id: user.id,
       level: profile.level,
       subLevel: profile.subLevel ?? 1,
       elo: profile.elo ?? 1000,
       problemsSolved: profile.problemsSolved ?? 0,
       streak: profile.streak ?? 0,
       expertise: profile.expertise,
+      application: profile.application ?? "",
       learningStyle: profile.learningStyle,
       goals: profile.goals ?? [],
+      credits: creditData.credits,
     });
   } catch (error) {
     console.error("Profile GET error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Internal Server Error", details: String(error) },
+      { error: "Internal Server Error", details: message },
       { status: 500 },
     );
   }
@@ -102,6 +120,7 @@ export async function POST(req: Request) {
   try {
     const session = await auth();
     if (!session?.user?.email) {
+      console.log("[Profile API] Unauthorized POST attempt - no session email");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -111,10 +130,13 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
+      console.log(`[Profile API] User not found for email: ${session.user.email}`);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const data = await req.json();
+    console.log(`[Profile API] Updating profile for user ${user.id} with data:`, data);
+
     const level =
       typeof data.level === "string" && data.level.trim()
         ? data.level.trim()
@@ -123,6 +145,8 @@ export async function POST(req: Request) {
       typeof data.expertise === "string" && data.expertise.trim()
         ? data.expertise.trim()
         : defaultProfile.expertise;
+    const application =
+      typeof data.application === "string" ? data.application.trim() : "";
     const learningStyle =
       typeof data.learningStyle === "string" && data.learningStyle.trim()
         ? data.learningStyle.trim()
@@ -138,6 +162,7 @@ export async function POST(req: Request) {
       update: {
         level,
         expertise,
+        application,
         learningStyle,
         goals,
       },
@@ -145,10 +170,21 @@ export async function POST(req: Request) {
         userId: user.id,
         level,
         expertise,
+        application,
         learningStyle,
         goals,
+        credits: defaultProfile.credits,
       },
     });
+
+    // Ensure the dashboard and other protected pages see the fresh data
+    revalidatePath("/dashboard", "page");
+    revalidatePath("/profile", "page");
+    revalidatePath("/", "layout"); // Revalidate home layout just in case
+
+    console.log(
+      `[Profile API] Successfully updated profile for user ${user.id}, application: "${profile.application}"`,
+    );
 
     return NextResponse.json({
       success: true,
@@ -159,11 +195,14 @@ export async function POST(req: Request) {
         problemsSolved: profile.problemsSolved ?? 0,
         streak: profile.streak ?? 0,
         expertise: profile.expertise,
+        application: profile.application ?? "",
         learningStyle: profile.learningStyle,
         goals: profile.goals,
+        credits: profile.credits ?? 50,
       },
     });
   } catch (error) {
+    console.error("[Profile API] POST error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
