@@ -83,12 +83,18 @@ export async function POST(request: Request) {
       include: { user: { include: { profile: true } } },
     });
 
-    const submissions = allParticipants.filter((p) => p.prompt);
+    const submissions = allParticipants.filter(
+      (p): p is typeof p & { prompt: string } => !!p.prompt,
+    );
 
     // We expect 2 participants for a battle
     if (submissions.length >= 2) {
       // Both submitted, evaluate!
       const testCases = battle.testCases as any[];
+
+      // Safe: we've verified submissions.length >= 2 and filtered for non-null prompts
+      const p1Prompt = submissions[0]!.prompt!;
+      const p2Prompt = submissions[1]!.prompt!;
 
       // Call FastAPI backend for evaluation
       const evalController = new AbortController();
@@ -98,7 +104,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: submissions[0].prompt,
+          prompt: p1Prompt,
           testCases,
         }),
         signal: evalController.signal,
@@ -121,7 +127,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: submissions[1].prompt,
+          prompt: p2Prompt,
           testCases,
         }),
         signal: evalController2.signal,
@@ -158,8 +164,8 @@ export async function POST(request: Request) {
         p2_elo = ELO_BATTLE_GAIN;
       } else {
         // Tiebreaker: fewer tokens
-        const t1 = submissions[0].tokenCount || 0;
-        const t2 = submissions[1].tokenCount || 0;
+        const t1 = submissions[0]!.tokenCount || 0;
+        const t2 = submissions[1]!.tokenCount || 0;
         if (t1 < t2) {
           p1_result = "WIN";
           p2_result = "LOSS";
@@ -181,7 +187,7 @@ export async function POST(request: Request) {
       // Update participants, user ELOs, and battle status atomically
       const result = await db.$transaction(async (tx) => {
         await tx.battleParticipant.update({
-          where: { id: submissions[0].id },
+          where: { id: submissions[0]!.id },
           data: {
             score: s1,
             passed: eval1.passed,
@@ -191,7 +197,7 @@ export async function POST(request: Request) {
         });
 
         await tx.battleParticipant.update({
-          where: { id: submissions[1].id },
+          where: { id: submissions[1]!.id },
           data: {
             score: s2,
             passed: eval2.passed,
@@ -201,12 +207,12 @@ export async function POST(request: Request) {
         });
 
         await tx.userProfile.update({
-          where: { userId: submissions[0].userId },
+          where: { userId: submissions[0]!.userId },
           data: { elo: { increment: p1_elo } },
         });
 
         await tx.userProfile.update({
-          where: { userId: submissions[1].userId },
+          where: { userId: submissions[1]!.userId },
           data: { elo: { increment: p2_elo } },
         });
 
@@ -235,26 +241,6 @@ export async function POST(request: Request) {
       return NextResponse.json({
         status: "completed",
         battle: result.battle,
-      });
-
-      const updatedBattle = await db.battle.update({
-        where: { id: battleId },
-        data: { status: "COMPLETED" },
-        include: {
-          participants: {
-            include: { user: { select: { name: true } } },
-          },
-        },
-      });
-
-      const formattedParticipants = updatedBattle.participants.map((p) => ({
-        ...p,
-        userName: p.user.name,
-      }));
-
-      return NextResponse.json({
-        status: "completed",
-        battle: { ...updatedBattle, participants: formattedParticipants },
       });
     }
 
