@@ -1,8 +1,5 @@
 import uvicorn
-try:
-    from backend.app import app
-except ImportError:
-    from app import app
+from app import app
 
 
 if __name__ == "__main__":

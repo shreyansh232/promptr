@@ -405,30 +405,7 @@ export default function ChatInterface() {
         (data.label === "STRONG" ? 92 : data.label === "MODERATE" ? 68 : 44);
       setScore(numericScore);
 
-      const eloRes = await fetch("/api/user/elo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          score: numericScore,
-        }),
-      });
-
-      if (eloRes.ok) {
-        const eloData = await eloRes.json();
-        setEloResult(eloData);
-        setUserInfo((prev) =>
-          prev
-            ? {
-                ...prev,
-                elo: eloData.elo,
-                level: eloData.level,
-                subLevel: eloData.subLevel,
-                problemsSolved: eloData.problemsSolved,
-                streak: eloData.streak,
-              }
-            : null,
-        );
-      }
+      // ELO is only awarded for problem-solving with test cases, not casual analysis
 
       setMessages((prev) => [
         ...prev,
@@ -482,7 +459,7 @@ export default function ChatInterface() {
 
   const handleNextProblem = async () => {
     if (!normalizedUserInfo) return;
-    
+
     // Clear all current state
     setPromptAnalysis(null);
     setPromptEvaluation(null);
@@ -513,7 +490,7 @@ export default function ChatInterface() {
         toast.error("Failed to generate a new problem. Please try again.");
         return;
       }
-      
+
       const data = await response.json();
       if (data.problems?.length > 0) {
         saveProblemsToCache(data.problems, normalizedUserInfo);
@@ -647,7 +624,7 @@ export default function ChatInterface() {
         <div className="flex min-w-0 flex-1 overflow-hidden">
           {/* Center: Problem Description Panel */}
           <div className="flex min-w-0 flex-1 flex-col border-r border-white/10">
-            <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="no-scrollbar flex-1 overflow-y-auto px-6 py-6">
               {/* Problem header */}
               <div className="mb-6">
                 <div className="flex items-center gap-3">
@@ -808,7 +785,8 @@ export default function ChatInterface() {
                           className="h-8 rounded-lg border border-white/5 bg-white/[0.02] text-xs text-[#a0978a] hover:bg-white/10 hover:text-[#f5efe6]"
                           onClick={() =>
                             setInputValue(
-                              promptAnalysis.improved_prompts?.[0]?.prompt ?? "",
+                              promptAnalysis.improved_prompts?.[0]?.prompt ??
+                                "",
                             )
                           }
                         >
@@ -896,7 +874,7 @@ export default function ChatInterface() {
                     <div className="flex items-center gap-6">
                       <div className="text-right">
                         <div
-                          className={`text-lg font-mono font-bold ${
+                          className={`font-mono text-lg font-bold ${
                             (eloResult?.eloChange ?? 0) >= 0
                               ? "text-emerald-400"
                               : "text-red-400"

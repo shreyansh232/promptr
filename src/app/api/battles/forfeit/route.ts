@@ -64,39 +64,40 @@ export async function POST(request: Request) {
     }
 
     // Mark creator as forfeit/loss, opponent as win
-    await db.battleParticipant.update({
-      where: { id: creatorParticipant.id },
-      data: {
-        result: "LOSS",
-        score: 0,
-        eloChange: -15,
-      },
-    });
+    // Update battle status and ELO ratings atomically
+    await db.$transaction(async (tx) => {
+      await tx.battleParticipant.update({
+        where: { id: creatorParticipant.id },
+        data: {
+          result: "LOSS",
+          score: 0,
+          eloChange: -15,
+        },
+      });
 
-    await db.battleParticipant.update({
-      where: { id: opponentParticipant.id },
-      data: {
-        result: "WIN",
-        score: 100,
-        eloChange: 30,
-      },
-    });
+      await tx.battleParticipant.update({
+        where: { id: opponentParticipant.id },
+        data: {
+          result: "WIN",
+          score: 100,
+          eloChange: 30,
+        },
+      });
 
-    // Update battle status
-    await db.battle.update({
-      where: { id: battleId },
-      data: { status: "COMPLETED" },
-    });
+      await tx.battle.update({
+        where: { id: battleId },
+        data: { status: "COMPLETED" },
+      });
 
-    // Update ELO ratings
-    await db.userProfile.updateMany({
-      where: { userId: battle.createdBy },
-      data: { elo: { decrement: 15 } },
-    });
+      await tx.userProfile.update({
+        where: { userId: battle.createdBy },
+        data: { elo: { decrement: 15 } },
+      });
 
-    await db.userProfile.updateMany({
-      where: { userId: opponentParticipant.userId },
-      data: { elo: { increment: 30 } },
+      await tx.userProfile.update({
+        where: { userId: opponentParticipant.userId },
+        data: { elo: { increment: 30 } },
+      });
     });
 
     return NextResponse.json({ success: true });

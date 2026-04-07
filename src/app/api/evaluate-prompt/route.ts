@@ -165,11 +165,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Evaluation error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    const stack = error instanceof Error ? error.stack : "";
-    console.error("Evaluation error details:", message, stack);
     return NextResponse.json(
-      { error: "Evaluation service is unavailable", details: message },
+      { error: "Evaluation service is unavailable" },
       { status: 502 },
     );
   }
