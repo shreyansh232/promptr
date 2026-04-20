@@ -51,3 +51,6 @@ venv/
 backend/venv/
 __pycache__/
 *.py[cod]
+
+.pi/
+.pi-lens/

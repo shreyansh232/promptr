@@ -13,7 +13,7 @@ export default function HeroSection() {
         </div>
 
         <h1 className="text-5xl leading-relaxed tracking-[0.03em] text-[#fff6ee] md:text-7xl lg:text-[5.8rem]">
-         Learn prompt engineering by writing, scoring, and rewriting real prompts.
+        Sharpen Your Prompts by Practice, Not Guesswork
         </h1>
 
         <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-[#b9b0a5] md:text-xl">
