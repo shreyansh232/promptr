@@ -1,33 +1,18 @@
 from fastapi import APIRouter, HTTPException
 
-try:
-    from backend.schemas.analysis import (
-        ChatRequest,
-        PracticeProblemsResponse,
-        PromptAnalysisResponse,
-        TestCaseEvaluationRequest,
-        TestCaseEvaluationResponse,
-    )
-    from backend.schemas.user import UserType
-    from backend.services.gemini_service import (
-        analyze_prompt_response,
-        evaluate_prompt_full,
-        generate_practice_problems,
-    )
-except ImportError:
-    from schemas.analysis import (
-        ChatRequest,
-        PracticeProblemsResponse,
-        PromptAnalysisResponse,
-        TestCaseEvaluationRequest,
-        TestCaseEvaluationResponse,
-    )
-    from schemas.user import UserType
-    from services.gemini_service import (
-        analyze_prompt_response,
-        evaluate_prompt_full,
-        generate_practice_problems,
-    )
+from schemas.analysis import (
+    ChatRequest,
+    PracticeProblemsResponse,
+    PromptAnalysisResponse,
+    TestCaseEvaluationRequest,
+    TestCaseEvaluationResponse,
+)
+from schemas.user import UserType
+from services.gemini_service import (
+    analyze_prompt_response,
+    evaluate_prompt_full,
+    generate_practice_problems,
+)
 
 router = APIRouter()
 

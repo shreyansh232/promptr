@@ -5,22 +5,17 @@ from textwrap import dedent
 
 from openai import OpenAI
 
-try:
-    from backend.core.config import BACKEND_DIR
-    from backend.schemas.analysis import (
-        ChatRequest,
-        PracticeProblemsResponse,
-        PromptAnalysisResponse,
-    )
-    from backend.schemas.user import UserType
-except ImportError:
-    from core.config import BACKEND_DIR
-    from schemas.analysis import (
-        ChatRequest,
-        PracticeProblemsResponse,
-        PromptAnalysisResponse,
-    )
-    from schemas.user import UserType
+from core.config import BACKEND_DIR
+from schemas.analysis import (
+    ChatRequest,
+    PracticeExample,
+    PracticeProblem,
+    PracticeProblemsResponse,
+    PracticeTestCase,
+    PromptAnalysisResponse,
+    PromptSuggestion,
+)
+from schemas.user import UserType
 
 API_KEY = os.environ.get("OPENAI_API_KEY")
 if not API_KEY:
@@ -114,34 +109,34 @@ ANALYSIS_FALLBACK = PromptAnalysisResponse(
 
 PROBLEMS_FALLBACK = PracticeProblemsResponse(
     problems=[
-        {
-            "id": 1,
-            "title": "Fix a vague prompt",
-            "difficulty": "Easy",
-            "description": (
+        PracticeProblem(
+            id=1,
+            title="Fix a vague prompt",
+            difficulty="Easy",
+            description=(
                 "Rewrite a vague request so the task, context, and desired output are clear. "
                 "Keep the final prompt under 80 words."
             ),
-            "examples": [
-                {
-                    "input": "Write something about climate change.",
-                    "output": (
+            examples=[
+                PracticeExample(
+                    input="Write something about climate change.",
+                    output=(
                         "Act as a science writer. Explain climate change to high school students "
                         "in 3 short paragraphs using simple language and one real-world example."
                     ),
-                    "explanation": "The rewrite adds role, audience, scope, and output shape.",
-                }
+                    explanation="The rewrite adds role, audience, scope, and output shape.",
+                )
             ],
-            "testCases": [
-                {
-                    "input": "Make this better: Tell me about pricing.",
-                    "expectedOutput": (
+            testCases=[
+                PracticeTestCase(
+                    input="Make this better: Tell me about pricing.",
+                    expectedOutput=(
                         "A clearer prompt with a defined audience, pricing context, and response format."
                     ),
-                    "description": "Practice turning a vague business request into a usable prompt.",
-                }
+                    description="Practice turning a vague business request into a usable prompt.",
+                )
             ],
-        }
+        )
     ]
 )
 
@@ -191,15 +186,15 @@ def _format_goals(goals: list[str]) -> str:
 def _analysis_response_fallback(prompt: str) -> PromptAnalysisResponse:
     fallback = ANALYSIS_FALLBACK.model_copy(deep=True)
     fallback.improved_prompts = [
-        {
-            "title": "Simple rewrite",
-            "prompt": (
+        PromptSuggestion(
+            title="Simple rewrite",
+            prompt=(
                 "Act as a helpful expert. Complete this task: "
                 f"{prompt.strip()} "
                 "Use a clear structure and finish with a concise summary."
             ),
-            "reasoning": "This rewrite makes the task explicit and asks for a structured response.",
-        }
+            reasoning="This rewrite makes the task explicit and asks for a structured response.",
+        )
     ]
     return fallback
 
@@ -405,8 +400,8 @@ def _build_problems_prompt(user_info: UserType) -> str:
         - Goals: {goals}
 
         Create 1 unique practice problem tailored to this learner's profile.
-        
-        CRITICAL: The problem must be NEW and DIFFERENT from common or previously seen problems. 
+
+        CRITICAL: The problem must be NEW and DIFFERENT from common or previously seen problems.
         Avoid generic "Product Description" or "Code Explanation" problems unless they are highly specific to a niche within the learner's application area.
         Focus on complex, real-world edge cases or specific workflows within "{user_info.application}".
 
@@ -530,19 +525,19 @@ def generate_battle_content(title: str, description: str) -> dict:
         f"""
         You are a battle architect for a prompt engineering platform.
         A user is creating a head-to-head battle with this title and description:
-        
+
         Title: {title}
         Description: {description}
-        
+
         Your task:
         1. Refine the goal into a concise, actionable one-sentence "Your Goal" statement.
         2. Create 2 challenging and diverse test cases.
-        
+
         Test Case Rules:
         - input: ONLY raw data (no instructions).
         - expectedOutput: Clear description of what the response should contain/structure.
         - description: What this specific case tests (e.g. "Edge case", "Format check").
-        
+
         Return valid JSON only:
         {{
             "goal": "...",

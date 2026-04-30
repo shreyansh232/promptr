@@ -1,12 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-try:
-    from backend.routers.analysis import router as analysis_router
-    from backend.routers.battle import router as battle_router
-except ImportError:
-    from routers.analysis import router as analysis_router
-    from routers.battle import router as battle_router
+from routers.analysis import router as analysis_router
+from routers.battle import router as battle_router
 
 
 def create_app() -> FastAPI:
@@ -22,6 +18,11 @@ def create_app() -> FastAPI:
 
     app.include_router(analysis_router)
     app.include_router(battle_router, prefix="/battles")
+
+    @app.get("/")
+    def health():
+        return {"message": "healthy"}
+
     return app
 
 

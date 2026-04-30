@@ -1,5 +1,5 @@
 import uvicorn
-from app import app
+from app import app  # noqa: F401 — used by uvicorn via "main:app" string reference
 
 
 if __name__ == "__main__":

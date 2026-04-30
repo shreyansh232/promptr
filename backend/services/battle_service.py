@@ -11,26 +11,8 @@ Flow:
 """
 
 import json
-from typing import Optional
 
-try:
-    from backend.schemas.battle import (
-        CreateBattleRequest,
-        SubmitPromptRequest,
-    )
-    from backend.services.gemini_service import (
-        evaluate_prompt_full,
-        _send_prompt,
-    )
-except ImportError:
-    from schemas.battle import (
-        CreateBattleRequest,
-        SubmitPromptRequest,
-    )
-    from services.gemini_service import (
-        evaluate_prompt_full,
-        _send_prompt,
-    )
+from services.gemini_service import _send_prompt
 
 # ELO exchange amounts for battles
 BATTLE_WIN_ELO = 30

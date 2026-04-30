@@ -1,32 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 
-try:
-    from backend.schemas.battle import (
-        CreateBattleRequest,
-        BattleGenerationRequest,
-        BattleGenerationResponse,
-        JoinBattleRequest,
-        SubmitPromptRequest,
-        BattleResponse,
-        BattleListResponse,
-        BattleResultResponse,
-        BattleParticipantResponse,
-        EloExchangeResponse,
-    )
-except ImportError:
-    from schemas.battle import (
-        CreateBattleRequest,
-        BattleGenerationRequest,
-        BattleGenerationResponse,
-        JoinBattleRequest,
-        SubmitPromptRequest,
-        BattleResponse,
-        BattleListResponse,
-        BattleResultResponse,
-        BattleParticipantResponse,
-        EloExchangeResponse,
-    )
+from schemas.battle import (
+    CreateBattleRequest,
+    BattleGenerationRequest,
+    BattleGenerationResponse,
+    JoinBattleRequest,
+    SubmitPromptRequest,
+)
 
 router = APIRouter()
 
@@ -56,10 +37,7 @@ def _serialize_battle(battle: dict) -> dict:
 @router.post("/generate")
 async def generate_battle(request: BattleGenerationRequest) -> BattleGenerationResponse:
     """Generate AI content for a battle."""
-    try:
-        from backend.services.gemini_service import generate_battle_content
-    except ImportError:
-        from services.gemini_service import generate_battle_content
+    from services.gemini_service import generate_battle_content
 
     result = generate_battle_content(request.title, request.description)
     return BattleGenerationResponse(**result)
@@ -170,10 +148,7 @@ async def _evaluate_battle(
     battle_id: str, battle: dict, participants: list[dict]
 ) -> dict:
     """Evaluate both prompts and determine winner."""
-    try:
-        from backend.services.gemini_service import evaluate_prompt_full
-    except ImportError:
-        from services.gemini_service import evaluate_prompt_full
+    from services.gemini_service import evaluate_prompt_full
 
     test_cases = battle["testCases"]
     results = []
@@ -195,11 +170,9 @@ async def _evaluate_battle(
     p2_score = p2.get("score", 0) or 0
 
     if p1_score > p2_score:
-        winner, loser = p1, p2
         p1["result"] = "WIN"
         p2["result"] = "LOSS"
     elif p2_score > p1_score:
-        winner, loser = p2, p1
         p2["result"] = "WIN"
         p1["result"] = "LOSS"
     else:
@@ -207,17 +180,14 @@ async def _evaluate_battle(
         p1_tokens = p1.get("tokenCount", 0) or 0
         p2_tokens = p2.get("tokenCount", 0) or 0
         if p1_tokens < p2_tokens:
-            winner, loser = p1, p2
             p1["result"] = "WIN"
             p2["result"] = "LOSS"
         elif p2_tokens < p1_tokens:
-            winner, loser = p2, p1
             p2["result"] = "WIN"
             p1["result"] = "LOSS"
         else:
             p1["result"] = "DRAW"
             p2["result"] = "DRAW"
-            winner = loser = None
 
     battle["status"] = "COMPLETED"
     battle["participants"] = participants

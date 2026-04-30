@@ -1,9 +1,6 @@
 from pydantic import BaseModel
 
-try:
-    from backend.schemas.user import UserType
-except ImportError:
-    from schemas.user import UserType
+from schemas.user import UserType
 
 
 class Message(BaseModel):
