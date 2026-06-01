@@ -8,7 +8,7 @@ from schemas.analysis import (
     TestCaseEvaluationResponse,
 )
 from schemas.user import UserType
-from services.gemini_service import (
+from services.llm_service import (
     analyze_prompt_response,
     evaluate_prompt_full,
     generate_practice_problems,

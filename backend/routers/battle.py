@@ -37,7 +37,7 @@ def _serialize_battle(battle: dict) -> dict:
 @router.post("/generate")
 async def generate_battle(request: BattleGenerationRequest) -> BattleGenerationResponse:
     """Generate AI content for a battle."""
-    from services.gemini_service import generate_battle_content
+    from services.llm_service import generate_battle_content
 
     result = generate_battle_content(request.title, request.description)
     return BattleGenerationResponse(**result)
@@ -47,10 +47,10 @@ async def generate_battle(request: BattleGenerationRequest) -> BattleGenerationR
 async def create_battle(request: CreateBattleRequest) -> dict:
     """Create a new prompt battle."""
     import uuid
-    from datetime import datetime
+    from datetime import UTC, datetime
 
     battle_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(UTC).isoformat()
 
     battle = {
         "id": battle_id,
@@ -86,7 +86,9 @@ async def join_battle(request: JoinBattleRequest) -> dict:
         raise HTTPException(status_code=400, detail="Battle already has an opponent")
 
     battle["status"] = "ACTIVE"
-    battle["updatedAt"] = __import__("datetime").datetime.utcnow().isoformat()
+    battle["updatedAt"] = (
+        __import__("datetime").datetime.now(__import__("datetime").UTC).isoformat()
+    )
 
     return {"battle": _serialize_battle(battle)}
 
@@ -119,7 +121,9 @@ async def submit_prompt(request: SubmitPromptRequest) -> dict:
         "passed": None,
         "result": None,
         "eloChange": None,
-        "submittedAt": __import__("datetime").datetime.utcnow().isoformat(),
+        "submittedAt": __import__("datetime")
+        .datetime.now(__import__("datetime").UTC)
+        .isoformat(),
     }
 
     # If this is the first participant, they're the creator
@@ -148,7 +152,7 @@ async def _evaluate_battle(
     battle_id: str, battle: dict, participants: list[dict]
 ) -> dict:
     """Evaluate both prompts and determine winner."""
-    from services.gemini_service import evaluate_prompt_full
+    from services.llm_service import evaluate_prompt_full
 
     test_cases = battle["testCases"]
     results = []

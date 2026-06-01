@@ -55,7 +55,7 @@ def test_evaluate_prompt(client, mock_openai):
     # Setup mock
     mock_response = mock_openai.chat.completions.create.return_value
     # The evaluation service might call OpenAI multiple times or in a specific way
-    # Let's check how evaluate_prompt_full is implemented in gemini_service.py
+    # Let's check how evaluate_prompt_full is implemented in llm_service.py
     mock_response.choices[0].message.content = "Evaluated content"
 
     request_data = {

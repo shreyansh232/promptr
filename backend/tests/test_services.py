@@ -1,4 +1,4 @@
-from services.gemini_service import (
+from services.llm_service import (
     analyze_prompt_response,
     evaluate_prompt_full,
     _parse_gemini_json,
@@ -55,7 +55,7 @@ def test_evaluate_prompt_against_test_case(mock_openai):
         0
     ].message.content = '{"score": 75, "passed": true, "reasoning": "R", "missing_elements": [], "strengths": []}'
 
-    from services.gemini_service import evaluate_prompt_against_test_case
+    from services.llm_service import evaluate_prompt_against_test_case
 
     result = evaluate_prompt_against_test_case("p", "i", "e", "d")
 

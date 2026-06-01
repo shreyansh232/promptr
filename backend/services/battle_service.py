@@ -12,7 +12,7 @@ Flow:
 
 import json
 
-from services.gemini_service import _send_prompt
+from services.llm_service import _send_prompt
 
 # ELO exchange amounts for battles
 BATTLE_WIN_ELO = 30

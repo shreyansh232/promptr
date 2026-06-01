@@ -50,7 +50,7 @@ promptr/
 ├── backend/                        # FastAPI + OpenAI
 │   ├── main.py                     # FastAPI app entry
 │   ├── routers/analysis.py         # /analyze-prompt & /generate-problems routes
-│   ├── services/gemini_service.py  # AI service (prompt analysis + problem generation)
+│   ├── services/llm_service.py     # AI service (prompt analysis + problem generation)
 │   ├── schemas/                    # Pydantic models
 │   └── knowledge-base/             # Prompt engineering reference for problem generation
 ├── prisma/

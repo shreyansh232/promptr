@@ -16,5 +16,5 @@ def client(app):
 
 @pytest.fixture(autouse=True)
 def mock_openai():
-    with patch("services.gemini_service.client") as mock:
+    with patch("services.llm_service.client") as mock:
         yield mock
