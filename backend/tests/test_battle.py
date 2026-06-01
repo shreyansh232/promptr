@@ -1,5 +1,3 @@
-import pytest
-
 def _create_battle(client):
     request_data = {
         "title": "SQL Expert Battle",
