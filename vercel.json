@@ -1,16 +1,13 @@
 {
   "functions": {
     "backend/app.py": {
-      "runtime": "@vercel/python"
+      "runtime": "@vercel/python@5.0.0"
     }
-  },
-  "env": {
-    "PYTHON_VERSION": "3.12"
   },
   "rewrites": [
     {
       "source": "/api/python/(.*)",
-      "destination": "backend/app.py"
+      "destination": "/backend/app.py"
     }
   ]
 }
