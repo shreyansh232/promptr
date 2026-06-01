@@ -109,11 +109,11 @@ OPENAI_API_KEY=your_openai_api_key
 # Frontend
 pnpm install
 
-# Backend virtual environment
+# Backend
 cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+# Recommended: Install uv (https://astral.sh/uv)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+make install
 ```
 
 ### Database Setup
@@ -134,8 +134,8 @@ pnpm dev
 
 # Terminal 2 — Backend (http://localhost:8000)
 cd backend
-source venv/bin/activate
-uvicorn main:app --reload --port 8000
+make install # ensure dependencies are synced
+uv run uvicorn main:app --reload --port 8000
 ```
 
 ## Commands
@@ -153,11 +153,36 @@ npx prisma studio # Open Prisma Studio (GUI)
 
 ### Backend
 
+The backend uses a `Makefile` for standardized operations. It is recommended to use [uv](https://astral.sh/uv) for dependency management.
+
 ```bash
 cd backend
-source venv/bin/activate
-uvicorn main:app --reload --port 8000
+make install      # Install/Sync dependencies
+make test         # Run pytest suite
+make format       # Format code with ruff
+make lint         # Lint and fix with ruff
+make check-lint   # Check lint without fixing
 ```
+
+## Testing & CI/CD
+
+### Backend Tests
+The backend features a comprehensive test suite using `pytest`.
+- **Unit Tests:** Located in `backend/tests/`.
+- **Mocks:** External API calls to OpenAI are mocked using `unittest.mock`.
+- **Coverage:** Includes router validation, service logic, and fallback mechanisms.
+
+Run tests locally:
+```bash
+cd backend
+make test
+```
+
+### CI/CD Pipeline
+A GitHub Actions pipeline (`.github/workflows/backend.yml`) automatically runs on every push and pull request to the `main` branch. It ensures:
+1.  **Formatting:** Code matches `ruff` format standards.
+2.  **Linting:** No linting errors are present.
+3.  **Tests:** All 15+ test cases pass in a clean environment.
 
 ## How It Works
 
