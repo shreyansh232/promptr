@@ -67,10 +67,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = parsed as Record<string, unknown>;
+    const parsedData = parsed as Record<string, unknown>;
     const requiredFields = ["level", "expertise", "learning_style", "goals"];
     for (const field of requiredFields) {
-      if (!(field in data)) {
+      if (!(field in parsedData)) {
         return NextResponse.json(
           { error: `Missing required field: ${field}` },
           { status: 400 },
@@ -79,9 +79,9 @@ export async function POST(request: Request) {
     }
 
     if (
-      typeof data.level !== "string" ||
-      typeof data.expertise !== "string" ||
-      typeof data.learning_style !== "string"
+      typeof parsedData.level !== "string" ||
+      typeof parsedData.expertise !== "string" ||
+      typeof parsedData.learning_style !== "string"
     ) {
       return NextResponse.json(
         { error: "level, expertise, and learning_style must be strings" },
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!Array.isArray(data.goals)) {
+    if (!Array.isArray(parsedData.goals)) {
       return NextResponse.json(
         { error: "goals must be an array" },
         { status: 400 },
@@ -109,9 +109,9 @@ export async function POST(request: Request) {
       60000,
     );
 
-    const data = (await response.json()) as Record<string, unknown>;
+    const backendData = (await response.json()) as Record<string, unknown>;
 
-    return NextResponse.json(data, {
+    return NextResponse.json(backendData, {
       status: response.status,
       headers: {
         "Content-Type":

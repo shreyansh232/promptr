@@ -3,6 +3,8 @@ import { auth } from "auth";
 import { db } from "db";
 import { BattleStatus } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const session = await auth();

@@ -94,22 +94,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = parsed as Record<string, unknown>;
-    if (!Array.isArray(data.messages)) {
+    const parsedData = parsed as Record<string, unknown>;
+    if (!Array.isArray(parsedData.messages)) {
       return NextResponse.json(
         { error: "messages must be an array" },
         { status: 400 },
       );
     }
 
-    if (data.messages.length === 0) {
+    if (parsedData.messages.length === 0) {
       return NextResponse.json(
         { error: "messages must not be empty" },
         { status: 400 },
       );
     }
 
-    for (const msg of data.messages) {
+    for (const msg of parsedData.messages) {
       if (
         typeof msg !== "object" ||
         msg === null ||
@@ -139,9 +139,9 @@ export async function POST(request: Request) {
       30000,
     );
 
-    const data = (await response.json()) as Record<string, unknown>;
+    const backendData = (await response.json()) as Record<string, unknown>;
 
-    return NextResponse.json(data, {
+    return NextResponse.json(backendData, {
       status: response.status,
       headers: {
         "Content-Type":
