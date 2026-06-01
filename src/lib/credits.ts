@@ -9,47 +9,33 @@ export const DAILY_CREDIT_RESET_LIMIT = 50;
 
 /**
  * Checks if a user has enough credits for an action and deducts them.
- * Also handles daily credit refresh.
+ * Also handles daily credit refresh atomically.
  */
-export async function useCredits(userId: string, cost: number) {
-  const profile = await db.userProfile.findUnique({
-    where: { userId },
+export async function deductCredits(userId: string, cost: number) {
+  const startOfToday = new Date();
+  startOfToday.setUTCHours(0, 0, 0, 0);
+
+  // 1. Atomic Refresh: Reset credits to DAILY_CREDIT_RESET_LIMIT if last refresh was before today
+  await db.userProfile.updateMany({
+    where: {
+      userId,
+      OR: [
+        { lastCreditRefresh: { lt: startOfToday } },
+        { lastCreditRefresh: null },
+      ],
+    },
+    data: {
+      credits: DAILY_CREDIT_RESET_LIMIT,
+      lastCreditRefresh: new Date(),
+    },
   });
 
-  if (!profile) {
-    throw new Error("User profile not found");
-  }
-
-  let currentCredits = profile.credits;
-  const now = new Date();
-  const lastRefresh = profile.lastCreditRefresh
-    ? new Date(profile.lastCreditRefresh)
-    : now;
-
-  // Daily refresh logic: If last refresh was on a previous day
-  const isDifferentDay =
-    now.getUTCFullYear() !== lastRefresh.getUTCFullYear() ||
-    now.getUTCMonth() !== lastRefresh.getUTCMonth() ||
-    now.getUTCDate() !== lastRefresh.getUTCDate();
-
-  if (isDifferentDay) {
-    currentCredits = DAILY_CREDIT_RESET_LIMIT;
-    // Update the profile with refreshed credits and new timestamp
-    await db.userProfile.update({
-      where: { userId },
-      data: {
-        credits: currentCredits,
-        lastCreditRefresh: now,
-      },
-    });
-  }
-
-  if (currentCredits < cost) {
-    return { allowed: false, remaining: currentCredits };
-  }
-
-  const updatedProfile = await db.userProfile.update({
-    where: { userId },
+  // 2. Atomic Decrement: Only decrement if current credits >= cost
+  const updated = await db.userProfile.updateMany({
+    where: {
+      userId,
+      credits: { gte: cost },
+    },
     data: {
       credits: {
         decrement: cost,
@@ -57,7 +43,27 @@ export async function useCredits(userId: string, cost: number) {
     },
   });
 
-  return { allowed: true, remaining: updatedProfile.credits };
+  // 3. Check if deduction was successful
+  if (updated.count === 0) {
+    const profile = await db.userProfile.findUnique({
+      where: { userId },
+      select: { credits: true },
+    });
+
+    if (!profile) {
+      throw new Error("User profile not found");
+    }
+
+    return { allowed: false, remaining: profile.credits };
+  }
+
+  // 4. Fetch the new balance
+  const after = await db.userProfile.findUnique({
+    where: { userId },
+    select: { credits: true },
+  });
+
+  return { allowed: true, remaining: after?.credits ?? 0 };
 }
 
 export async function getUserCredits(userId: string) {

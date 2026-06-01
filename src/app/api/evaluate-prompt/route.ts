@@ -3,9 +3,8 @@ import { auth } from "auth";
 import { env } from "@/env";
 import { db } from "db";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { useCredits, CREDIT_COSTS } from "@/lib/credits";
-
-const MAX_BODY_BYTES = 50_000; // 50 KB limit
+import { deductCredits, CREDIT_COSTS } from "@/lib/credits";
+import { fetchWithTimeout } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // Check and use credits
-    const creditCheck = await useCredits(user.id, CREDIT_COSTS.EVALUATE_PROMPT);
+    const creditCheck = await deductCredits(user.id, CREDIT_COSTS.EVALUATE_PROMPT);
     if (!creditCheck.allowed) {
       return NextResponse.json(
         {
@@ -58,9 +57,9 @@ export async function POST(request: Request) {
     }
 
     const bodyText = await request.text();
-    let parsed: any;
+    let parsed: { prompt: string; problemId?: string; testCases?: Record<string, unknown>[] };
     try {
-      parsed = JSON.parse(bodyText);
+      parsed = JSON.parse(bodyText) as typeof parsed;
     } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
@@ -117,20 +116,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
-
-    const response = await fetch(`${env.BACKEND_URL}/evaluate-prompt`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      `${env.BACKEND_URL}/evaluate-prompt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt, testCases: finalTestCases }),
+        cache: "no-store",
       },
-      body: JSON.stringify({ prompt, testCases: finalTestCases }),
-      cache: "no-store",
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
+      120000,
+    );
 
     if (!response.ok) {
       return NextResponse.json(
@@ -139,7 +136,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const evalResult = await response.json();
+    const evalResult = (await response.json()) as {
+      overallScore: number;
+      passed: boolean;
+      results: Record<string, unknown>[];
+    };
 
     // Save submission if it's a known database problem
     let submissionId = null;

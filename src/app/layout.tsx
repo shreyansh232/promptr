@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { auth } from "auth";
 import { Toaster } from "react-hot-toast";
 import { Instrument_Serif, Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 
 const sans = Manrope({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default async function RootLayout({
         <SessionProvider session={session}>
           <GradientBackground>{children}</GradientBackground>
           <Toaster />
+          <Analytics />
         </SessionProvider>
       </body>
     </html>

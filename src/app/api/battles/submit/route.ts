@@ -25,7 +25,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { battleId, prompt } = await request.json();
+    const body = (await request.json()) as { battleId: string; prompt: string };
+    const { battleId, prompt } = body;
 
     if (!battleId || !prompt) {
       return NextResponse.json(
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
     }
 
     // Update participant with prompt
-    const updatedParticipant = await db.battleParticipant.update({
+    await db.battleParticipant.update({
       where: { id: participant.id },
       data: {
         prompt,
@@ -84,64 +85,57 @@ export async function POST(request: Request) {
     });
 
     const submissions = allParticipants.filter(
-      (p): p is typeof p & { prompt: string } => !!p.prompt,
+      (p): p is typeof p & { prompt: string; tokenCount: number } =>
+        !!p.prompt && p.tokenCount !== null,
     );
 
     // We expect 2 participants for a battle
     if (submissions.length >= 2) {
-      // Both submitted, evaluate!
-      const testCases = battle.testCases as any[];
+      // Call FastAPI backend for evaluation in parallel
+      const testCases = (battle.testCases as unknown) as Record<string, unknown>[];
+      const p1Prompt = submissions[0]!.prompt;
+      const p2Prompt = submissions[1]!.prompt;
 
-      // Safe: we've verified submissions.length >= 2 and filtered for non-null prompts
-      const p1Prompt = submissions[0]!.prompt!;
-      const p2Prompt = submissions[1]!.prompt!;
-
-      // Call FastAPI backend for evaluation
-      const evalController = new AbortController();
-      const evalTimeout = setTimeout(() => evalController.abort(), 120000);
-
-      const evalResponse = await fetch(`${env.BACKEND_URL}/evaluate-prompt`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: p1Prompt,
-          testCases,
-        }),
-        signal: evalController.signal,
-      });
-
-      clearTimeout(evalTimeout);
-
-      if (!evalResponse.ok) {
-        throw new Error(
-          `Backend evaluation failed for participant 1 with status ${evalResponse.status}`,
-        );
+      interface EvaluationResult {
+        overallScore: number;
+        passed: boolean;
+        results: Record<string, unknown>[];
       }
 
-      const eval1 = await evalResponse.json();
+      const evaluatePrompt = async (prompt: string): Promise<EvaluationResult> => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 120000);
+        try {
+          const response = await fetch(`${env.BACKEND_URL}/evaluate-prompt`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, testCases }),
+            signal: controller.signal,
+          });
+          if (!response.ok) {
+            throw new Error(`Backend evaluation failed: ${response.status}`);
+          }
+          return (await response.json()) as EvaluationResult;
+        } finally {
+          clearTimeout(timeout);
+        }
+      };
 
-      const evalController2 = new AbortController();
-      const evalTimeout2 = setTimeout(() => evalController2.abort(), 120000);
+      const [r1, r2] = await Promise.allSettled([
+        evaluatePrompt(p1Prompt),
+        evaluatePrompt(p2Prompt),
+      ]);
 
-      const evalResponse2 = await fetch(`${env.BACKEND_URL}/evaluate-prompt`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: p2Prompt,
-          testCases,
-        }),
-        signal: evalController2.signal,
-      });
-
-      clearTimeout(evalTimeout2);
-
-      if (!evalResponse2.ok) {
-        throw new Error(
-          `Backend evaluation failed for participant 2 with status ${evalResponse2.status}`,
-        );
+      if (r1.status === "rejected" || r2.status === "rejected") {
+        console.error("Evaluation failure:", {
+          r1: r1.status === "rejected" ? (r1.reason as unknown) : "ok",
+          r2: r2.status === "rejected" ? (r2.reason as unknown) : "ok",
+        });
+        throw new Error("One or more prompt evaluations failed or timed out");
       }
 
-      const eval2 = await evalResponse2.json();
+      const eval1: EvaluationResult = r1.value;
+      const eval2: EvaluationResult = r2.value;
 
       // Determine winner
       const s1 = eval1.overallScore;
@@ -164,8 +158,8 @@ export async function POST(request: Request) {
         p2_elo = ELO_BATTLE_GAIN;
       } else {
         // Tiebreaker: fewer tokens
-        const t1 = submissions[0]!.tokenCount || 0;
-        const t2 = submissions[1]!.tokenCount || 0;
+        const t1 = submissions[0]!.tokenCount ?? 0;
+        const t2 = submissions[1]!.tokenCount ?? 0;
         if (t1 < t2) {
           p1_result = "WIN";
           p2_result = "LOSS";
@@ -227,7 +221,7 @@ export async function POST(request: Request) {
         });
 
         const formattedParticipants = updatedBattle.participants.map(
-          (p: { user: { name: string | null } } & Record<string, unknown>) => ({
+          (p) => ({
             ...p,
             userName: p.user.name,
           }),

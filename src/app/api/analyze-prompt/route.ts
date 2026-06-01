@@ -3,7 +3,8 @@ import { auth } from "auth";
 import { env } from "@/env";
 import { db } from "db";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { useCredits, CREDIT_COSTS } from "@/lib/credits";
+import { deductCredits, CREDIT_COSTS } from "@/lib/credits";
+import { fetchWithTimeout } from "@/lib/utils";
 
 const MAX_BODY_BYTES = 50_000; // 50 KB limit
 
@@ -23,15 +24,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check and use credits
-    const creditCheck = await useCredits(user.id, CREDIT_COSTS.ANALYZE_PROMPT);
-    if (!creditCheck.allowed) {
-      return NextResponse.json(
-        { error: `Insufficient credits. You have ${creditCheck.remaining} left.` },
-        { status: 403 },
-      );
-    }
-
     // Rate limit check
     const limit = checkRateLimit(
       `analyze:${session.user.email}`,
@@ -49,6 +41,17 @@ export async function POST(request: Request) {
             ),
           },
         },
+      );
+    }
+    
+    // Check and use credits
+    const creditCheck = await deductCredits(user.id, CREDIT_COSTS.ANALYZE_PROMPT);
+    if (!creditCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Insufficient credits. You have ${creditCheck.remaining} left.`,
+        },
+        { status: 403 },
       );
     }
 
@@ -123,18 +126,22 @@ export async function POST(request: Request) {
       }
     }
 
-    const response = await fetch(`${env.BACKEND_URL}/analyze-prompt`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      `${env.BACKEND_URL}/analyze-prompt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body,
+        cache: "no-store",
       },
-      body,
-      cache: "no-store",
-    });
+      30000,
+    );
 
-    const responseText = await response.text();
+    const data = (await response.json()) as Record<string, unknown>;
 
-    return new NextResponse(responseText, {
+    return NextResponse.json(data, {
       status: response.status,
       headers: {
         "Content-Type":

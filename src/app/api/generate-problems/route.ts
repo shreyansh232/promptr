@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { env } from "@/env";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { fetchWithTimeout } from "@/lib/utils";
 
 const MAX_BODY_BYTES = 10_000; // 10 KB limit (user type is small)
 
@@ -95,18 +96,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch(`${env.BACKEND_URL}/generate-problems`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetchWithTimeout(
+      `${env.BACKEND_URL}/generate-problems`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body,
+        cache: "no-store",
       },
-      body,
-      cache: "no-store",
-    });
+      60000,
+    );
 
-    const responseText = await response.text();
+    const data = (await response.json()) as Record<string, unknown>;
 
-    return new NextResponse(responseText, {
+    return NextResponse.json(data, {
       status: response.status,
       headers: {
         "Content-Type":
