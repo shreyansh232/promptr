@@ -15,6 +15,9 @@ dependencies = [
 [project.scripts]
 promptr-api = "uvicorn:main"
 
+[tool.vercel]
+entrypoint = "backend.app:app"
+
 [dependency-groups]
 dev = [
     "pyright>=1.1.409",
