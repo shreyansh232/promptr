@@ -100,7 +100,11 @@ async def join_battle(request: JoinBattleRequest, db=Depends(get_db)) -> dict:
     await db.battles.update_one(
         {"id": request.battleId},
         {
-            "$set": {"status": "ACTIVE", "updatedAt": now, "opponentId": request.userId},
+            "$set": {
+                "status": "ACTIVE",
+                "updatedAt": now,
+                "opponentId": request.userId,
+            },
             "$push": {"participants": opponent_participant},
         },
     )

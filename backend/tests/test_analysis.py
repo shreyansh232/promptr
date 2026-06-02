@@ -86,7 +86,7 @@ def test_generate_problems_db_cache(client, mock_openai, mock_db):
         "expertise": "marketing",
         "goals": ["writing"],
         "learning_style": "visual",
-        "subLevel": 1
+        "subLevel": 1,
     }
 
     # 1. First call - should call mock_openai and save to DB

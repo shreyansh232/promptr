@@ -45,7 +45,9 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
             profile["lastCreditRefresh"] = now
 
     if profile is None:
-        raise HTTPException(status_code=500, detail="Failed to create or retrieve profile")
+        raise HTTPException(
+            status_code=500, detail="Failed to create or retrieve profile"
+        )
     profile["id"] = str(profile.pop("_id"))
     return profile
 

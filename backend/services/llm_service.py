@@ -146,7 +146,7 @@ PROBLEMS_FALLBACK = PracticeProblemsResponse(
             proTips=[
                 "Define a clear role/persona.",
                 "Specify target audience/context.",
-                "Define expected structure."
+                "Define expected structure.",
             ],
             tags=["task-clarity", "audience-awareness", "output-format"],
             hint="Hint: Try starting your prompt with 'Act as a [role]' to set a clear persona, and specify the exact bullet format in your instructions.",
@@ -279,6 +279,8 @@ def _build_analysis_prompt(user_info: UserType, prompt: str) -> str:
         {prompt}
         """
     ).strip()
+
+
 def _build_problems_prompt(user_info: UserType) -> str:
     level = _normalize_level(user_info.level)
     goals = _format_goals(user_info.goals)

@@ -34,22 +34,31 @@ async def generate_problems(
 ) -> PracticeProblemsResponse:
     try:
         if user_info.userId:
-            cached = await db.generated_problems.find_one({
-                "userId": user_info.userId,
-                "level": user_info.level,
-                "subLevel": user_info.subLevel,
-            })
+            cached = await db.generated_problems.find_one(
+                {
+                    "userId": user_info.userId,
+                    "level": user_info.level,
+                    "subLevel": user_info.subLevel,
+                }
+            )
             if cached and "problems" in cached:
                 problems = cached["problems"]
                 # Skip cache if it contains ONLY the fallback problem so the user can get a real generated problem
-                if not (problems and len(problems) == 1 and problems[0].get("title") == "Fix a vague prompt"):
+                if not (
+                    problems
+                    and len(problems) == 1
+                    and problems[0].get("title") == "Fix a vague prompt"
+                ):
                     return PracticeProblemsResponse(problems=problems)
 
         response = generate_practice_problems(user_info)
 
         if user_info.userId and response.problems:
             # Do NOT save fallback problems to the database cache
-            if not (len(response.problems) == 1 and response.problems[0].title == "Fix a vague prompt"):
+            if not (
+                len(response.problems) == 1
+                and response.problems[0].title == "Fix a vague prompt"
+            ):
                 db_doc = {
                     "userId": user_info.userId,
                     "level": user_info.level,

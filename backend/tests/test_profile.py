@@ -46,7 +46,9 @@ def test_solved_problems_no_overwrite(client):
         "problemJson": '{"title": "Intro to Prompting"}',
         "userPrompt": "First prompt",
     }
-    response = client.post(f"/profiles/{user_id}/solved-problems", json=solved_problem_data1)
+    response = client.post(
+        f"/profiles/{user_id}/solved-problems", json=solved_problem_data1
+    )
     assert response.status_code == 200
 
     # 2. Save second solved problem with a different title in the same sublevel
@@ -57,7 +59,9 @@ def test_solved_problems_no_overwrite(client):
         "problemJson": '{"title": "Intermediate Prompting"}',
         "userPrompt": "Second prompt",
     }
-    response = client.post(f"/profiles/{user_id}/solved-problems", json=solved_problem_data2)
+    response = client.post(
+        f"/profiles/{user_id}/solved-problems", json=solved_problem_data2
+    )
     assert response.status_code == 200
 
     # 3. Get solved problems - should contain both problems instead of overwriting
