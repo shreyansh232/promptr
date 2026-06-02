@@ -5,14 +5,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TestCase } from "@/types/problem";
+import type { TestCase } from "@/types/problem";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "@phosphor-icons/react";
 
 interface PromptEditorProps {
   testCases: TestCase[];
@@ -28,7 +27,7 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
   const runTests = async () => {
     setIsRunning(true);
     // Simulate API call to test the prompt
-    const simulatedResults = testCases.map((testCase) => ({
+    const simulatedResults = testCases.map((_testCase) => ({
       success: Math.random() > 0.5,
       output: "Generated output would appear here...",
     }));
@@ -41,18 +40,18 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
   };
 
   return (
-    <div className="flex h-full flex-col p-4">
+    <div className="flex h-full flex-col p-4 bg-black">
       <Textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         placeholder="Write your prompt here..."
-        className="focus:border-second mb-4 h-1/2 min-h-[450px] flex-1 resize-none rounded-xl border-2 border-white bg-gray-700 font-mono text-white dark:text-white"
+        className="mb-4 h-1/2 min-h-[450px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 font-mono text-white placeholder-white/30 focus:border-primary/50 focus:ring-0 focus:outline-none"
       />
       <div className="scroll-none flex-1 space-y-4 overflow-auto">
         {testCases.map((testCase, index) => (
           <Card
             key={index}
-            className="scroll-none border-none bg-gray-700 text-white"
+            className="scroll-none border border-white/10 bg-white/5 text-white"
           >
             <CardHeader className="py-3">
               <CardTitle className="text-sm font-medium">
@@ -63,9 +62,9 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
                     className="ml-2"
                   >
                     {results[index].success ? (
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      <CheckCircle className="mr-1 h-3 w-3 text-black" weight="fill" />
                     ) : (
-                      <XCircle className="mr-1 h-3 w-3" />
+                      <XCircle className="mr-1 h-3 w-3" weight="fill" />
                     )}
                     {results[index].success ? "Passed" : "Failed"}
                   </Badge>
@@ -75,17 +74,17 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
             <CardContent className="py-2 text-sm">
               <div className="space-y-2">
                 <div>
-                  <div className="mb-1 font-mono text-xs text-white">
+                  <div className="mb-1 font-mono text-xs text-white/75">
                     Input:
                   </div>
-                  <div className="rounded-md bg-gray-500 p-2 font-mono">
+                  <div className="rounded-md bg-black/40 border border-white/10 p-2 font-mono text-white/95">
                     {testCase.input}
                   </div>
                 </div>
                 {results[index] && (
                   <div>
-                    <div className="font-mono text-xs text-white">Output:</div>
-                    <div className="rounded-md bg-gray-500 p-2 font-mono">
+                    <div className="font-mono text-xs text-white/75">Output:</div>
+                    <div className="rounded-md bg-black/40 border border-white/10 p-2 font-mono text-white/95">
                       {results[index].output}
                     </div>
                   </div>
@@ -98,7 +97,7 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
       <div className="mt-4">
         <Button
           onClick={runTests}
-          className="bg-second w-full"
+          className="w-full bg-[#ff8a3d] hover:bg-[#ff9b5b] text-black font-semibold rounded-full py-6"
           disabled={!prompt.trim() || isRunning}
         >
           {isRunning ? "Running Tests..." : "Run Test Cases"}

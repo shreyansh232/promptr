@@ -1,62 +1,24 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
-import { db } from "db";
 
-export async function DELETE(request: Request) {
+/**
+ * Delete a battle. The FastAPI backend does not currently expose a
+ * dedicated delete endpoint. Returns 501 so the frontend can detect
+ * the missing feature and surface a friendly message.
+ */
+export async function DELETE(_request: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const { battleId } = await request.json();
-
-    if (!battleId) {
-      return NextResponse.json({ error: "Missing battleId" }, { status: 400 });
-    }
-
-    const battle = await db.battle.findUnique({
-      where: { id: battleId },
-      include: { participants: true },
-    });
-
-    if (!battle) {
-      return NextResponse.json({ error: "Battle not found" }, { status: 404 });
-    }
-
-    // Only the creator can delete, and only if still WAITING
-    if (battle.createdBy !== user.id) {
-      return NextResponse.json(
-        { error: "Only the creator can delete this battle" },
-        { status: 403 },
-      );
-    }
-
-    if (battle.status !== "WAITING") {
-      return NextResponse.json(
-        { error: "Cannot delete an active or completed battle" },
-        { status: 400 },
-      );
-    }
-
-    // Delete participants first (cascade should handle it, but be explicit for MongoDB)
-    await db.battleParticipant.deleteMany({
-      where: { battleId },
-    });
-
-    await db.battle.delete({
-      where: { id: battleId },
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      {
+        error: "Delete is not yet supported by the backend",
+      },
+      { status: 501 },
+    );
   } catch (error) {
     console.error("Battle delete error:", error);
     return NextResponse.json(

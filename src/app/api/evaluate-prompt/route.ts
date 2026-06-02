@@ -1,36 +1,33 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { env } from "@/env";
-import { db } from "db";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { deductCredits, CREDIT_COSTS } from "@/lib/credits";
 import { fetchWithTimeout } from "@/lib/utils";
+import type { TestCaseEvaluationResult } from "@/lib/backend";
+
+interface EvaluationRequestBody {
+  prompt: string;
+  problemId?: string;
+  testCases?: { input: string; expectedOutput: string; description: string }[];
+}
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id || !session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
-    });
-
-    if (!user || !user.profile) {
-      return NextResponse.json(
-        { error: "User or profile not found" },
-        { status: 404 },
-      );
-    }
-
     // Check and use credits
-    const creditCheck = await deductCredits(user.id, CREDIT_COSTS.EVALUATE_PROMPT);
+    const creditCheck = await deductCredits(
+      session.user.id,
+      CREDIT_COSTS.EVALUATE_PROMPT,
+    );
     if (!creditCheck.allowed) {
       return NextResponse.json(
         {
-          error: `Insufficient credits. You have ${creditCheck.remaining} left.`,
+          error: `Insufficient credits. You have ${creditCheck.remaining} credits left.`,
         },
         { status: 403 },
       );
@@ -57,14 +54,14 @@ export async function POST(request: Request) {
     }
 
     const bodyText = await request.text();
-    let parsed: { prompt: string; problemId?: string; testCases?: Record<string, unknown>[] };
+    let parsed: EvaluationRequestBody;
     try {
-      parsed = JSON.parse(bodyText) as typeof parsed;
+      parsed = JSON.parse(bodyText) as EvaluationRequestBody;
     } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const { prompt, problemId, testCases: providedTestCases } = parsed;
+    const { prompt, testCases: providedTestCases } = parsed;
 
     if (!prompt || typeof prompt !== "string") {
       return NextResponse.json(
@@ -73,43 +70,11 @@ export async function POST(request: Request) {
       );
     }
 
-    let finalTestCases = providedTestCases;
-    let dbProblem = null;
-
-    // Only attempt database lookup if problemId is a valid MongoDB ObjectId (24 char hex)
-    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(String(problemId));
-
-    if (problemId && isValidObjectId) {
-      dbProblem = await db.problem.findUnique({
-        where: { id: String(problemId) },
-        include: { testCases: true },
-      });
-
-      if (!dbProblem) {
-        return NextResponse.json(
-          { error: "Problem not found" },
-          { status: 404 },
-        );
-      }
-
-      // Check ELO gate
-      if (user.profile.elo < dbProblem.eloGate) {
-        return NextResponse.json(
-          {
-            error: `ELO too low. You need ${dbProblem.eloGate} ELO for this problem.`,
-          },
-          { status: 403 },
-        );
-      }
-
-      finalTestCases = dbProblem.testCases.map((tc) => ({
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        description: tc.description,
-      }));
-    }
-
-    if (!finalTestCases || !Array.isArray(finalTestCases)) {
+    if (
+      !providedTestCases ||
+      !Array.isArray(providedTestCases) ||
+      providedTestCases.length === 0
+    ) {
       return NextResponse.json(
         { error: "Test cases are required" },
         { status: 400 },
@@ -123,7 +88,7 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, testCases: finalTestCases }),
+        body: JSON.stringify({ prompt, testCases: providedTestCases }),
         cache: "no-store",
       },
       120000,
@@ -136,32 +101,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const evalResult = (await response.json()) as {
-      overallScore: number;
-      passed: boolean;
-      results: Record<string, unknown>[];
-    };
-
-    // Save submission if it's a known database problem
-    let submissionId = null;
-    if (problemId && isValidObjectId) {
-      const submission = await db.submission.create({
-        data: {
-          userId: user.id,
-          problemId: String(problemId),
-          prompt,
-          score: evalResult.overallScore,
-          allPassed: evalResult.passed,
-          feedback: JSON.stringify(evalResult.results),
-          status: evalResult.passed ? "PASSED" : "FAILED",
-        },
-      });
-      submissionId = submission.id;
-    }
+    const evalResult = (await response.json()) as TestCaseEvaluationResult;
 
     return NextResponse.json({
       ...evalResult,
-      submissionId,
       creditsRemaining: creditCheck.remaining,
     });
   } catch (error) {

@@ -33,7 +33,7 @@ export const problemsList: ProblemsListItem[] = [
   },
 ];
 
-export const problems: { [key: number]: Problem } = {
+export const problems: Record<number, Problem> = {
   1: {
     id: 1,
     title: "Product Description Generator",

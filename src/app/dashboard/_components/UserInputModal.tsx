@@ -122,7 +122,7 @@ export default function UserInputModal({
                 What industry do you work in?
               </div>
               <p className="mt-2 text-sm leading-6 text-[#a0978a]">
-                We'll personalize practice problems to your field.
+                We&apos;ll personalize practice problems to your field.
               </p>
             </div>
             <Input

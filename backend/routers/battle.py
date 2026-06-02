@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
+from motor.core import AgnosticDatabase
 
+from core.db import get_db
 from schemas.battle import (
     CreateBattleRequest,
     BattleGenerationRequest,
@@ -11,16 +13,11 @@ from schemas.battle import (
 
 router = APIRouter()
 
-# In-memory store for battles (replace with DB in production)
-# For now, this is a simple dict-based store
-_battles: dict[str, dict] = {}
-_participants: dict[str, list[dict]] = {}  # battleId -> [participants]
-
 
 def _serialize_battle(battle: dict) -> dict:
     """Serialize a battle dict for API response."""
     return {
-        "id": battle["id"],
+        "id": battle.get("id") or str(battle.get("_id")),
         "title": battle["title"],
         "description": battle["description"],
         "goal": battle["goal"],
@@ -44,7 +41,7 @@ async def generate_battle(request: BattleGenerationRequest) -> BattleGenerationR
 
 
 @router.post("/create")
-async def create_battle(request: CreateBattleRequest) -> dict:
+async def create_battle(request: CreateBattleRequest, db=Depends(get_db)) -> dict:
     """Create a new prompt battle."""
     import uuid
     from datetime import UTC, datetime
@@ -59,23 +56,29 @@ async def create_battle(request: CreateBattleRequest) -> dict:
         "goal": request.goal,
         "testCases": request.testCases,
         "status": "WAITING",
-        "createdBy": "",  # Set by the API route with user ID
+        "createdBy": request.createdBy,
         "opponentId": None,
-        "participants": [],
+        "participants": [
+            {
+                "userId": request.createdBy,
+                "userName": request.createdByName or None,
+            }
+        ]
+        if request.createdBy
+        else [],
         "createdAt": now,
         "updatedAt": now,
     }
 
-    _battles[battle_id] = battle
-    _participants[battle_id] = []
+    await db.battles.insert_one(battle)
 
     return {"battleId": battle_id, "battle": _serialize_battle(battle)}
 
 
 @router.post("/join")
-async def join_battle(request: JoinBattleRequest) -> dict:
+async def join_battle(request: JoinBattleRequest, db=Depends(get_db)) -> dict:
     """Join an existing battle as the opponent."""
-    battle = _battles.get(request.battleId)
+    battle = await db.battles.find_one({"id": request.battleId})
     if not battle:
         raise HTTPException(status_code=404, detail="Battle not found")
 
@@ -85,71 +88,78 @@ async def join_battle(request: JoinBattleRequest) -> dict:
     if battle["opponentId"]:
         raise HTTPException(status_code=400, detail="Battle already has an opponent")
 
-    battle["status"] = "ACTIVE"
-    battle["updatedAt"] = (
-        __import__("datetime").datetime.now(__import__("datetime").UTC).isoformat()
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC).isoformat()
+
+    opponent_participant = {
+        "userId": request.userId,
+        "userName": request.userName or None,
+    }
+
+    await db.battles.update_one(
+        {"id": request.battleId},
+        {
+            "$set": {"status": "ACTIVE", "updatedAt": now, "opponentId": request.userId},
+            "$push": {"participants": opponent_participant},
+        },
     )
 
+    battle = await db.battles.find_one({"id": request.battleId})
     return {"battle": _serialize_battle(battle)}
 
 
 @router.post("/submit")
-async def submit_prompt(request: SubmitPromptRequest) -> dict:
+async def submit_prompt(request: SubmitPromptRequest, db=Depends(get_db)) -> dict:
     """Submit a prompt for a battle."""
-    battle = _battles.get(request.battleId)
+    battle = await db.battles.find_one({"id": request.battleId})
     if not battle:
         raise HTTPException(status_code=404, detail="Battle not found")
 
     if battle["status"] not in ("WAITING", "ACTIVE"):
         raise HTTPException(status_code=400, detail="Battle is not active")
 
-    # Find or create participant entry
-    participants = _participants.get(request.battleId, [])
-
-    # Check if this user already submitted
-    for p in participants:
-        if p.get("prompt") is not None:
-            # Already has a prompt, check if it's the same user
-            pass
+    participants = battle.get("participants", [])
 
     # Add/update participant
+    from datetime import UTC, datetime
+
     participant = {
-        "userId": "",  # Set by API route
+        "userId": "",
         "prompt": request.prompt,
-        "tokenCount": len(request.prompt.split()),  # Approximate token count
+        "tokenCount": len(request.prompt.split()),
         "score": None,
         "passed": None,
         "result": None,
         "eloChange": None,
-        "submittedAt": __import__("datetime")
-        .datetime.now(__import__("datetime").UTC)
-        .isoformat(),
+        "submittedAt": datetime.now(UTC).isoformat(),
     }
 
-    # If this is the first participant, they're the creator
+    # Simplified logic for demo: if 0 participants, this is P1, if 1, this is P2
     if not participants:
         participant["userId"] = battle["createdBy"]
-        participants.append(participant)
     else:
         participant["userId"] = battle.get("opponentId", "")
-        participants.append(participant)
 
-    _participants[request.battleId] = participants
+    participants.append(participant)
+
+    await db.battles.update_one(
+        {"id": request.battleId}, {"$set": {"participants": participants}}
+    )
 
     # If both have submitted, evaluate
-    submitted_count = sum(1 for p in participants if p.get("prompt"))
-    if submitted_count >= 2 and battle["testCases"]:
-        return await _evaluate_battle(request.battleId, battle, participants)
+    if len(participants) >= 2 and battle["testCases"]:
+        return await _evaluate_battle(request.battleId, battle, participants, db)
 
     return {
         "status": "submitted",
-        "submittedCount": submitted_count,
+        "submittedCount": len(participants),
         "totalRequired": 2,
     }
 
 
 async def _evaluate_battle(
-    battle_id: str, battle: dict, participants: list[dict]
+    battle_id: str, battle: dict, participants: list[dict], db: AgnosticDatabase
 ) -> dict:
     """Evaluate both prompts and determine winner."""
     from services.llm_service import evaluate_prompt_full
@@ -193,6 +203,21 @@ async def _evaluate_battle(
             p1["result"] = "DRAW"
             p2["result"] = "DRAW"
 
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC).isoformat()
+
+    await db.battles.update_one(
+        {"id": battle_id},
+        {
+            "$set": {
+                "status": "COMPLETED",
+                "participants": participants,
+                "updatedAt": now,
+            }
+        },
+    )
+
     battle["status"] = "COMPLETED"
     battle["participants"] = participants
 
@@ -204,21 +229,24 @@ async def _evaluate_battle(
 
 
 @router.get("/list")
-async def list_battles(status: Optional[str] = None) -> dict:
+async def list_battles(status: Optional[str] = None, db=Depends(get_db)) -> dict:
     """List all battles, optionally filtered by status."""
+    query = {}
+    if status:
+        query["status"] = status
+
+    cursor = db.battles.find(query)
     battles = []
-    for battle in _battles.values():
-        if status and battle["status"] != status:
-            continue
+    async for battle in cursor:
         battles.append(_serialize_battle(battle))
 
     return {"battles": battles}
 
 
 @router.get("/{battle_id}")
-async def get_battle(battle_id: str) -> dict:
+async def get_battle(battle_id: str, db=Depends(get_db)) -> dict:
     """Get a specific battle by ID."""
-    battle = _battles.get(battle_id)
+    battle = await db.battles.find_one({"id": battle_id})
     if not battle:
         raise HTTPException(status_code=404, detail="Battle not found")
 

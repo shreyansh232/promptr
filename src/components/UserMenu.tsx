@@ -50,14 +50,14 @@ export function UserMenu({
         align="end"
         className="w-48 border-white/10 bg-[#1a1a1a] text-[#f5efe6]"
       >
-        <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-          <Link href="/profile" className="w-full">
+        <DropdownMenuItem className="cursor-pointer text-[#f5efe6] hover:bg-white/10 hover:text-[#f5efe6] focus:bg-white/10 focus:text-[#f5efe6]">
+          <Link href="/profile?from=landing" className="w-full">
             View profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => logout()}
-          className="cursor-pointer text-red-400 hover:bg-white/10 focus:bg-white/10"
+          className="cursor-pointer text-red-400 hover:bg-white/10 hover:text-red-400 focus:bg-white/10 focus:text-red-400"
         >
           Log out
         </DropdownMenuItem>

@@ -51,6 +51,8 @@ class PracticeProblem(BaseModel):
     examples: list[PracticeExample]
     testCases: list[PracticeTestCase]
     proTips: list[str] = []
+    tags: list[str] = []
+    hint: str = ""
 
 
 class PracticeProblemsResponse(BaseModel):
@@ -60,6 +62,9 @@ class PracticeProblemsResponse(BaseModel):
 class TestCaseEvaluationRequest(BaseModel):
     prompt: str
     testCases: list[PracticeTestCase]
+    problemTitle: str = ""
+    problemDescription: str = ""
+    problemGoal: str = ""
 
 
 class TestCaseResult(BaseModel):

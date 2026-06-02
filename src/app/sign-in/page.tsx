@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import LoginGithub from "@/components/LoginGithub";
+import LoginGoogle from "@/components/LoginGoogle";
 import { loginWithCreds } from "@/actions/auth";
 import { toast } from "react-hot-toast";
 
@@ -113,6 +114,7 @@ const SignIn = () => {
           <AuthButton label="Sign in" pending={form.formState.isSubmitting} />
         </form>
         <LoginGithub />
+        <LoginGoogle />
       </Form>
     </AuthShell>
   );

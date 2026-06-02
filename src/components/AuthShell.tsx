@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@phosphor-icons/react";
 
 interface AuthShellProps {
   mode: "sign-in" | "sign-up";
@@ -41,9 +41,6 @@ export default function AuthShell({
         <section className="bg-[#171717] px-6 py-8 text-[#f7f2ea] md:px-8 lg:px-10 lg:py-10">
           <div className="mx-auto flex h-full max-w-md flex-col justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.28em] text-[#a0978a]">
-                {isSignIn ? "Welcome back" : "Create your account"}
-              </div>
               <h2 className="mt-6 text-4xl leading-tight text-[#fff6ee]">
                 {title}
               </h2>

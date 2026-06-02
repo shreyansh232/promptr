@@ -28,7 +28,9 @@ detect-installer==0.1.0
 distro==1.9.0
     # via openai
 dnspython==2.8.0
-    # via email-validator
+    # via
+    #   email-validator
+    #   pymongo
 email-validator==2.3.0
     # via
     #   fastapi
@@ -73,6 +75,8 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
+motor==3.7.1
+    # via backend (pyproject.toml)
 openai==2.38.0
     # via backend (pyproject.toml)
 packaging==26.2
@@ -92,6 +96,8 @@ pydantic-settings==2.14.1
     # via fastapi
 pygments==2.20.0
     # via rich
+pymongo==4.17.0
+    # via motor
 python-dotenv==1.2.2
     # via
     #   backend (pyproject.toml)

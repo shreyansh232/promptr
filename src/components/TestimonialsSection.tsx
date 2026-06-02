@@ -21,33 +21,33 @@ const testimonials = [
   
   
   const TestimonialsSection = () => {
-    return (
-      <section className="py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">Loved by Users</h2>
-          <p className="text-xl text-gray-400">See what our users have to say about their experience</p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-gray-800 rounded-lg p-6 shadow-lg">
-              <div className="flex items-center mb-4">
-                <img
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  className="w-12 h-12 rounded-full mr-4 object-cover"
-                />
-                <div>
-                  <h4 className="font-semibold">{testimonial.name}</h4>
-                  <p className="text-sm text-gray-400">{testimonial.role}</p>
-                </div>
+  return (
+    <section className="py-16">
+      <div className="text-center mb-12">
+        <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 text-[#fff5eb]">Loved by Users</h2>
+        <p className="text-xl text-white/60">See what our users have to say about their experience</p>
+      </div>
+      <div className="grid md:grid-cols-3 gap-8">
+        {testimonials.map((testimonial, index) => (
+          <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+            <p className="text-white/80 leading-relaxed mb-6">&ldquo;{testimonial.content}&rdquo;</p>
+            <div className="flex items-center">
+              <img
+                src={testimonial.image}
+                alt={testimonial.name}
+                className="w-12 h-12 rounded-full mr-4 object-cover border border-white/10"
+              />
+              <div>
+                <h4 className="font-semibold text-white">{testimonial.name}</h4>
+                <p className="text-sm text-white/60">{testimonial.role}</p>
               </div>
-              <p className="text-gray-300">{testimonial.content}</p>
             </div>
-          ))}
-        </div>
-      </section>
-    );
-  };
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
   
   export default TestimonialsSection;
   

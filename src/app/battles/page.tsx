@@ -1,23 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import {
-  Swords,
+  Sword as Swords,
   Plus,
   Users,
   Trophy,
   Clock,
-  CheckCircle2,
+  CheckCircle as CheckCircle2,
   XCircle,
   ArrowLeft,
-  Send,
-  Loader2,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+  PaperPlaneTilt as Send,
+  CircleNotch as Loader2,
+  Trash as Trash2,
+  CaretDown as ChevronDown,
+  CaretUp as ChevronUp,
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -86,7 +84,7 @@ function ParticleBurst() {
     angle: (360 / 20) * i,
     distance: 60 + Math.random() * 80,
     size: 3 + Math.random() * 4,
-    color: ["#ff8a3d", "#ff6b35", "#ffd700", "#ff4444", "#44ff88"][
+    color: ["#ff8a3d", "#ffa86a", "#ffa05e", "#ffbe8f", "#ffffff"][
       Math.floor(Math.random() * 5)
     ],
   }));
@@ -126,8 +124,6 @@ function ParticleBurst() {
 /* ── Main Page ──────────────────────────────────────────────────── */
 
 export default function BattlesPage() {
-  const { data: session } = useSession();
-  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [view, setView] = useState<View>("lobby");
   const [battles, setBattles] = useState<Battle[]>([]);
@@ -152,7 +148,7 @@ export default function BattlesPage() {
       try {
         const res = await fetch("/api/user/profile");
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json()) as { id?: string };
           setCurrentUserId(data.id ?? null);
         }
       } catch {
@@ -173,12 +169,11 @@ export default function BattlesPage() {
     try {
       const res = await fetch("/api/battles/list");
       if (res.ok) {
-        const data = await res.json();
-        setBattles(data.battles || []);
+        const data = (await res.json()) as { battles: Battle[] };
+        setBattles(data.battles ?? []);
 
-        // If we are in waiting/battle view, update the active battle from the list
         if (activeBattle) {
-          const updated = (data.battles as Battle[]).find(
+          const updated = data.battles.find(
             (b) => b.id === activeBattle.id,
           );
           if (updated) {
@@ -202,11 +197,11 @@ export default function BattlesPage() {
               view !== "results" &&
               (view === "waiting" || view === "battle")
             ) {
-              const participants = updated.participants || [];
+              const participants = updated.participants ?? [];
               const winner =
-                participants.find((p) => p.result === "WIN") || null;
+                participants.find((p) => p.result === "WIN") ?? null;
               const loser =
-                participants.find((p) => p.result === "LOSS") || null;
+                participants.find((p) => p.result === "LOSS") ?? null;
               const isDraw = participants.some((p) => p.result === "DRAW");
               setBattleResults({ winner, loser, isDraw });
               setView("results");
@@ -252,9 +247,11 @@ export default function BattlesPage() {
         throw new Error("Failed to generate battle content");
       }
 
-      const genData = await genRes.json();
+      const genData = (await genRes.json()) as {
+        goal: string;
+        testCases: BattleTestCase[];
+      };
 
-      // 2. Create the battle with generated content
       const res = await fetch("/api/battles/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -267,7 +264,7 @@ export default function BattlesPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as { battle: Battle };
         setActiveBattle(data.battle);
         setView("waiting");
         toast.success("Battle created! Waiting for an opponent...");
@@ -291,14 +288,14 @@ export default function BattlesPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as { battle: Battle };
         setActiveBattle(data.battle);
         setView("battle");
         toast.success("Joined the battle! Good luck.");
         void fetchBattles();
       } else {
-        const err = await res.json();
-        toast.error(err.error || "Failed to join battle.");
+        const err = (await res.json()) as { error?: string };
+        toast.error(err.error ?? "Failed to join battle.");
       }
     } catch {
       toast.error("Failed to join battle.");
@@ -324,8 +321,8 @@ export default function BattlesPage() {
         }
         void fetchBattles();
       } else {
-        const err = await res.json();
-        toast.error(err.error || "Failed to delete battle.");
+        const err = (await res.json()) as { error?: string };
+        toast.error(err.error ?? "Failed to delete battle.");
       }
     } catch {
       toast.error("Failed to delete battle.");
@@ -338,21 +335,21 @@ export default function BattlesPage() {
     toast(
       (t) => (
         <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-[#f5efe6]">
-            Forfeit this battle? You'll lose 15 ELO and your opponent will win.
+          <p className="text-sm font-medium text-foreground">
+            Forfeit this battle? You&apos;ll lose 15 ELO and your opponent will win.
           </p>
           <div className="flex justify-end gap-2">
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 rounded-full border border-white/10 text-xs text-[#a0978a] hover:bg-white/5 hover:text-[#f5efe6]"
+              className="h-8 rounded-full border border-border text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
               onClick={() => toast.dismiss(t.id)}
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              className="h-8 rounded-full bg-red-500/20 text-xs font-semibold text-red-400 hover:bg-red-500/30"
+              className="h-8 rounded-full bg-secondary border border-border text-xs font-semibold text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
               onClick={async () => {
                 toast.dismiss(t.id);
                 await performForfeit(battleId);
@@ -367,8 +364,8 @@ export default function BattlesPage() {
         duration: 6000,
         position: "top-center",
         style: {
-          background: "#111111",
-          border: "1px solid rgba(255,255,255,0.1)",
+          background: "#0A0A0A",
+          border: "1px solid #1F1F1F",
           padding: "16px",
           borderRadius: "12px",
         },
@@ -389,8 +386,8 @@ export default function BattlesPage() {
         toast.success("Battle forfeited.");
         void fetchBattles();
       } else {
-        const err = await res.json();
-        toast.error(err.error || "Failed to forfeit battle.");
+        const err = (await res.json()) as { error?: string };
+        toast.error(err.error ?? "Failed to forfeit battle.");
       }
     } catch {
       toast.error("Failed to forfeit battle.");
@@ -414,19 +411,19 @@ export default function BattlesPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as {
+          status: string;
+          battle: Battle;
+        };
         if (data.status === "completed") {
           setActiveBattle(data.battle);
-          // Determine results
-          const participants = data.battle.participants || [];
+          const participants = data.battle.participants ?? [];
           const winner =
-            participants.find((p: BattleParticipant) => p.result === "WIN") ||
-            null;
+            participants.find((p) => p.result === "WIN") ?? null;
           const loser =
-            participants.find((p: BattleParticipant) => p.result === "LOSS") ||
-            null;
+            participants.find((p) => p.result === "LOSS") ?? null;
           const isDraw = participants.some(
-            (p: BattleParticipant) => p.result === "DRAW",
+            (p) => p.result === "DRAW",
           );
           setBattleResults({ winner, loser, isDraw });
           setView("results");
@@ -436,8 +433,8 @@ export default function BattlesPage() {
           toast.success("Prompt submitted! Waiting for opponent to finish...");
         }
       } else {
-        const err = await res.json();
-        toast.error(err.error || "Failed to submit prompt.");
+        const err = (await res.json()) as { error?: string };
+        toast.error(err.error ?? "Failed to submit prompt.");
       }
     } catch {
       toast.error("Failed to submit prompt.");
@@ -459,7 +456,7 @@ export default function BattlesPage() {
   const completedBattles = battles.filter((b) => b.status === "COMPLETED");
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0d0d0d]">
+    <div className="flex h-screen overflow-hidden bg-background">
       <MainSidebar
         userLevel={undefined}
         isExpanded={sidebarOpen}
@@ -468,11 +465,11 @@ export default function BattlesPage() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-3 md:px-8">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-3 md:px-8">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Swords className="h-5 w-5 text-[#ff8a3d]" />
-              <h1 className="text-lg font-semibold text-[#f5efe6]">
+              <Swords className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-semibold text-foreground">
                 Prompt Battles
               </h1>
             </div>
@@ -481,7 +478,7 @@ export default function BattlesPage() {
             <Button
               variant="ghost"
               onClick={resetToLobby}
-              className="rounded-full text-[#a0978a] hover:bg-white/5 hover:text-[#f5efe6]"
+              className="rounded-full text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Lobby
@@ -502,16 +499,16 @@ export default function BattlesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-semibold text-[#f5efe6]">
+                    <h2 className="text-2xl font-semibold text-foreground">
                       Battle Lobby
                     </h2>
-                    <p className="mt-1 text-sm text-[#a0978a]">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Create a battle or join an existing one.
                     </p>
                   </div>
                   <Button
                     onClick={() => setView("create")}
-                    className="rounded-full bg-[#ff8a3d] px-5 text-sm text-[#111111] hover:bg-[#ff9b5b]"
+                    className="rounded-full bg-primary px-5 text-sm text-primary-foreground hover:bg-primary/90"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Create Battle
@@ -520,20 +517,20 @@ export default function BattlesPage() {
 
                 {/* How to Play */}
                 <motion.div
-                  className="overflow-hidden rounded-xl border border-white/10 bg-[#111111]"
+                  className="overflow-hidden rounded-xl border border-border bg-secondary/20"
                   initial={false}
                 >
                   <button
                     onClick={() => setShowHowToPlay(!showHowToPlay)}
-                    className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/5"
+                    className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-secondary/60"
                   >
-                    <span className="text-sm font-medium text-[#f5efe6]">
+                    <span className="text-sm font-medium text-foreground">
                       How to Play
                     </span>
                     {showHowToPlay ? (
-                      <ChevronUp className="h-4 w-4 text-[#6a6255]" />
+                      <ChevronUp className="h-4 w-4 text-muted-foreground/60" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 text-[#6a6255]" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground/60" />
                     )}
                   </button>
 
@@ -546,8 +543,8 @@ export default function BattlesPage() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-white/10 px-5 py-4">
-                          <p className="text-sm leading-6 text-[#a0978a]">
+                        <div className="border-t border-border px-5 py-4">
+                          <p className="text-sm leading-6 text-muted-foreground">
                             Two players write prompts for the same objective. An
                             AI evaluator scores each prompt — the better one
                             wins.
@@ -555,33 +552,33 @@ export default function BattlesPage() {
 
                           <div className="mt-4 space-y-3">
                             <div className="flex items-start gap-3">
-                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ff8a3d]/15 text-[10px] font-bold text-[#ff8a3d]">
+                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
                                 1
                               </span>
-                              <p className="text-sm text-[#a0978a]">
-                                <span className="text-[#f5efe6]">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="text-foreground">
                                   Create or join
                                 </span>{" "}
                                 a battle from the lobby
                               </p>
                             </div>
                             <div className="flex items-start gap-3">
-                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ff8a3d]/15 text-[10px] font-bold text-[#ff8a3d]">
+                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
                                 2
                               </span>
-                              <p className="text-sm text-[#a0978a]">
-                                <span className="text-[#f5efe6]">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="text-foreground">
                                   Write your prompt
                                 </span>{" "}
                                 for the given objective
                               </p>
                             </div>
                             <div className="flex items-start gap-3">
-                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ff8a3d]/15 text-[10px] font-bold text-[#ff8a3d]">
+                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
                                 3
                               </span>
-                              <p className="text-sm text-[#a0978a]">
-                                <span className="text-[#f5efe6]">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="text-foreground">
                                   AI evaluates
                                 </span>{" "}
                                 both prompts — higher score wins
@@ -589,15 +586,15 @@ export default function BattlesPage() {
                             </div>
                           </div>
 
-                          <div className="mt-4 flex gap-6 text-xs text-[#6a6255]">
+                          <div className="mt-4 flex gap-6 text-xs text-muted-foreground/60">
                             <span>
-                              Win <span className="text-emerald-400">+30</span>
+                              Win <span className="text-primary font-semibold">+30</span>
                             </span>
                             <span>
-                              Loss <span className="text-red-400">-15</span>
+                              Loss <span className="text-muted-foreground font-semibold">-15</span>
                             </span>
                             <span>
-                              Draw <span className="text-amber-400">+5</span>
+                              Draw <span className="text-primary/70 font-semibold">+5</span>
                             </span>
                           </div>
                         </div>
@@ -613,7 +610,7 @@ export default function BattlesPage() {
                     animate="animate"
                     variants={staggerContainer}
                   >
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[#6a6255]">
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground/60">
                       <Clock className="h-4 w-4" />
                       Waiting for Opponent
                     </h3>
@@ -624,19 +621,19 @@ export default function BattlesPage() {
                           <motion.div
                             key={battle.id}
                             variants={cardVariant}
-                            className="rounded-xl border border-white/10 bg-[#111111] p-5 transition-colors hover:border-white/20"
+                            className="rounded-xl border border-border bg-secondary/20 p-5 transition-colors hover:border-border/80"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
-                                <h4 className="text-base font-medium text-[#f5efe6]">
+                                <h4 className="text-base font-medium text-foreground">
                                   {battle.title}
                                 </h4>
-                                <p className="mt-1 text-sm text-[#a0978a]">
+                                <p className="mt-1 text-sm text-muted-foreground">
                                   {battle.description}
                                 </p>
-                                <p className="mt-1 text-xs text-[#4a453d]">
+                                <p className="mt-1 text-xs text-muted-foreground/40">
                                   Created by{" "}
-                                  {battle.participants[0]?.userName ||
+                                  {battle.participants[0]?.userName ??
                                     "Unknown"}
                                 </p>
                               </div>
@@ -649,7 +646,7 @@ export default function BattlesPage() {
                                     disabled={isDeleting}
                                     variant="ghost"
                                     size="sm"
-                                    className="rounded-full text-red-400/70 hover:bg-red-500/10 hover:text-red-400"
+                                    className="rounded-full text-muted-foreground/70 hover:bg-secondary hover:text-foreground"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -658,7 +655,7 @@ export default function BattlesPage() {
                                   <Button
                                     onClick={() => handleJoinBattle(battle.id)}
                                     disabled={isSubmitting}
-                                    className="rounded-full bg-[#ff8a3d] px-4 text-sm text-[#111111] hover:bg-[#ff9b5b]"
+                                    className="rounded-full bg-primary px-4 text-sm text-primary-foreground hover:bg-primary/90"
                                   >
                                     <Swords className="mr-2 h-4 w-4" />
                                     Join
@@ -680,7 +677,7 @@ export default function BattlesPage() {
                     animate="animate"
                     variants={staggerContainer}
                   >
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[#6a6255]">
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground/60">
                       <Users className="h-4 w-4" />
                       Active Battles
                     </h3>
@@ -691,21 +688,21 @@ export default function BattlesPage() {
                           <motion.div
                             key={battle.id}
                             variants={cardVariant}
-                            className="rounded-xl border border-white/10 bg-[#111111] p-5"
+                            className="rounded-xl border border-border bg-secondary/20 p-5"
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <h4 className="text-base font-medium text-[#f5efe6]">
+                                <h4 className="text-base font-medium text-foreground">
                                   {battle.title}
                                 </h4>
-                                <p className="mt-1 text-sm text-[#a0978a]">
+                                <p className="mt-1 text-sm text-muted-foreground">
                                   {battle.description}
                                 </p>
                                 <div className="mt-2 flex gap-2">
                                   {battle.participants.map((p) => (
                                     <span
                                       key={p.userId}
-                                      className="text-[10px] text-[#6a6255]"
+                                      className="text-[10px] text-muted-foreground/60"
                                     >
                                       {p.userName}
                                     </span>
@@ -713,7 +710,7 @@ export default function BattlesPage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400">
+                                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                                   In Progress
                                 </span>
                                 {isCreator && (
@@ -724,7 +721,7 @@ export default function BattlesPage() {
                                     disabled={isDeleting}
                                     variant="ghost"
                                     size="sm"
-                                    className="rounded-full text-red-400/70 hover:bg-red-500/10 hover:text-red-400"
+                                    className="rounded-full text-muted-foreground/70 hover:bg-secondary hover:text-foreground"
                                   >
                                     Forfeit
                                   </Button>
@@ -745,7 +742,7 @@ export default function BattlesPage() {
                     animate="animate"
                     variants={staggerContainer}
                   >
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[#6a6255]">
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground/60">
                       <Trophy className="h-4 w-4" />
                       Completed
                     </h3>
@@ -758,19 +755,19 @@ export default function BattlesPage() {
                           <motion.div
                             key={battle.id}
                             variants={cardVariant}
-                            className="rounded-xl border border-white/10 bg-[#111111] p-5"
+                            className="rounded-xl border border-border bg-secondary/20 p-5"
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <h4 className="text-base font-medium text-[#f5efe6]">
+                                <h4 className="text-base font-medium text-foreground">
                                   {battle.title}
                                 </h4>
-                                <p className="mt-1 text-sm text-[#a0978a]">
+                                <p className="mt-1 text-sm text-muted-foreground">
                                   {battle.description}
                                 </p>
                               </div>
                               <div className="text-right">
-                                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
+                                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                                   {winner?.userName
                                     ? `Winner: ${winner.userName}`
                                     : "Draw"}
@@ -791,16 +788,16 @@ export default function BattlesPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.15 }}
                   >
-                    <Swords className="mx-auto h-12 w-12 text-[#6a6255]" />
-                    <h3 className="mt-4 text-lg font-medium text-[#f5efe6]">
+                    <Swords className="mx-auto h-12 w-12 text-muted-foreground/60" />
+                    <h3 className="mt-4 text-lg font-medium text-foreground">
                       No battles yet
                     </h3>
-                    <p className="mt-2 text-sm text-[#a0978a]">
+                    <p className="mt-2 text-sm text-muted-foreground">
                       Create the first battle and challenge others.
                     </p>
                     <Button
                       onClick={() => setView("create")}
-                      className="mt-6 rounded-full bg-[#ff8a3d] px-6 text-sm text-[#111111] hover:bg-[#ff9b5b]"
+                      className="mt-6 rounded-full bg-primary px-6 text-sm text-primary-foreground hover:bg-primary/90"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Create Battle
@@ -818,17 +815,17 @@ export default function BattlesPage() {
                 {...pageTransition}
               >
                 <div>
-                  <h2 className="text-2xl font-semibold text-[#f5efe6]">
+                  <h2 className="text-2xl font-semibold text-foreground">
                     Create a Battle
                   </h2>
-                  <p className="mt-1 text-sm text-[#a0978a]">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Set the objective and wait for an opponent.
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-[#f5efe6]">
+                    <label className="mb-1 block text-sm font-medium text-foreground">
                       Battle Title
                     </label>
                     <Input
@@ -837,12 +834,12 @@ export default function BattlesPage() {
                         setCreateForm((p) => ({ ...p, title: e.target.value }))
                       }
                       placeholder="e.g., Code Commenter Challenge"
-                      className="rounded-xl border-white/10 bg-[#111111] text-[#f5efe6] placeholder:text-[#4a453d]"
+                      className="rounded-xl border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/40"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-[#f5efe6]">
+                    <label className="mb-1 block text-sm font-medium text-foreground">
                       Description
                     </label>
                     <Textarea
@@ -854,12 +851,12 @@ export default function BattlesPage() {
                         }))
                       }
                       placeholder="Describe the objective..."
-                      className="min-h-[100px] rounded-xl border-white/10 bg-[#111111] text-[#f5efe6] placeholder:text-[#4a453d]"
+                      className="min-h-[100px] rounded-xl border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/40"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-[#f5efe6]">
+                    <label className="mb-1 block text-sm font-medium text-foreground">
                       Goal (optional)
                     </label>
                     <Input
@@ -868,7 +865,7 @@ export default function BattlesPage() {
                         setCreateForm((p) => ({ ...p, goal: e.target.value }))
                       }
                       placeholder="What does success look like?"
-                      className="rounded-xl border-white/10 bg-[#111111] text-[#f5efe6] placeholder:text-[#4a453d]"
+                      className="rounded-xl border-border bg-secondary/20 text-foreground placeholder:text-muted-foreground/40"
                     />
                   </div>
                 </div>
@@ -881,14 +878,14 @@ export default function BattlesPage() {
                       !createForm.title.trim() ||
                       !createForm.description.trim()
                     }
-                    className="rounded-full bg-[#ff8a3d] px-6 text-sm text-[#111111] hover:bg-[#ff9b5b]"
+                    className="rounded-full bg-primary px-6 text-sm text-primary-foreground hover:bg-primary/90"
                   >
                     {isSubmitting ? "Creating..." : "Create & Wait"}
                   </Button>
                   <Button
                     variant="ghost"
                     onClick={resetToLobby}
-                    className="rounded-full text-[#a0978a] hover:bg-white/5"
+                    className="rounded-full text-muted-foreground hover:bg-secondary/60"
                   >
                     Cancel
                   </Button>
@@ -906,29 +903,29 @@ export default function BattlesPage() {
                 {/* Particle burst celebration */}
                 {showBurst && <ParticleBurst />}
 
-                <div className="rounded-xl border border-white/10 bg-[#111111] p-6">
+                <div className="rounded-xl border border-border bg-secondary/20 p-6">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <div className="h-3 w-3 rounded-full bg-amber-400" />
-                      <div className="absolute inset-0 h-3 w-3 animate-ping rounded-full bg-amber-400/50" />
+                      <div className="h-3 w-3 rounded-full bg-primary" />
+                      <div className="absolute inset-0 h-3 w-3 animate-ping rounded-full bg-primary/50" />
                     </div>
-                    <h2 className="text-xl font-semibold text-[#f5efe6]">
+                    <h2 className="text-xl font-semibold text-foreground">
                       {activeBattle.participants.length === 1
                         ? "Waiting for opponent..."
                         : "Waiting for opponent to submit..."}
                     </h2>
                   </div>
-                  <p className="mt-3 text-sm text-[#a0978a]">
+                  <p className="mt-3 text-sm text-muted-foreground">
                     {activeBattle.participants.length === 1
                       ? "Share the battle title or wait for someone to join from the lobby."
                       : "Your opponent has joined and is writing their prompt."}
                   </p>
 
-                  <div className="mt-4 rounded-lg border border-white/10 bg-[#0d0d0d] p-4">
-                    <h3 className="text-sm font-medium text-[#f5efe6]">
+                  <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                    <h3 className="text-sm font-medium text-foreground">
                       {activeBattle.title}
                     </h3>
-                    <p className="mt-1 text-sm text-[#a0978a]">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {activeBattle.description}
                     </p>
                   </div>
@@ -941,11 +938,11 @@ export default function BattlesPage() {
                       animate={{ opacity: 1 }}
                     >
                       <motion.div
-                        className="h-1.5 w-1.5 rounded-full bg-[#ff8a3d]"
+                        className="h-1.5 w-1.5 rounded-full bg-primary"
                         animate={{ scale: [1, 1.5, 1], opacity: [0.4, 1, 0.4] }}
                         transition={{ duration: 2, repeat: Infinity }}
                       />
-                      <p className="text-xs text-[#6a6255]">
+                      <p className="text-xs text-muted-foreground/60">
                         Waiting for someone to join...
                       </p>
                     </motion.div>
@@ -954,12 +951,12 @@ export default function BattlesPage() {
                   {/* Opponent joined indicator */}
                   {activeBattle.participants.length >= 2 && (
                     <motion.div
-                      className="mt-4 flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3"
+                      className="mt-4 flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                     >
-                      <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                      <span className="text-sm font-medium text-emerald-400">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-medium text-primary">
                         Opponent joined! Battle starting...
                       </span>
                     </motion.div>
@@ -967,7 +964,7 @@ export default function BattlesPage() {
                 </div>
 
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#ff8a3d]" />
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
 
                 {/* Cancel button for creator */}
@@ -977,7 +974,7 @@ export default function BattlesPage() {
                       variant="ghost"
                       onClick={() => handleDeleteBattle(activeBattle.id)}
                       disabled={isDeleting}
-                      className="rounded-full text-red-400/70 hover:bg-red-500/10 hover:text-red-400"
+                      className="rounded-full text-muted-foreground/70 hover:bg-secondary hover:text-foreground"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Cancel Battle
@@ -995,22 +992,22 @@ export default function BattlesPage() {
                 {...pageTransition}
               >
                 {/* Battle objective */}
-                <div className="rounded-xl border border-[#ff8a3d]/20 bg-[#ff8a3d]/5 p-6">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
                   <div className="flex items-center gap-2">
-                    <Swords className="h-5 w-5 text-[#ff8a3d]" />
-                    <h2 className="text-xl font-semibold text-[#f5efe6]">
+                    <Swords className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-semibold text-foreground">
                       {activeBattle.title}
                     </h2>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-[#a0978a]">
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     {activeBattle.description}
                   </p>
                   {activeBattle.goal && (
-                    <div className="mt-3 rounded-lg border border-[#ff8a3d]/20 bg-[#ff8a3d]/10 p-3">
-                      <span className="text-xs font-medium text-[#ff8a3d]">
+                    <div className="mt-3 rounded-lg border border-primary/20 bg-primary/10 p-3">
+                      <span className="text-xs font-medium text-primary">
                         Goal:{" "}
                       </span>
-                      <span className="text-xs text-[#f5efe6]">
+                      <span className="text-xs text-foreground">
                         {activeBattle.goal}
                       </span>
                     </div>
@@ -1020,27 +1017,27 @@ export default function BattlesPage() {
                 {/* Test cases preview */}
                 {activeBattle.testCases.length > 0 && (
                   <div>
-                    <h3 className="mb-3 text-sm font-medium text-[#6a6255]">
+                    <h3 className="mb-3 text-sm font-medium text-muted-foreground/60">
                       Test Cases ({activeBattle.testCases.length})
                     </h3>
                     <div className="space-y-3">
                       {activeBattle.testCases.map((tc, idx) => (
                         <motion.div
                           key={idx}
-                          className="rounded-xl border border-white/10 bg-[#111111] p-4"
+                          className="rounded-xl border border-border bg-secondary/20 p-4"
                           initial={{ opacity: 0, x: -12 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.1 }}
                         >
                           <div className="mb-2">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-[#ff8a3d]">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
                               Test Case {idx + 1}
                             </span>
-                            <div className="mt-1 text-xs text-[#6a6255]">
+                            <div className="mt-1 text-xs text-muted-foreground/60">
                               {tc.description}
                             </div>
                           </div>
-                          <div className="rounded-lg bg-[#0d0d0d] px-3 py-2 text-xs text-[#d9d1c7]">
+                          <div className="rounded-lg bg-background px-3 py-2 text-xs text-foreground">
                             {tc.input}
                           </div>
                         </motion.div>
@@ -1051,23 +1048,23 @@ export default function BattlesPage() {
 
                 {/* Prompt input */}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-[#f5efe6]">
+                  <label className="mb-2 block text-sm font-medium text-foreground">
                     Write your prompt
                   </label>
                   <Textarea
                     value={promptInput}
                     onChange={(e) => setPromptInput(e.target.value)}
                     placeholder="Write the best prompt you can..."
-                    className="max-h-[400px] min-h-[200px] resize-y rounded-xl border-white/10 bg-[#111111] px-5 py-4 text-base leading-7 text-[#f5efe6] placeholder:text-[#4a453d] focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="max-h-[400px] min-h-[200px] resize-y rounded-xl border-border bg-secondary/20 px-5 py-4 text-base leading-7 text-foreground placeholder:text-muted-foreground/40 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                   <div className="mt-3 flex items-center justify-between">
-                    <p className="text-xs text-[#4a453d]">
+                    <p className="text-xs text-muted-foreground/40">
                       ~{promptInput.split(/\s+/).filter(Boolean).length} words
                     </p>
                     <Button
                       onClick={handleSubmitPrompt}
                       disabled={isSubmitting || !promptInput.trim()}
-                      className="rounded-full bg-[#ff8a3d] px-6 text-sm text-[#111111] hover:bg-[#ff9b5b]"
+                      className="rounded-full bg-primary px-6 text-sm text-primary-foreground hover:bg-primary/90"
                     >
                       <Send className="mr-2 h-4 w-4" />
                       {isSubmitting ? "Submitting..." : "Submit Prompt"}
@@ -1088,8 +1085,8 @@ export default function BattlesPage() {
                 <motion.div
                   className={`rounded-xl border p-6 text-center ${
                     battleResults.isDraw
-                      ? "border-amber-500/30 bg-amber-500/5"
-                      : "border-emerald-500/30 bg-emerald-500/5"
+                      ? "border-primary/20 bg-primary/5"
+                      : "border-primary/30 bg-primary/10"
                   }`}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -1108,18 +1105,18 @@ export default function BattlesPage() {
                     <Trophy
                       className={`mx-auto h-10 w-10 ${
                         battleResults.isDraw
-                          ? "text-amber-400"
-                          : "text-emerald-400"
+                          ? "text-primary/70"
+                          : "text-primary"
                       }`}
                     />
                   </motion.div>
-                  <h2 className="mt-3 text-2xl font-bold text-[#f5efe6]">
+                  <h2 className="mt-3 text-2xl font-bold text-foreground">
                     {battleResults.isDraw
                       ? "It's a Draw!"
-                      : `${battleResults.winner?.userName || "Player"} Wins!`}
+                      : `${battleResults.winner?.userName ?? "Player"} Wins!`}
                   </h2>
                   {!battleResults.isDraw && battleResults.winner && (
-                    <p className="mt-1 text-sm text-[#a0978a]">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Score: {battleResults.winner.score}/100 ·{" "}
                       {battleResults.winner.tokenCount} tokens
                     </p>
@@ -1133,50 +1130,50 @@ export default function BattlesPage() {
                       key={idx}
                       className={`rounded-xl border p-5 ${
                         p.result === "WIN"
-                          ? "border-emerald-500/30 bg-emerald-500/5"
+                          ? "border-primary/30 bg-primary/5"
                           : p.result === "LOSS"
-                            ? "border-red-500/30 bg-red-500/5"
-                            : "border-amber-500/30 bg-amber-500/5"
+                            ? "border-border bg-secondary/15"
+                            : "border-primary/20 bg-primary/5"
                       }`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + idx * 0.15 }}
                     >
                       <div className="mb-3 flex items-center justify-between">
-                        <span className="text-sm font-medium text-[#f5efe6]">
-                          {p.userName || `Player ${idx + 1}`}
+                        <span className="text-sm font-medium text-foreground">
+                          {p.userName ?? `Player ${idx + 1}`}
                         </span>
                         {p.result === "WIN" ? (
-                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
                         ) : p.result === "LOSS" ? (
-                          <XCircle className="h-5 w-5 text-red-400" />
+                          <XCircle className="h-5 w-5 text-muted-foreground" />
                         ) : (
-                          <span className="text-xs text-amber-400">Draw</span>
+                          <span className="text-xs text-primary/70">Draw</span>
                         )}
                       </div>
-                      <div className="space-y-2 text-xs text-[#a0978a]">
+                      <div className="space-y-2 text-xs text-muted-foreground">
                         <div>
-                          <span className="font-medium text-[#6a6255]">
+                          <span className="font-medium text-muted-foreground/60">
                             Score:{" "}
                           </span>
                           {p.score ?? "N/A"}/100
                         </div>
                         <div>
-                          <span className="font-medium text-[#6a6255]">
+                          <span className="font-medium text-muted-foreground/60">
                             Tokens:{" "}
                           </span>
                           {p.tokenCount ?? "N/A"}
                         </div>
                         {p.eloChange && (
                           <div>
-                            <span className="font-medium text-[#6a6255]">
+                            <span className="font-medium text-muted-foreground/60">
                               ELO:{" "}
                             </span>
                             <span
                               className={
                                 p.eloChange > 0
-                                  ? "text-emerald-400"
-                                  : "text-red-400"
+                                  ? "text-primary font-bold"
+                                  : "text-muted-foreground"
                               }
                             >
                               {p.eloChange > 0 ? "+" : ""}
@@ -1185,7 +1182,7 @@ export default function BattlesPage() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 rounded-lg bg-[#0d0d0d] p-3 text-xs text-[#d9d1c7]">
+                      <div className="mt-3 rounded-lg bg-background p-3 text-xs text-foreground">
                         {p.prompt}
                       </div>
                     </motion.div>
@@ -1195,7 +1192,7 @@ export default function BattlesPage() {
                 <div className="flex justify-center">
                   <Button
                     onClick={resetToLobby}
-                    className="rounded-full bg-[#ff8a3d] px-6 text-sm text-[#111111] hover:bg-[#ff9b5b]"
+                    className="rounded-full bg-primary px-6 text-sm text-primary-foreground hover:bg-primary/90"
                   >
                     Back to Lobby
                   </Button>

@@ -1,56 +1,39 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
-import { db } from "db";
+import { backendFetch, type Battle, type CreateBattleRequest } from "@/lib/backend";
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const body = (await request.json()) as CreateBattleRequest;
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!body.title || !body.description) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
-    const { title, description, goal, testCases } = await request.json();
-
-    if (!title || !description) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const battle = await db.battle.create({
-      data: {
-        title,
-        description,
-        goal,
-        testCases: testCases || [],
-        createdBy: user.id,
-        status: "WAITING",
-        participants: {
-          create: {
-            userId: user.id,
-          },
-        },
+    const result = await backendFetch<{ battleId: string; battle: Battle }>(
+      "/battles/create",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          title: body.title,
+          description: body.description,
+          goal: body.goal,
+          testCases: body.testCases ?? [],
+          createdBy: session.user.id,
+          createdByName: session.user.name ?? "",
+        }),
       },
-      include: {
-        participants: {
-          include: {
-            user: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    );
 
-    return NextResponse.json({ battle });
+    return NextResponse.json({ battle: result.battle });
   } catch (error) {
     console.error("Battle creation error:", error);
     return NextResponse.json(

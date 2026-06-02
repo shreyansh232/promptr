@@ -5,6 +5,13 @@ import { db } from "db";
 import { revalidatePath } from "next/cache";
 import { hash } from "bcryptjs";
 import { AuthError } from "next-auth";
+import { z } from "zod";
+
+const AuthSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+});
 
 const getUserByEmail = async (email: string) => {
   try {
@@ -36,16 +43,16 @@ export const loginWithCreds = async (
   const email = formData.get("email");
   const password = formData.get("password");
 
-  if (typeof email !== "string" || typeof password !== "string") {
-    return { error: "Please provide both email and password" };
+  const validatedFields = AuthSchema.pick({ email: true, password: true }).safeParse({
+    email,
+    password,
+  });
+
+  if (!validatedFields.success) {
+    return { error: validatedFields.error.errors[0]?.message ?? "Invalid input" };
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPassword = password.trim();
-
-  if (!normalizedEmail || !normalizedPassword) {
-    return { error: "Please provide both email and password" };
-  }
+  const { email: normalizedEmail, password: normalizedPassword } = validatedFields.data;
 
   try {
     await signIn("credentials", {
@@ -75,21 +82,17 @@ export const registerWithCreds = async (formData: FormData): Promise<void> => {
   const password = formData.get("password");
   const name = formData.get("name");
 
-  if (
-    typeof email !== "string" ||
-    typeof password !== "string" ||
-    typeof name !== "string"
-  ) {
-    throw new Error("Please complete all required fields");
+  const validatedFields = AuthSchema.safeParse({
+    email,
+    password,
+    name,
+  });
+
+  if (!validatedFields.success) {
+    throw new Error(validatedFields.error.errors[0]?.message ?? "Invalid input");
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPassword = password.trim();
-  const normalizedName = name.trim();
-
-  if (!normalizedEmail || !normalizedPassword || !normalizedName) {
-    throw new Error("Please complete all required fields");
-  }
+  const { email: normalizedEmail, password: normalizedPassword, name: normalizedName } = validatedFields.data;
 
   const existingUser = await getUserByEmail(normalizedEmail);
 
@@ -102,14 +105,7 @@ export const registerWithCreds = async (formData: FormData): Promise<void> => {
       name: normalizedName,
       email: normalizedEmail,
       hashedPassword: await hash(normalizedPassword, 10),
-      profile: {
-        create: {
-          level: "beginner",
-          expertise: "general",
-          learningStyle: "visual",
-          goals: [],
-        },
-      },
+      // UserProfile will be created by the backend or via an event/hook
     },
   });
 

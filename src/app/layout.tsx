@@ -4,7 +4,7 @@ import GradientBackground from "@/components/ui/gradient-background";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "auth";
 import { Toaster } from "react-hot-toast";
-import { Instrument_Serif, Manrope } from "next/font/google";
+import { Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 
 const sans = Manrope({
@@ -12,10 +12,9 @@ const sans = Manrope({
   variable: "--font-sans",
 });
 
-const display = Instrument_Serif({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -28,8 +27,8 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
   return (
-    <html lang="en">
-      <body className={`${sans.variable} ${display.variable} bg-background text-foreground`}>
+    <html lang="en" className="dark">
+      <body className={`${sans.variable} ${mono.variable} bg-background text-foreground`}>
         <SessionProvider session={session}>
           <GradientBackground>{children}</GradientBackground>
           <Toaster />

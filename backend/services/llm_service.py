@@ -85,6 +85,12 @@ PRACTICE_PROBLEMS_RESPONSE_SHAPE = {
                 "Define the desired output format and tone",
                 "Test with edge cases to ensure robustness",
             ],
+            "tags": [
+                "structured-output",
+                "audience-awareness",
+                "task-clarity",
+            ],
+            "hint": "Try stating the desired format explicitly (e.g. 'Use a professional yet engaging tone in exactly 4 sentences').",
         }
     ]
 }
@@ -117,6 +123,7 @@ PROBLEMS_FALLBACK = PracticeProblemsResponse(
                 "Rewrite a vague request so the task, context, and desired output are clear. "
                 "Keep the final prompt under 80 words."
             ),
+            goal="Improve the vague request to be clear, specific, and structured using zero-shot prompting.",
             examples=[
                 PracticeExample(
                     input="Write something about climate change.",
@@ -136,6 +143,13 @@ PROBLEMS_FALLBACK = PracticeProblemsResponse(
                     description="Practice turning a vague business request into a usable prompt.",
                 )
             ],
+            proTips=[
+                "Define a clear role/persona.",
+                "Specify target audience/context.",
+                "Define expected structure."
+            ],
+            tags=["task-clarity", "audience-awareness", "output-format"],
+            hint="Hint: Try starting your prompt with 'Act as a [role]' to set a clear persona, and specify the exact bullet format in your instructions.",
         )
     ]
 )
@@ -265,12 +279,45 @@ def _build_analysis_prompt(user_info: UserType, prompt: str) -> str:
         {prompt}
         """
     ).strip()
-
-
 def _build_problems_prompt(user_info: UserType) -> str:
     level = _normalize_level(user_info.level)
     goals = _format_goals(user_info.goals)
     response_shape = json.dumps(PRACTICE_PROBLEMS_RESPONSE_SHAPE, indent=2)
+
+    # Progression based on subLevel (1-5)
+    sub_level_guidance = ""
+    if user_info.subLevel == 1:
+        sub_level_guidance = (
+            "Sublevel 1 (Problem 1 of 5): Keep it extremely basic and foundational for an absolute beginner. "
+            "Create a very simple prompt writing drill. For example: prompting the LLM to act as a research assistant, "
+            "use web search to find today's news on a topic, and compile a simple, short bulleted briefing. "
+            "Focus strictly on basic role setting and clear task description. Do not require complex output shapes, "
+            "agent-planning, or advanced logical constraints. Keep it simple and friendly!"
+        )
+    elif user_info.subLevel == 2:
+        sub_level_guidance = (
+            "Sublevel 2 (Problem 2 of 5): Introduce basic CONSTRAINTS (e.g., length limits, tone restrictions) "
+            "and simple OUTPUT FORMATTING (e.g., bullet points or key-value structures). "
+            "Build on top of the basics of zero-shot role setting."
+        )
+    elif user_info.subLevel == 3:
+        sub_level_guidance = (
+            "Sublevel 3 (Problem 3 of 5): Introduce FEW-SHOT prompting. "
+            "Require the user to write a prompt that includes 1 or 2 high-quality examples in their prompt "
+            "so the model learns the desired style, structure, or reasoning in-context."
+        )
+    elif user_info.subLevel == 4:
+        sub_level_guidance = (
+            "Sublevel 4 (Problem 4 of 5): Introduce CHAIN-OF-THOUGHT (CoT) prompting. "
+            "Create a reasoning-heavy task where the user's prompt must instruct the model to think step-by-step "
+            "or explain its reasoning before drawing a conclusion."
+        )
+    else:
+        sub_level_guidance = (
+            "Sublevel 5 (Problem 5 of 5): Introduce ADVANCED prompt engineering concepts. "
+            "Focus on prompt robustness against edge cases, handling negative constraints (what NOT to do, "
+            "but framed constructively), or performing self-consistency checks."
+        )
 
     application_context = ""
     if user_info.application and user_info.application.strip():
@@ -278,7 +325,7 @@ def _build_problems_prompt(user_info: UserType) -> str:
         - Application: {user_info.application}
 
         CRITICAL: The problem MUST be grounded in the learner's application area: "{user_info.application}".
-        All examples, test cases, and scenarios should relate to this use case.
+        All examples and evaluation scenarios should relate to this use case.
         For instance, if their application is "writing reports", create problems about prompts for report generation, data summarization, or business writing.
         If their application is "coding", create problems about code explanation, code review prompts, or debugging assistants.
         Never use generic or unrelated examples (like cooking, travel, or fitness) when a specific application is provided.
@@ -292,95 +339,55 @@ def _build_problems_prompt(user_info: UserType) -> str:
         f"""
         You are Promptr Coach creating practice drills for a prompt engineering learner.
 
-        === KNOWLEDGE BASE (MANDATORY REFERENCE) ===
+        === SKILL PROGRESSION CONTEXT ===
+        The learner is currently at:
+        - Level Tier: {level}
+        - Problem Progress: {user_info.subLevel} of 5
 
-        Before generating any problem, consult the prompt engineering knowledge base below.
-        Every problem MUST teach, test, or reinforce a concept from this knowledge base.
+        CRITICAL REQUIREMENT FOR PROGRESSION AND PERSONALIZATION:
+        {sub_level_guidance}
+
+        === KNOWLEDGE BASE & ADVANCED SKILLS (MANDATORY REFERENCE) ===
+
+        Before generating any problem, consult the prompt engineering knowledge base and advanced skills below.
+        Every problem MUST teach, test, or reinforce a concept from this reference, and explicitly instruct the user to use these skills.
 
         ---
 
-        # Prompt Engineering Knowledge Base
+        # Prompt Engineering Knowledge Base & Skills
 
-        ## 1. Elements of a Prompt
-        Every effective prompt contains some combination of:
+        ## 1. Core Elements of a Prompt
+        Every effective prompt contains:
         - **Instruction**: The specific task (e.g., "Classify", "Summarize", "Write")
         - **Context**: External information that steers the model (audience, domain, background)
         - **Input Data**: The actual input to respond to
         - **Output Indicator**: The type or format of the output (e.g., "Return JSON", "Sentiment:")
 
-        ## 2. General Tips for Designing Prompts
-        - **Start Simple**: Prompt engineering is iterative. Break big tasks into subtasks.
-        - **Use Clear Commands**: "Write", "Classify", "Summarize", "Translate", "Order"
-        - **Be Specific**: More descriptive = better results. Provide examples for specific formats.
-        - **Avoid Impreciseness**: Be direct, not clever. "Use 2-3 sentences to explain X to a high school student" beats "Keep it short and not too descriptive."
-        - **Say What To Do**: Positive instructions work better than negative constraints. "Recommend from top trending movies" beats "DO NOT ask for interests."
+        ## 2. Advanced Prompting Skills
+        - **Few-Shot Learning**: Teach the model by showing 2-5 high-quality input-output example demonstrations instead of explaining abstract rules. Use when consistent formatting, specific style, or edge-case handling is needed.
+        - **Chain-of-Thought (CoT) Prompting**: Request step-by-step reasoning before the final answer. Add "Let's think step by step" or include example reasoning traces. Use for complex logic, calculations, or code validation.
+        - **Prompt Optimization**: Systematically refine prompts. Start simple, measure performance, and add constraints/reasoning/examples iteratively.
+        - **Template Systems**: Build reusable prompt structures with variables and placeholders (e.g., `{{variable}}`).
+        - **System Prompt Design**: Set global behavior, persona, rules, and permanent constraints that persist across the entire conversation.
+        - **Progressive Disclosure**: Break down large/complex prompts. Start with direct instruction, add constraints, add reasoning, and finally add examples.
+        - **Instruction Hierarchy**: Structure prompts logically: System Context -> Task Instruction -> Examples -> Input Data -> Output Format.
+        - **Error Recovery**: Build prompts that handle failures gracefully (specify how to indicate missing info, request confidence scores).
 
-        ## 3. Prompting Techniques
-        ### Zero-Shot Prompting
-        - Model performs task without examples. Works for simple, common tasks.
-        - Example: "Classify the text into neutral, negative or positive. Text: I think the vacation is okay. Sentiment:"
+        ## 3. General Tips for Designing Prompts
+        - **Use Clear Commands**: Put clear commands like "Write", "Classify", "Summarize" at the beginning of the prompt.
+        - **Be Specific**: Keep instructions descriptive and detailed, but avoid unnecessary fluff.
+        - **Avoid Impreciseness**: Say exactly "Explain X to a high schooler in 2-3 sentences" instead of "Keep it short".
+        - **Say What To Do**: Phrase constraints positively. "Recommend from top movies" works better than "DO NOT ask for interests".
 
-        ### Few-Shot Prompting
-        - Provide demonstrations in the prompt for in-context learning.
-        - Label space and input distribution in demonstrations matter.
-        - Format plays a key role — even random labels with correct format outperform no labels.
-
-        ### Chain-of-Thought (CoT) Prompting
-        - Enables complex reasoning through intermediate steps.
-        - Combine with few-shot for complex tasks.
-        - Zero-shot CoT: Add "Let's think step by step." to trigger reasoning.
-
-        ### Self-Consistency
-        - Generate multiple reasoning paths, select the most consistent answer.
-
-        ### Prompt Chaining
-        - Break complex tasks into a sequence of simpler prompts.
-
-        ### Tree of Thoughts (ToT)
-        - Explores multiple reasoning branches with search/evaluation.
-
-        ### Retrieval Augmented Generation (RAG)
-        - Combines prompt generation with external knowledge retrieval.
-
-        ### ReAct (Reasoning + Acting)
-        - Combines reasoning traces with tool use (search, calculator, APIs).
-        - Alternates between "Thought:" and "Action:".
-
-        ### Generate Knowledge Prompting
-        - Ask model to generate relevant knowledge before answering.
-
-        ### Program-Aided Language Models (PAL)
-        - Offloads computational tasks to a code interpreter.
-
-        ## 4. Risks and Misuses
-        - **Prompt Injection**: Malicious input that overrides instructions.
-        - **Prompt Leaking**: Tricks model into revealing system prompts.
-        - **Jailbreaking**: Bypasses safety filters.
-        - **Factuality**: LLMs can hallucinate — use RAG, ask for sources.
-        - **Biases**: LLMs reflect training data biases — instruct for fairness.
-
-        ## 5. LLM Settings
-        - **Temperature**: Controls randomness (0.0 = deterministic, 1.0 = creative)
-        - **Top-p**: Nucleus sampling for output diversity
-        - **Max Tokens**: Maximum response length
-        - **Frequency/Presence Penalty**: Controls repetition and topic diversity
-
-        ## 6. Progression of Skills
-        - **Beginner (ELO 0-1199)**: Clear instructions, specificity, zero-shot, basic few-shot
-        - **Intermediate (ELO 1200-1499)**: Few-shot design, CoT, prompt chaining, edge cases
-        - **Expert (ELO 1500+)**: ToT, ReAct, RAG, robustness, adversarial inputs, evaluation
-
-        ## 7. Common Anti-Patterns
+        ## 4. Common Anti-Patterns (to test against)
         1. Vague instruction: "Write something about X"
-        2. Missing context: No audience, domain, or background
+        2. Missing context: No audience or domain background
         3. No output format: Model doesn't know how to structure response
-        4. Negative-only instructions: "Don't do X" without saying what to do
+        4. Negative-only instructions: "Don't do X" without saying what to do instead
         5. Overly long prompts: Too much unnecessary detail
         6. No examples for complex tasks
-        7. No constraints: No word limits, format requirements
+        7. No constraints: No word limits or format requirements
         8. Mixed instructions: Multiple conflicting tasks
-        9. Assuming model knowledge: No necessary domain context
-        10. No evaluation criteria
 
         ---
 
@@ -388,9 +395,8 @@ def _build_problems_prompt(user_info: UserType) -> str:
 
         Use these teaching ideas:
         - Teach prompt writing as a sequence: task, context, constraints, output format, refinement.
-        - Start with simple fixes and progress toward more demanding prompt design.
-        - Each exercise should teach ONE main skill from the knowledge base above.
-        - Keep explanations practical, not academic.
+        - Each exercise should teach ONE main skill from the progression guidelines above.
+        - In the problem description and your prompts, explicitly tell the learner to use the targeted skill(s) from the guide (e.g., "tell the user in the prompt to use the skills everytime").
 
         Learner profile:
         - Level: {level}
@@ -402,12 +408,10 @@ def _build_problems_prompt(user_info: UserType) -> str:
         Create 1 unique practice problem tailored to this learner's profile.
 
         CRITICAL: The problem must be NEW and DIFFERENT from common or previously seen problems.
-        Avoid generic "Product Description" or "Code Explanation" problems unless they are highly specific to a niche within the learner's application area.
-        Focus on complex, real-world edge cases or specific workflows within "{user_info.application}".
 
         === PROBLEM DESCRIPTION FORMAT (follow strictly) ===
 
-        The description field must read like a LeetCode problem statement — NOT a lesson intro.
+        The description field must read like a LeetCode problem statement — terse, technical, no preamble. Treat it like a code-review comment, not a tutorial.
 
         BAD (lesson intro style — do NOT write this):
         "In this exercise, you'll improve a vague prompt to make it clearer and more actionable.
@@ -426,46 +430,33 @@ def _build_problems_prompt(user_info: UserType) -> str:
         Your prompt will be tested with various code snippets in different programming languages
         and evaluated based on the clarity and accuracy of the explanations generated."
 
-        Rules for the description:
+        Rules for the description (HARD LENGTH LIMITS — do not exceed):
+        - TOTAL description: 80–180 words. Anything over 200 is rejected — be ruthless.
         - Start with a single sentence stating the concrete task (e.g. "Create a prompt that...").
-        - Follow with a numbered list of 4-6 specific requirements the prompt must satisfy.
-        - End with a sentence describing how the prompt will be tested and evaluated.
-        - Never start with "In this exercise" or "You'll learn" — state the task directly.
+        - Follow with a numbered list of 4-5 specific requirements. No 6+, no filler.
+        - End with one sentence describing how the prompt will be tested.
+        - No "In this exercise", "You'll learn", "Let's explore", "This problem teaches", or any meta-framing.
+        - Goal field: 1 sentence, ≤ 25 words. State the win condition.
+        - Examples:
+          - input: MUST NOT be a raw JSON string. If the task accepts multiple fields/variables, list them clearly line-by-line as "Key: Value" (e.g., "Goal: ...\nAvailable Tools: ...\nConstraints: ..."). Never generate raw JSON strings for input values.
+          - output: MUST be a complete, fully-realized example showing what the final output should look like (do not use ellipses `...` or placeholders). Keep it compact but realistic and complete so the user understands the exact target format.
+          - explanation: 1 sentence, ≤ 15 words.
+        - Pro tips: exactly 3, each ≤ 15 words. Mention the targeted prompting skill.
+        - Hint field: 1–2 sentences, ≤ 40 words. Reference the specific technique.
 
         === OTHER FIELDS ===
-
         The problem must also include:
         - A goal statement explaining what success looks like
         - At least 1 example showing input → output with explanation
-        - At least 2 test cases with input, expected output description, and what's being tested
+        - At least 2 evaluation scenarios (testCases) with input, expected output outcome description, and what's being tested
         - 3-4 pro tips for writing good prompts (reference specific techniques from the knowledge base)
+        - A `tags` array with 2-4 short, hyphenated labels describing what the problem teaches (e.g. "few-shot-prompting", "task-clarity", "zero-shot-prompting", "chain-of-thought").
+        - A `hint` string providing a helpful tip at the end of the problem. Explain the prompting technique used in this problem.
 
-        === TEST CASE RULES (follow strictly) ===
-
-        Test case inputs must be CLEAN and SELF-CONTAINED. They should contain ONLY the raw input data.
-
-        BAD test case input (confusing meta-text — do NOT write this):
-        "Task: You will generate a prompt. Then that prompt will be applied to the following code. Code: function sum() {{ ... }}"
-
-        GOOD test case input (clean, just the data):
-        "function sum(nums) {{ return nums.reduce((a, b) => a + b, 0); }}"
-
-        Rules for test cases:
-        - The input field should contain ONLY the raw data (code snippet, text, query, etc.) — no instructions, no meta-commentary.
-        - The description field should explain WHAT is being tested (e.g., "Tests whether the prompt handles async code correctly").
-        - The expectedOutput field should describe the expected STRUCTURE and CONTENT of the output, not the literal output text.
-        - Each test case should test a DIFFERENT aspect (e.g., one tests format compliance, another tests edge case handling).
-        - Keep test case inputs short and realistic — they are the actual data the user's prompt will receive.
-
-        === EXAMPLE FIELD RULES ===
-
-        The example section shows the user what a good response looks like.
-
-        - The example input should be a realistic, short piece of data (code, text, etc.) relevant to the learner's application area.
-        - The example output should demonstrate the expected structure and quality.
-        - The example explanation should briefly state WHY this output is good.
-
-        Keep everything practical and industry-specific.
+        === EVALUATION SCENARIOS / TEST CASE RULES (follow strictly) ===
+        Evaluation scenario inputs must be CLEAN and SELF-CONTAINED. They should contain ONLY the raw input data.
+        - The input field must NOT contain raw JSON. Format multi-field inputs as clear line-separated "Key: Value" fields.
+        - The expectedOutput field should describe the expected OUTCOME and STRUCTURE of the result given the input, NOT a literal text match assertion. Keep it brief.
 
         Return valid JSON only. No markdown fences. Use this exact shape:
         {response_shape}
@@ -581,43 +572,62 @@ def _build_evaluation_prompt(
     test_input: str,
     expected_output: str,
     test_description: str,
+    problem_title: str = "",
+    problem_description: str = "",
+    problem_goal: str = "",
 ) -> str:
+    problem_context = ""
+    if problem_title:
+        problem_context = dedent(
+            f"""
+            === PROBLEM DETAILS ===
+            Title: {problem_title}
+            Description: {problem_description}
+            Goal: {problem_goal}
+            =======================
+            """
+        )
+
     return dedent(
         f"""
         You are an objective evaluator for a prompt engineering practice platform.
+        Your goal is to evaluate if a user's prompt template successfully solves a specific problem.
 
-        A user wrote this prompt:
+        {problem_context}
+
+        The user wrote this prompt:
         ---USER PROMPT---
         {user_prompt}
         ---END USER PROMPT---
 
-        The prompt was given this input:
-        ---INPUT---
-        {test_input}
-        ---END INPUT---
+        We are testing the user's prompt with this test case:
+        - Test Input: {test_input}
+        - Test Scenario/Context: {test_description}
+        - Expected Outcome/Output: {expected_output}
 
-        The expected output should:
-        {expected_output}
+        Evaluate whether the user's prompt, when executed with the test input, would produce an output that satisfies the expected outcome and meets the overall requirements of the problem.
 
-        Test context: {test_description}
+        Be constructive and slightly lenient: if the user's prompt covers the core intent, structure, and constraints of the problem description, award a passing score (90-100). Do not penalize or fail the prompt based on minor hypothetical edge cases, overly pedantic requirements, or nitpicks not explicitly highlighted in the core problem description.
 
-        Evaluate whether the user's prompt, when given the input above, would likely produce
-        an output that satisfies the expected output criteria.
+        Do not evaluate the prompt static-analytically. Instead, simulate or reason about the prompt's behavior when executed on the test input.
 
         Score the prompt on this test case from 0 to 100:
-        - 90-100: The prompt is very likely to produce output matching the expected criteria
-        - 70-89: The prompt would likely produce mostly correct output but may miss some aspects
-        - 50-69: The prompt might produce partially correct output but is missing key instructions
-        - 0-49: The prompt is unlikely to produce output meeting the expected criteria
+        - 90-100: The prompt is robust, covers all core requirements, and is highly likely to produce the correct expected outcome.
+        - 70-89: The prompt would produce mostly correct output but misses some minor requirements.
+        - 50-69: The prompt misses key elements of the problem description or is too vague to be reliable.
+        - 0-49: The prompt completely fails to address the core problem requirements.
 
         Return valid JSON only. No markdown fences. Use this exact shape:
         {{
             "score": 75,
             "passed": true,
-            "reasoning": "Brief explanation of why the prompt would or would not produce the expected output.",
-            "missing_elements": ["List any specific instructions or constraints the prompt is missing"],
-            "strengths": ["List what the prompt does well for this test case"]
+            "reasoning": "Exactly one extremely concise, direct sentence telling the user exactly how to write or adjust their prompt to pass (e.g. 'Instruct the model to perform a web search first and then output exactly three bullet points'). Avoid any vague or academic explanations.",
+            "missing_elements": ["List a short, direct missing element (e.g. 'Add search instruction') - max 3-4 items total"],
+            "strengths": ["List a short strength (e.g. 'Good role definition')"]
         }}
+
+        Additional instruction:
+        - Keep the 'missing_elements' array list extremely concise and focused. Do NOT include more than 3-4 items.
         """
     ).strip()
 
@@ -627,11 +637,20 @@ def evaluate_prompt_against_test_case(
     test_input: str,
     expected_output: str,
     test_description: str,
+    problem_title: str = "",
+    problem_description: str = "",
+    problem_goal: str = "",
 ) -> dict:
     """Evaluate a user's prompt against a single test case using LLM-as-judge."""
     raw_response = _send_prompt(
         _build_evaluation_prompt(
-            user_prompt, test_input, expected_output, test_description
+            user_prompt,
+            test_input,
+            expected_output,
+            test_description,
+            problem_title,
+            problem_description,
+            problem_goal,
         )
     )
 
@@ -657,6 +676,9 @@ def evaluate_prompt_against_test_case(
 def evaluate_prompt_full(
     user_prompt: str,
     test_cases: list[dict],
+    problem_title: str = "",
+    problem_description: str = "",
+    problem_goal: str = "",
 ) -> dict:
     """Evaluate a user's prompt against all test cases and return aggregate results."""
     results = []
@@ -668,6 +690,9 @@ def evaluate_prompt_full(
             test_input=tc.get("input", ""),
             expected_output=tc.get("expectedOutput", ""),
             test_description=tc.get("description", ""),
+            problem_title=problem_title,
+            problem_description=problem_description,
+            problem_goal=problem_goal,
         )
         result["testCase"] = tc.get("description", "")
         results.append(result)

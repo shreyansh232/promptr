@@ -41,7 +41,7 @@ export default function FeaturesSection() {
           <div className="text-[11px] uppercase tracking-[0.32em] text-[#f0a067]">
             Features
           </div>
-          <h2 className="mt-5 text-4xl leading-tight text-[#fff5eb] md:text-6xl">
+          <h2 className="font-display mt-5 text-4xl leading-tight text-[#fff5eb] md:text-6xl">
             Hands on approach to learn prompt engineering
           </h2>
           <p className="mt-6 text-lg leading-8 text-[#b8b0a5]">

@@ -2,40 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { db } from "db";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-
-const SUB_LEVELS_PER_TIER = 5;
-const ELO_PER_WIN = 25;
-const ELO_PER_LOSS = -10;
-
-const TIER_ELO_RANGES: Record<string, { min: number; max: number }> = {
-  beginner: { min: 0, max: 1199 },
-  intermediate: { min: 1200, max: 1499 },
-  expert: { min: 1500, max: 99999 },
-};
-
-function getSubLevel(elo: number): {
-  level: string;
-  sub: number;
-  progress: number;
-} {
-  let tier = "beginner";
-  if (elo >= 1500) tier = "expert";
-  else if (elo >= 1200) tier = "intermediate";
-
-  const range = TIER_ELO_RANGES[tier]!;
-  const tierProgress = elo - range.min;
-  const tierSpan = range.max - range.min + 1;
-  const sub = Math.min(
-    Math.floor((tierProgress / tierSpan) * SUB_LEVELS_PER_TIER) + 1,
-    SUB_LEVELS_PER_TIER,
-  );
-  const progress =
-    ((tierProgress % (tierSpan / SUB_LEVELS_PER_TIER)) /
-      (tierSpan / SUB_LEVELS_PER_TIER)) *
-    100;
-
-  return { level: tier, sub, progress: Math.round(progress) };
-}
+import { env } from "@/env";
 
 export async function POST(req: Request) {
   try {
@@ -73,7 +40,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { score, allPassed, problemId } = await req.json();
+    const body = (await req.json()) as {
+      score: number;
+      allPassed?: boolean;
+      problemId?: string;
+      problemTitle?: string;
+      problemJson?: string;
+      userPrompt?: string;
+    };
+    const { score, allPassed, problemTitle, problemJson, userPrompt } = body;
+
     if (typeof score !== "number") {
       return NextResponse.json({ error: "Score required" }, { status: 400 });
     }
@@ -86,58 +62,92 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // Check if this problem was already solved by this user
-    let alreadySolved = false;
-    if (problemId) {
-      const existingSuccess = await db.submission.findFirst({
-        where: {
-          userId: user.id,
-          problemId: problemId,
-          status: "PASSED",
-        },
-      });
-      if (existingSuccess) {
-        alreadySolved = true;
+    // If all test cases passed, it's a clear win. Otherwise use score >= 90 as fallback.
+    const passed = allPassed === true || score >= 90;
+
+    let newLevel = profile.level ?? "beginner";
+    let newSubLevel = profile.subLevel ?? 1;
+
+    if (passed) {
+      // Save solved problem to backend
+      try {
+        await fetch(`${env.BACKEND_URL}/profiles/${user.id}/solved-problems`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userLevel: profile.level ?? "beginner",
+            subLevel: profile.subLevel ?? 1,
+            problemTitle: problemTitle ?? "Problem",
+            problemJson: problemJson ?? "{}",
+            userPrompt: userPrompt ?? "",
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to save solved problem in backend:", err);
+      }
+
+      if (newSubLevel < 5) {
+        newSubLevel += 1;
+      } else {
+        newSubLevel = 1;
+        if (newLevel === "beginner") {
+          newLevel = "intermediate";
+        } else if (newLevel === "intermediate") {
+          newLevel = "expert";
+        } else {
+          newLevel = "expert";
+          newSubLevel = 5; // Capped at expert subLevel 5
+        }
       }
     }
 
-    // If all test cases passed, it's a clear win. Otherwise use score >= 90 as fallback.
-    const passed = allPassed === true || score >= 90;
-    
-    // Only grant ELO if the problem wasn't already solved
-    const eloChange = (passed && !alreadySolved) ? ELO_PER_WIN : (passed ? 0 : ELO_PER_LOSS);
-    
-    const newElo = Math.max(100, (profile.elo ?? 1000) + eloChange);
-    const newProblemsSolved = (passed && !alreadySolved)
+    const newProblemsSolved = passed
       ? (profile.problemsSolved ?? 0) + 1
       : (profile.problemsSolved ?? 0);
     const newStreak = passed ? (profile.streak ?? 0) + 1 : 0;
 
-    const { level, sub } = getSubLevel(newElo);
-
     await db.userProfile.update({
       where: { userId: user.id },
       data: {
-        elo: newElo,
-        level,
-        subLevel: sub,
+        level: newLevel,
+        subLevel: newSubLevel,
         problemsSolved: newProblemsSolved,
         streak: newStreak,
       },
     });
 
+    interface SolvedProblem {
+      userLevel: string;
+      subLevel: number;
+      problemTitle: string;
+    }
+
+    let solvedProblems: SolvedProblem[] = [];
+    try {
+      const solvedRes = await fetch(
+        `${env.BACKEND_URL}/profiles/${user.id}/solved-problems`,
+        { cache: "no-store" },
+      );
+      if (solvedRes.ok) {
+        solvedProblems = (await solvedRes.json()) as SolvedProblem[];
+      }
+    } catch (err) {
+      console.error("Failed to fetch solved problems in backend:", err);
+    }
+
     return NextResponse.json({
-      elo: newElo,
-      eloChange,
-      level,
-      subLevel: sub,
+      elo: 1000,
+      eloChange: 0,
+      level: newLevel,
+      subLevel: newSubLevel,
       problemsSolved: newProblemsSolved,
       streak: newStreak,
       passed,
-      alreadySolved,
+      alreadySolved: false,
+      solvedProblems,
     });
   } catch (error) {
-    console.error("ELO Update Error:", error);
+    console.error("Progression Update Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

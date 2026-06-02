@@ -69,12 +69,14 @@ export function checkRateLimit(
  * Rate limit configuration for different endpoints.
  */
 export const RATE_LIMITS = {
-  // ELO updates: 10 per minute (prevents score manipulation)
-  elo: { maxRequests: 10, windowMs: 60 * 1000 },
-  // Prompt analysis: 20 per minute (prevents API quota burn)
-  analyzePrompt: { maxRequests: 20, windowMs: 60 * 1000 },
-  // Problem generation: 5 per minute (expensive AI call)
-  generateProblems: { maxRequests: 5, windowMs: 60 * 1000 },
-  // Profile reads/writes: 30 per minute
-  profile: { maxRequests: 30, windowMs: 60 * 1000 },
+  // ELO updates: 30 per minute (prevents score manipulation)
+  elo: { maxRequests: 30, windowMs: 60 * 1000 },
+  // Prompt analysis: 60 per minute (prevents API quota burn)
+  analyzePrompt: { maxRequests: 60, windowMs: 60 * 1000 },
+  // Problem generation: 20 per minute (expensive AI call).
+  // Generous because React 18 dev mode double-invokes effects, so a single
+  // dashboard mount can fire 2 requests. 5/min was too tight for testing.
+  generateProblems: { maxRequests: 20, windowMs: 60 * 1000 },
+  // Profile reads/writes: 60 per minute
+  profile: { maxRequests: 60, windowMs: 60 * 1000 },
 } as const;

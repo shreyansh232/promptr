@@ -1,12 +1,22 @@
 import pytest
+from mongomock_motor import AsyncMongoMockClient
 from fastapi.testclient import TestClient
 from app import create_app
+from core.db import get_db
 from unittest.mock import patch
 
 
 @pytest.fixture
-def app():
-    return create_app()
+def mock_db():
+    client = AsyncMongoMockClient()
+    return client.promptr
+
+
+@pytest.fixture
+def app(mock_db):
+    app = create_app()
+    app.dependency_overrides[get_db] = lambda: mock_db
+    return app
 
 
 @pytest.fixture

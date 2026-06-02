@@ -14,7 +14,7 @@ const MainPage = async () => {
 
   // Check if user has completed onboarding
   const user = await db.user.findUnique({
-    where: { email: session.user.email as string },
+    where: { email: session.user.email! },
     include: { profile: true },
   });
 
@@ -30,7 +30,7 @@ const MainPage = async () => {
 
   // Redirect if profile is missing or user hasn't set an application area
   // We use application as the sentinel because it's a mandatory field in onboarding
-  if (!user || !user.profile || user.profile.application === "") {
+  if (!user?.profile || user.profile.application === "") {
     console.log(`[Dashboard] Redirecting ${session.user.email} to onboarding. Reason:`, 
       !user ? "No user found" : !user.profile ? "No profile found" : "Empty application area");
     redirect("/onboarding");

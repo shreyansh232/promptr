@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import LoginGithub from "@/components/LoginGithub";
+import LoginGoogle from "@/components/LoginGoogle";
 import { registerWithCreds } from "@/actions/auth";
 import { toast } from "react-hot-toast";
 
@@ -65,7 +66,7 @@ const SignUp = () => {
   return (
     <AuthShell
       mode="sign-up"
-      title="Create an account for guided prompt practice."
+      title="Create an account"
       subtitle="Set up a focused workspace where each challenge starts with a problem statement and ends with a sharper prompt."
     >
       <Form {...form}>
@@ -135,6 +136,7 @@ const SignUp = () => {
           />
         </form>
         <LoginGithub />
+        <LoginGoogle />
       </Form>
     </AuthShell>
   );

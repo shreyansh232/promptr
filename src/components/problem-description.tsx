@@ -1,4 +1,4 @@
-import { Problem } from "@/types/problem";
+import type { Problem } from "@/types/problem";
 import {
   Card,
   CardContent,
@@ -33,7 +33,7 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
             </Badge>
           </div>
         </div>
-        <Card className="bg-gray-700 border-none text-white">
+        <Card className="bg-white/5 border border-white/10 text-white">
           <CardHeader>
             <CardTitle className="text-2xl">Problem Description</CardTitle>
           </CardHeader>
@@ -42,33 +42,33 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           </CardContent>
         </Card>
         {problem.examples.map((example, index) => (
-          <Card key={index} className="bg-gray-700 border-none text-white">
+          <Card key={index} className="bg-white/5 border border-white/10 text-white">
             <CardHeader>
               <CardTitle className="text-2xl">Example {index + 1}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <div className="font-mono text-sm text-white">
+                <div className="font-mono text-sm text-white/70">
                   Input:
                 </div>
-                <div className="rounded-md bg-gray-500 p-4 font-mono">
+                <div className="rounded-md bg-black/40 border border-white/10 p-4 font-mono">
                   {example.input}
                 </div>
               </div>
               <div>
-                <div className="font-mono text-sm text-white">
+                <div className="font-mono text-sm text-white/70">
                   Output:
                 </div>
-                <div className="rounded-md bg-gray-500 p-4 font-mono">
+                <div className="rounded-md bg-black/40 border border-white/10 p-4 font-mono">
                   {example.output}
                 </div>
               </div>
               {example.explanation && (
                 <div>
-                  <div className="font-mono text-sm text-white">
+                  <div className="font-mono text-sm text-white/70">
                     Explanation:
                   </div>
-                  <div className="rounded-md bg-gray-500 p-4">
+                  <div className="rounded-md bg-black/40 border border-white/10 p-4">
                     {example.explanation}
                   </div>
                 </div>

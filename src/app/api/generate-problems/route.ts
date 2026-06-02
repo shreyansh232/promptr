@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { env } from "@/env";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { db } from "db";
 import { fetchWithTimeout } from "@/lib/utils";
 
 const MAX_BODY_BYTES = 10_000; // 10 KB limit (user type is small)
@@ -11,6 +12,16 @@ export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Fetch user from DB
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Rate limit check
@@ -68,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     const parsedData = parsed as Record<string, unknown>;
-    const requiredFields = ["level", "expertise", "learning_style", "goals"];
+    const requiredFields = ["level", "expertise", "goals"];
     for (const field of requiredFields) {
       if (!(field in parsedData)) {
         return NextResponse.json(
@@ -80,11 +91,10 @@ export async function POST(request: Request) {
 
     if (
       typeof parsedData.level !== "string" ||
-      typeof parsedData.expertise !== "string" ||
-      typeof parsedData.learning_style !== "string"
+      typeof parsedData.expertise !== "string"
     ) {
       return NextResponse.json(
-        { error: "level, expertise, and learning_style must be strings" },
+        { error: "level and expertise must be strings" },
         { status: 400 },
       );
     }
@@ -103,7 +113,15 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/json",
         },
-        body,
+        body: JSON.stringify({
+          userId: user.id,
+          level: parsedData.level,
+          expertise: parsedData.expertise,
+          application: parsedData.application ?? "",
+          learning_style: (parsedData.learning_style as string | undefined) ?? "",
+          goals: parsedData.goals,
+          subLevel: parsedData.subLevel ?? 1,
+        }),
         cache: "no-store",
       },
       60000,

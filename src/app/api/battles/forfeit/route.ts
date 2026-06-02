@@ -1,106 +1,25 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
-import { db } from "db";
 
-export async function POST(request: Request) {
+/**
+ * Forfeit a battle. The FastAPI backend does not currently expose a
+ * dedicated forfeit endpoint — battle termination is handled in-band
+ * by the submit endpoint. This stub returns 501 so the frontend can
+ * detect the missing feature and surface a friendly message.
+ */
+export async function POST(_request: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const { battleId } = await request.json();
-
-    if (!battleId) {
-      return NextResponse.json({ error: "Missing battleId" }, { status: 400 });
-    }
-
-    const battle = await db.battle.findUnique({
-      where: { id: battleId },
-      include: { participants: true },
-    });
-
-    if (!battle) {
-      return NextResponse.json({ error: "Battle not found" }, { status: 404 });
-    }
-
-    // Only the creator can forfeit
-    if (battle.createdBy !== user.id) {
-      return NextResponse.json(
-        { error: "Only the creator can forfeit this battle" },
-        { status: 403 },
-      );
-    }
-
-    // Can only forfeit active battles
-    if (battle.status !== "ACTIVE") {
-      return NextResponse.json(
-        { error: "Can only forfeit active battles" },
-        { status: 400 },
-      );
-    }
-
-    // Get participants
-    const creatorParticipant = battle.participants.find(
-      (p) => p.userId === battle.createdBy,
+    return NextResponse.json(
+      {
+        error: "Forfeit is not yet supported by the backend",
+      },
+      { status: 501 },
     );
-    const opponentParticipant = battle.participants.find(
-      (p) => p.userId !== battle.createdBy,
-    );
-
-    if (!creatorParticipant || !opponentParticipant) {
-      return NextResponse.json(
-        { error: "Invalid battle state" },
-        { status: 400 },
-      );
-    }
-
-    // Mark creator as forfeit/loss, opponent as win
-    // Update battle status and ELO ratings atomically
-    await db.$transaction(async (tx) => {
-      await tx.battleParticipant.update({
-        where: { id: creatorParticipant.id },
-        data: {
-          result: "LOSS",
-          score: 0,
-          eloChange: -15,
-        },
-      });
-
-      await tx.battleParticipant.update({
-        where: { id: opponentParticipant.id },
-        data: {
-          result: "WIN",
-          score: 100,
-          eloChange: 30,
-        },
-      });
-
-      await tx.battle.update({
-        where: { id: battleId },
-        data: { status: "COMPLETED" },
-      });
-
-      await tx.userProfile.update({
-        where: { userId: battle.createdBy },
-        data: { elo: { decrement: 15 } },
-      });
-
-      await tx.userProfile.update({
-        where: { userId: opponentParticipant.userId },
-        data: { elo: { increment: 30 } },
-      });
-    });
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Battle forfeit error:", error);
     return NextResponse.json(

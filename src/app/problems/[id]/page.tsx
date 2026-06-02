@@ -17,7 +17,7 @@ export default function ProblemPage() {
   const params = useParams<{ id: string }>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const problem = problems[Number(params.id) as keyof typeof problems];
+  const problem = problems[Number(params.id)];
 
   if (!problem) {
     notFound();

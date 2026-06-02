@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as { title?: string; description?: string };
     const { title, description } = body;
 
     if (!title || !description) {
@@ -36,7 +36,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      goal: string;
+      testCases: { input: string; expectedOutput: string; description: string }[];
+    };
     return NextResponse.json(data);
   } catch (error) {
     console.error("Battle generation error:", error);

@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Smile, Frown, Meh } from 'lucide-react';
+import { ArrowRight, Smiley, SmileySad } from '@phosphor-icons/react';
 
 const prompts: [string, string][] = [
   ["Write me an essay", "Write me a well-structured essay on climate change"],
@@ -11,7 +11,7 @@ const prompts: [string, string][] = [
 ];
 
 const getEmojiForPrompt = (isImproved: boolean) => {
-  return isImproved ? <Smile className="h-5 w-5 text-green-400" /> : <Frown className="h-5 w-5 text-red-400" />;
+  return isImproved ? <Smiley className="h-5 w-5 text-[#ff8a3d]" weight="fill" /> : <SmileySad className="h-5 w-5 text-white/40" weight="fill" />;
 };
 
 const TypewriterPrompt = () => {
@@ -21,7 +21,7 @@ const TypewriterPrompt = () => {
   const [isImproved, setIsImproved] = useState(false);
 
   useEffect(() => {
-    const currentPromptPair = prompts[promptIndex % prompts.length] || ["", ""]; 
+    const currentPromptPair = prompts[promptIndex % prompts.length] ?? ["", ""];
     const currentPromptText = isImproved ? currentPromptPair[1] : currentPromptPair[0];
 
     if (charIndex < currentPromptText.length) {
@@ -48,11 +48,11 @@ const TypewriterPrompt = () => {
   }, [charIndex, promptIndex, isImproved]);
 
   return (
-    <div className="bg-gray-800 rounded-full py-2 px-4 text-sm text-gray-400 flex items-center mt-4 w-full">
-      <span className="mr-2">{currentPrompt}</span>
+    <div className="bg-white/5 border border-white/10 rounded-full py-2 px-4 text-sm text-white/60 flex items-center mt-4 w-full">
+      <span className="mr-2 text-white">{currentPrompt}</span>
       <span className="ml-auto flex items-center">
         {getEmojiForPrompt(isImproved)}
-        <ArrowRight className="h-4 w-4 text-second ml-2" />
+        <ArrowRight className="h-4 w-4 text-[#ff8a3d] ml-2" />
       </span>
     </div>
   );

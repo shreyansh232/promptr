@@ -6,7 +6,9 @@ class CreateBattleRequest(BaseModel):
     title: str
     description: str
     goal: str
-    testCases: list[dict]  # [{ input, expectedOutput, description }]
+    testCases: list[dict]
+    createdBy: str = ""
+    createdByName: str = ""
 
 
 class BattleGenerationRequest(BaseModel):
@@ -21,6 +23,8 @@ class BattleGenerationResponse(BaseModel):
 
 class JoinBattleRequest(BaseModel):
     battleId: str
+    userId: str = ""
+    userName: str = ""
 
 
 class SubmitPromptRequest(BaseModel):

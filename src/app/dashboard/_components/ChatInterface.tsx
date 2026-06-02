@@ -2,18 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BookOpenIcon,
-  CheckCircleIcon,
-  DocumentDuplicateIcon,
-  LightBulbIcon,
-  PaperAirplaneIcon,
-  SparklesIcon,
-  XCircleIcon,
-  FlagIcon,
-} from "@heroicons/react/24/outline";
-import { useRouter } from "next/navigation";
+  Sparkle,
+  ArrowRight,
+  CircleNotch,
+  Target,
+  Fire,
+  Play,
+  Lightbulb
+} from "@phosphor-icons/react";
+import Link from "next/link";
+import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,7 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
-import { ArrowRight, Loader2 } from "lucide-react";
 import MainSidebar from "./Sidebar";
 
 interface UserInfo {
@@ -38,6 +36,11 @@ interface UserInfo {
   goals: string[];
   industry: string;
   credits: number;
+  solvedProblems?: {
+    userLevel: string;
+    subLevel: number;
+    problemTitle: string;
+  }[];
 }
 
 interface Message {
@@ -73,6 +76,8 @@ interface PracticeProblem {
   examples: { input: string; output: string; explanation: string }[];
   testCases: { input: string; expectedOutput: string; description: string }[];
   proTips: string[];
+  tags: string[];
+  hint?: string;
 }
 
 interface TestCaseEvalResult {
@@ -94,84 +99,29 @@ interface PromptEvaluation {
   submissionId?: string;
 }
 
-const PROBLEM_CACHE_KEY = "promptr_problems";
-const PROBLEM_CACHE_TTL = 1000 * 60 * 60 * 2; // 2 hours
+// No browser local storage cache. All problems persist in MongoDB.
 
-interface CachedProblems {
-  problems: PracticeProblem[];
-  profileHash: string;
-  timestamp: number;
-  currentIndex: number;
-}
-
-function getProfileHash(info: UserInfo): string {
-  return `${info.level}-${info.expertise}-${info.learningStyle}-${info.goals.join(",")}`;
-}
-
-function getCachedProblems(info: UserInfo): PracticeProblem[] | null {
+const formatExampleInput = (input: string) => {
+  if (!input) return "";
   try {
-    const raw = localStorage.getItem(PROBLEM_CACHE_KEY);
-    if (!raw) return null;
-
-    const cached: CachedProblems = JSON.parse(raw);
-    const isExpired = Date.now() - cached.timestamp > PROBLEM_CACHE_TTL;
-    const isStaleProfile = cached.profileHash !== getProfileHash(info);
-
-    if (isExpired || isStaleProfile) {
-      localStorage.removeItem(PROBLEM_CACHE_KEY);
-      return null;
+    const parsed = JSON.parse(input) as unknown;
+    if (parsed && typeof parsed === "object") {
+      const parsedObj = parsed as Record<string, unknown>;
+      return Object.entries(parsedObj)
+        .map(([key, val]) => {
+          const formattedVal = Array.isArray(val)
+            ? val.join(", ")
+            : val && typeof val === "object"
+            ? JSON.stringify(val)
+            : String(val);
+          return `${key}: ${formattedVal}`;
+        })
+        .join("\n");
     }
-
-    if (cached.problems?.length > 0) {
-      return cached.problems;
-    }
-
-    return null;
   } catch {
-    return null;
+    // Return original string if not valid JSON
   }
-}
-
-function saveProblemsToCache(problems: PracticeProblem[], info: UserInfo) {
-  try {
-    const cached: CachedProblems = {
-      problems,
-      profileHash: getProfileHash(info),
-      timestamp: Date.now(),
-      currentIndex: 0,
-    };
-    localStorage.setItem(PROBLEM_CACHE_KEY, JSON.stringify(cached));
-  } catch {
-    // ignore
-  }
-}
-
-function consumeCachedProblem(info: UserInfo): PracticeProblem | null {
-  try {
-    const raw = localStorage.getItem(PROBLEM_CACHE_KEY);
-    if (!raw) return null;
-
-    const cached: CachedProblems = JSON.parse(raw);
-    const nextIndex = cached.currentIndex + 1;
-
-    if (nextIndex >= cached.problems.length) {
-      localStorage.removeItem(PROBLEM_CACHE_KEY);
-      return null;
-    }
-
-    const problem = cached.problems[nextIndex] ?? null;
-    cached.currentIndex = nextIndex;
-    localStorage.setItem(PROBLEM_CACHE_KEY, JSON.stringify(cached));
-    return problem;
-  } catch {
-    return null;
-  }
-}
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  Easy: "text-emerald-400",
-  Medium: "text-amber-400",
-  Hard: "text-red-400",
+  return input;
 };
 
 export default function ChatInterface() {
@@ -184,39 +134,30 @@ export default function ChatInterface() {
   );
   const [promptEvaluation, setPromptEvaluation] =
     useState<PromptEvaluation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeProblem, setActiveProblem] = useState<PracticeProblem | null>(
     null,
   );
   const [score, setScore] = useState<number | null>(null);
-  const [eloResult, setEloResult] = useState<{
+  const [, setEloResult] = useState<{
     elo: number;
     eloChange: number;
     passed: boolean;
   } | null>(null);
   const [problemIndex, setProblemIndex] = useState(1);
   const [isReporting, setIsReporting] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const { data: session } = useSession();
-  const userInitial = session?.user?.name?.[0];
-  const router = useRouter();
+  const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? "P";
 
   const normalizedUserInfo = useMemo(() => userInfo, [userInfo]);
 
   // Fetch problems — defined as useCallback so it's accessible everywhere
   const fetchProblems = useCallback(async () => {
     if (!normalizedUserInfo) return;
-
-    // Try cache first
-    const cached = getCachedProblems(normalizedUserInfo);
-    if (cached) {
-      setActiveProblem(cached[0] ?? null);
-      setIsLoading(false);
-      setIsGenerating(false);
-      return;
-    }
 
     // Fetch from API with timeout
     setIsGenerating(true);
@@ -229,6 +170,7 @@ export default function ChatInterface() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           level: normalizedUserInfo.level,
+          subLevel: normalizedUserInfo.subLevel,
           expertise: normalizedUserInfo.expertise,
           application: normalizedUserInfo.application,
           learning_style: normalizedUserInfo.learningStyle,
@@ -239,10 +181,10 @@ export default function ChatInterface() {
 
       if (!response.ok) return;
 
-      const data = await response.json();
-      if (data.problems?.length > 0) {
-        saveProblemsToCache(data.problems, normalizedUserInfo);
-        setActiveProblem(data.problems[0] ?? null);
+      const data = (await response.json()) as { problems?: PracticeProblem[] };
+      const problems = data.problems;
+      if (problems && problems.length > 0) {
+        setActiveProblem(problems[0] ?? null);
       }
     } catch (error) {
       console.error("Error fetching problems:", error);
@@ -279,6 +221,18 @@ export default function ChatInterface() {
     }
   }, [normalizedUserInfo, fetchProblems]);
 
+  // Synchronize problemIndex with user sublevel progress
+  useEffect(() => {
+    if (normalizedUserInfo) {
+      setProblemIndex(normalizedUserInfo.subLevel);
+    }
+  }, [normalizedUserInfo]);
+
+  // Reset showHint state when problem changes
+  useEffect(() => {
+    setShowHint(false);
+  }, [activeProblem]);
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || !normalizedUserInfo || isTyping) return;
 
@@ -290,7 +244,9 @@ export default function ChatInterface() {
     };
 
     setMessages((prev) => [...prev, newUserMessage]);
-    setInputValue("");
+    if (!activeProblem) {
+      setInputValue("");
+    }
     setIsTyping(true);
     setScore(null);
     setEloResult(null);
@@ -309,6 +265,9 @@ export default function ChatInterface() {
             prompt: promptText,
             problemId: activeProblem.id,
             testCases: activeProblem.testCases,
+            problemTitle: activeProblem.title,
+            problemDescription: activeProblem.description,
+            problemGoal: activeProblem.goal,
           }),
           signal: controller.signal,
         });
@@ -316,9 +275,9 @@ export default function ChatInterface() {
         clearTimeout(timeout);
 
         if (!evalResponse.ok) {
-          const errorData = await evalResponse.json();
-          toast.error(errorData.error || "Failed to evaluate prompt");
-          throw new Error(errorData.error || "Failed to evaluate prompt");
+          const errorData = (await evalResponse.json()) as { error?: string };
+          toast.error(errorData.error ?? "Failed to evaluate prompt");
+          throw new Error(errorData.error ?? "Failed to evaluate prompt");
         }
 
         const evalData = (await evalResponse.json()) as PromptEvaluation;
@@ -332,19 +291,35 @@ export default function ChatInterface() {
           );
         }
 
-        // Update ELO based on evaluation score
+        // Update progression and save solved problem based on evaluation score
         const eloRes = await fetch("/api/user/elo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             score: evalData.overallScore,
-            allPassed: evalData.testCasesPassed === evalData.testCasesTotal,
+            allPassed: evalData.passed,
             problemId: activeProblem.id,
+            problemTitle: activeProblem.title,
+            problemJson: JSON.stringify(activeProblem),
+            userPrompt: promptText,
           }),
         });
 
         if (eloRes.ok) {
-          const eloData = await eloRes.json();
+          const eloData = (await eloRes.json()) as {
+            elo: number;
+            eloChange: number;
+            level: string;
+            subLevel: number;
+            problemsSolved: number;
+            streak: number;
+            passed: boolean;
+            solvedProblems?: {
+              userLevel: string;
+              subLevel: number;
+              problemTitle: string;
+            }[];
+          };
           setEloResult(eloData);
           setUserInfo((prev) =>
             prev
@@ -355,6 +330,7 @@ export default function ChatInterface() {
                   subLevel: eloData.subLevel,
                   problemsSolved: eloData.problemsSolved,
                   streak: eloData.streak,
+                  solvedProblems: eloData.solvedProblems,
                 }
               : null,
           );
@@ -392,9 +368,9 @@ export default function ChatInterface() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to analyze prompt");
-        throw new Error(errorData.error || "Failed to fetch response");
+        const errorData = (await response.json()) as { error?: string };
+        toast.error(errorData.error ?? "Failed to analyze prompt");
+        throw new Error(errorData.error ?? "Failed to fetch response");
       }
 
       const data = (await response.json()) as PromptAnalysis;
@@ -431,7 +407,7 @@ export default function ChatInterface() {
     }
   };
 
-  const handleReportEvaluation = async () => {
+  const _handleReportEvaluation = async () => {
     if (!promptEvaluation?.submissionId || isReporting) return;
 
     setIsReporting(true);
@@ -469,15 +445,13 @@ export default function ChatInterface() {
     setProblemIndex((prev) => prev + 1);
     setIsGenerating(true);
 
-    // Force clear problem cache to get a NEW one from AI
-    localStorage.removeItem(PROBLEM_CACHE_KEY);
-
     try {
       const response = await fetch("/api/generate-problems", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           level: normalizedUserInfo.level,
+          subLevel: normalizedUserInfo.subLevel,
           expertise: normalizedUserInfo.expertise,
           application: normalizedUserInfo.application,
           learning_style: normalizedUserInfo.learningStyle,
@@ -491,10 +465,10 @@ export default function ChatInterface() {
         return;
       }
 
-      const data = await response.json();
-      if (data.problems?.length > 0) {
-        saveProblemsToCache(data.problems, normalizedUserInfo);
-        setActiveProblem(data.problems[0] ?? null);
+      const data = (await response.json()) as { problems?: PracticeProblem[] };
+      const problems = data.problems;
+      if (problems && problems.length > 0) {
+        setActiveProblem(problems[0] ?? null);
       }
     } catch (error) {
       console.error("Error fetching next problem:", error);
@@ -512,18 +486,18 @@ export default function ChatInterface() {
   // Loading state — profile not loaded or generating problem
   if (!activeProblem) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0d0d0d]">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center text-center">
           {/* Simple, clean circle spinner */}
           <div className="relative mb-6 h-12 w-12">
-            <Loader2 className="h-12 w-12 animate-spin text-[#ff8a3d]" />
+            <CircleNotch className="h-12 w-12 animate-spin text-primary" />
           </div>
-          <div className="text-xl font-semibold tracking-tight text-[#f5efe6]">
+          <div className="text-xl font-semibold tracking-tight text-foreground">
             {isGenerating
               ? "Crafting your challenge..."
               : "Loading your challenge..."}
           </div>
-          <div className="mt-2 text-sm text-[#6a6255]">
+          <div className="mt-2 text-sm text-muted-foreground/60">
             {isGenerating
               ? "Personalizing a problem for your level"
               : "Setting up your workspace"}
@@ -536,82 +510,125 @@ export default function ChatInterface() {
   const example = activeProblem.examples[0];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0d0d0d]">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Left: Sidebar */}
       <MainSidebar
         userLevel={normalizedUserInfo?.level}
+        subLevel={normalizedUserInfo?.subLevel}
+        activeProblemTitle={activeProblem?.title}
+        solvedProblems={normalizedUserInfo?.solvedProblems}
         isExpanded={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      {/* Main content area */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar - spans full width from sidebar to right edge */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-3 md:px-8">
-          <div className="flex items-center gap-4">
+      {/* Main content area — top padding reserves space for the fixed top bar */}
+      <div
+        className="flex min-w-0 flex-1 flex-col transition-[padding] duration-300 ease-in-out"
+        style={{ paddingTop: "48px" }}
+      >
+        {/* Top bar - viewport-spanning so its center is always the viewport
+            center, invariant to sidebar width. */}
+        <div
+          className="fixed top-0 right-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background px-6 transition-[left] duration-300 ease-in-out md:px-8"
+          style={{ left: sidebarOpen ? "260px" : "68px" }}
+        >
+          <div className="flex items-center gap-6">
             {normalizedUserInfo && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                  <span className="text-sm font-bold text-[#ff8a3d]">
-                    {normalizedUserInfo.elo}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wider text-[#6a6255]">
-                    Rating
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                  <span className="text-sm font-semibold text-[#f5efe6]">
-                    {normalizedUserInfo.level.charAt(0).toUpperCase() +
-                      normalizedUserInfo.level.slice(1)}
-                  </span>
-                  <span className="text-xs text-[#6a6255]">
-                    Problem {problemIndex}/5
+              <>
+                {/* Level */}
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="text-xs font-semibold uppercase text-foreground">
+                    {normalizedUserInfo.level}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-[#ff8a3d]/10 px-3 py-1.5">
-                  <span className="text-sm font-bold text-[#ff8a3d]">
-                    ⚡️ {normalizedUserInfo.credits}
-                  </span>
-                </div>
-                {normalizedUserInfo.streak > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-                    <span className="text-sm text-[#ff8a3d]">🔥</span>
-                    <span className="text-sm text-[#f5efe6]">
-                      {normalizedUserInfo.streak}
+
+                {/* Problem Progress */}
+                <div className="flex items-center gap-2 border-l border-border pl-6">
+                  <Target className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  <span className="text-xs text-muted-foreground">
+                    Problem{" "}
+                    <span className="font-bold text-foreground">
+                      {problemIndex}
                     </span>
+                    <span className="text-muted-foreground/60">/5</span>
+                  </span>
+                </div>
+
+                {/* Hint Button */}
+                {activeProblem.hint && (
+                  <div className="flex items-center gap-2 border-l border-border pl-6">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowHint((prev) => !prev)}
+                      className={`h-7 gap-1.5 px-2.5 text-xs font-semibold transition-colors ${
+                        showHint
+                          ? "text-primary bg-primary/10 hover:bg-primary/20 hover:text-primary"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      }`}
+                    >
+                      <Lightbulb className="h-3.5 w-3.5 text-primary" weight="regular" />
+                      <span>Hint</span>
+                    </Button>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Submit actions are rendered as a separate viewport-fixed element below */}
+
+          <div className="flex items-center gap-5">
+            {/* Streak Status */}
+            {normalizedUserInfo && (
+              <div className="flex items-center gap-1.5">
+                <Fire
+                  size={18}
+                  weight={normalizedUserInfo.streak > 0 ? "fill" : "regular"}
+                  className={normalizedUserInfo.streak > 0 ? "text-[#ff8a3d]" : "text-muted-foreground/30"}
+                />
+                <span
+                  className={`font-mono text-sm font-bold ${
+                    normalizedUserInfo.streak > 0 ? "text-[#ff8a3d]" : "text-muted-foreground/45"
+                  }`}
+                >
+                  {normalizedUserInfo.streak}
+                </span>
+              </div>
+            )}
+
+            {/* User Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="rounded-full border border-white/10 bg-white/5 p-0 hover:bg-white/10"
-                >
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src="" alt="User Avatar" />
-                    <span className="flex h-full w-full items-center justify-center rounded-full text-xs font-semibold text-[#f5efe6]">
-                      {userInitial?.toUpperCase()}
+                <button className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-border bg-background transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                  {session?.user?.image ? (
+                    <Image
+                      className="h-full w-full object-cover"
+                      alt="user image"
+                      src={session.user.image}
+                      width={32}
+                      height={32}
+                    />
+                  ) : (
+                    <span className="text-xs font-bold text-foreground uppercase">
+                      {userInitial}
                     </span>
-                  </Avatar>
-                </Button>
+                  )}
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-48 border-white/10 bg-[#1a1a1a]"
+                className="w-48 border-border bg-[#141414] text-foreground shadow-lg shadow-black/80"
               >
-                <DropdownMenuItem
-                  onClick={() => router.push("/profile")}
-                  className="text-[#f5efe6] hover:bg-white/10"
-                >
-                  View profile
+                <DropdownMenuItem className="cursor-pointer hover:bg-secondary focus:bg-secondary">
+                  <Link href="/profile?from=dashboard" className="w-full">
+                    View profile
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => signOut()}
-                  className="text-red-400 hover:bg-white/10"
+                  className="cursor-pointer text-red-400 hover:bg-red-500/10 hover:text-red-400 focus:bg-red-500/10 focus:text-red-400"
                 >
                   Log out
                 </DropdownMenuItem>
@@ -620,46 +637,93 @@ export default function ChatInterface() {
           </div>
         </div>
 
+        {/* Viewport-centered submit actions — fixed to 50vw so sidebar
+            open/close doesn't shift it */}
+        <div
+          className="fixed top-0 z-40 flex h-12 items-center gap-2 pointer-events-none"
+          style={{ left: "50vw", transform: "translateX(-50%)" }}
+        >
+          <div className="pointer-events-auto flex items-center gap-2">
+            <Button
+              onClick={() => void handleSendMessage()}
+              disabled={isTyping || !inputValue.trim()}
+              className="h-[30px] rounded-[4px] bg-primary/90 px-3 text-sm font-semibold text-[#111] hover:bg-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            >
+              {isTyping ? (
+                <>
+                  <CircleNotch className="h-3.5 w-3.5 animate-spin" />
+                  Evaluating…
+                </>
+              ) : (
+                <>
+                  <Play weight="fill" className="h-3.5 w-3.5" />
+                  Submit
+                </>
+              )}
+            </Button>
+            {passed && (
+              <Button
+                onClick={() => void handleNextProblem()}
+                className="h-[30px] rounded-[4px] border border-primary/30 bg-primary/10 px-4 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors flex items-center gap-1.5"
+              >
+                Next Problem
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Two-column layout: Problem | Editor */}
         <div className="flex min-w-0 flex-1 overflow-hidden">
           {/* Center: Problem Description Panel */}
-          <div className="flex min-w-0 flex-1 flex-col border-r border-white/10">
+          <div className="flex min-w-0 flex-1 flex-col border-r border-border">
             <div className="no-scrollbar flex-1 overflow-y-auto px-6 py-6">
-              {/* Problem header */}
-              <div className="mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="text-[11px] uppercase tracking-[0.28em] text-[#6a6255]">
-                    Problem
-                  </div>
-                  <div
-                    className={`text-sm font-semibold ${DIFFICULTY_COLORS[activeProblem.difficulty] ?? "text-[#6a6255]"}`}
-                  >
-                    {activeProblem.difficulty}
-                  </div>
-                </div>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight text-[#f5efe6]">
+              {/* Problem header - Technical style */}
+              <div className="mb-6 border-b border-border/50 pb-6">
+                <h2 className="text-2xl font-semibold leading-tight text-foreground">
                   {activeProblem.title}
                 </h2>
+                {activeProblem.tags && activeProblem.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    {activeProblem.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center rounded-sm border border-border/60 bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] lowercase tracking-wide text-muted-foreground/80"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Problem Description */}
               <div className="mb-6">
-                <h3 className="mb-3 text-lg font-semibold text-[#f5efe6]">
+                <h3 className="mb-3 text-lg font-semibold text-foreground">
                   Problem Description
                 </h3>
-                <div className="whitespace-pre-line text-base leading-7 text-[#a0978a]">
+                <div className="whitespace-pre-line text-base leading-7 text-muted-foreground">
                   {activeProblem.description}
                 </div>
               </div>
 
               {/* Goal */}
               {activeProblem.goal && (
-                <div className="mb-6 rounded-xl border border-[#ff8a3d]/20 bg-[#ff8a3d]/5 p-5">
-                  <div className="mb-2 text-sm font-semibold text-[#ff8a3d]">
+                <div className="mb-6 rounded border border-primary/30 bg-primary/[0.03] p-3 shadow-sm shadow-primary/5">
+                  <div className="mb-2 text-sm font-semibold text-primary">
                     Your Goal
                   </div>
-                  <p className="text-sm leading-6 text-[#f5efe6]">
+                  <p className="text-sm leading-6 text-foreground">
                     {activeProblem.goal}
+                  </p>
+                </div>
+              )}
+
+              {/* Hint Display (inline above example, light orange text) */}
+              {activeProblem.hint && showHint && (
+                <div className="mb-6 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <p className="text-sm leading-relaxed text-primary/80 whitespace-pre-line">
+                    {activeProblem.hint}
                   </p>
                 </div>
               )}
@@ -667,29 +731,29 @@ export default function ChatInterface() {
               {/* Example */}
               {example && (
                 <div className="mb-6">
-                  <h3 className="mb-3 text-lg font-semibold text-[#f5efe6]">
+                  <h3 className="mb-3 text-lg font-semibold text-foreground">
                     Example {activeProblem.examples.length > 1 ? "1" : ""}
                   </h3>
-                  <div className="rounded-xl border border-white/10 bg-[#111111] p-5">
+                  <div className="rounded border border-border bg-card p-5 shadow-sm shadow-black/45">
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs uppercase tracking-wider text-[#6a6255]">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground/60">
                           Input
                         </div>
-                        <div className="mt-1 rounded-lg bg-[#0d0d0d] px-4 py-3 text-sm text-[#d9d1c7]">
-                          {example.input}
+                        <div className="mt-1.5 rounded border border-border/40 bg-background px-4 py-3 text-sm text-foreground whitespace-pre-wrap">
+                          {formatExampleInput(example.input)}
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wider text-[#6a6255]">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground/60">
                           Expected Output
                         </div>
-                        <div className="mt-1 rounded-lg bg-[#0d0d0d] px-4 py-3 text-sm text-[#d9d1c7]">
+                        <div className="mt-1.5 rounded border border-border/40 bg-background px-4 py-3 text-sm text-foreground whitespace-pre-wrap">
                           {example.output}
                         </div>
                       </div>
                       {example.explanation && (
-                        <div className="flex items-start gap-2 text-sm text-[#6a6255]">
+                        <div className="flex items-start gap-2 text-sm text-muted-foreground/60">
                           <span className="shrink-0">💡</span>
                           <span>{example.explanation}</span>
                         </div>
@@ -699,64 +763,22 @@ export default function ChatInterface() {
                 </div>
               )}
 
-              {/* Test Cases */}
-              {activeProblem.testCases?.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="mb-3 text-lg font-semibold text-[#f5efe6]">
-                    Test Cases
-                  </h3>
-                  <div className="space-y-3">
-                    {activeProblem.testCases.map((tc, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-xl border border-white/10 bg-[#111111] p-5"
-                      >
-                        <div className="mb-2">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-[#ff8a3d]">
-                            Test Case {idx + 1}
-                          </span>
-                          <div className="mt-1 text-xs text-[#6a6255]">
-                            {tc.description}
-                          </div>
-                        </div>
-                        <div className="rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3">
-                          <div className="text-xs uppercase tracking-wider text-[#6a6255]">
-                            Input
-                          </div>
-                          <p className="mt-2 text-sm text-[#d9d1c7]">
-                            {tc.input}
-                          </p>
-                        </div>
-                        {tc.expectedOutput && (
-                          <div className="mt-3 rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3">
-                            <div className="text-xs uppercase tracking-wider text-[#6a6255]">
-                              Expected Output
-                            </div>
-                            <p className="mt-2 text-sm text-[#d9d1c7]">
-                              {tc.expectedOutput}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+
 
               {/* Pro Tips */}
               {activeProblem.proTips?.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="mb-3 text-lg font-semibold text-[#f5efe6]">
+                  <h3 className="mb-3 text-lg font-semibold text-foreground">
                     Pro Tips
                   </h3>
-                  <div className="rounded-xl border border-white/10 bg-[#111111] p-5">
+                  <div>
                     <div className="space-y-2">
                       {activeProblem.proTips.map((tip, idx) => (
                         <div
                           key={idx}
-                          className="flex items-start gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-4 py-3 text-sm text-[#a0978a]"
+                          className="flex items-start gap-2 rounded-md px-4 py-3 text-sm text-muted-foreground"
                         >
-                          <span className="shrink-0 text-[#ff8a3d]">•</span>
+                          <span className="shrink-0 text-primary">•</span>
                           <span>{tip}</span>
                         </div>
                       ))}
@@ -764,259 +786,199 @@ export default function ChatInterface() {
                   </div>
                 </div>
               )}
+
             </div>
           </div>
 
           {/* Right: Prompt Editor + Analysis Panel */}
-          <div className="flex w-[600px] shrink-0 flex-col">
-            <div className="flex-1 overflow-y-auto">
-              <div className="px-5 py-5">
-                {/* Prompt input */}
-                <div className="mb-8">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="text-sm font-medium uppercase tracking-wider text-[#6a6255]">
-                      Editor
-                    </div>
-                    <div className="flex gap-2">
-                      {promptAnalysis?.improved_prompts?.[0] && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 rounded-lg border border-white/5 bg-white/[0.02] text-xs text-[#a0978a] hover:bg-white/10 hover:text-[#f5efe6]"
-                          onClick={() =>
-                            setInputValue(
-                              promptAnalysis.improved_prompts?.[0]?.prompt ??
-                                "",
-                            )
-                          }
-                        >
-                          <SparklesIcon className="mr-1.5 h-3 w-3" />
-                          Apply Suggestion
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="group relative">
-                    <Textarea
-                      value={inputValue}
-                      onChange={(event) => setInputValue(event.target.value)}
-                      placeholder="Enter your prompt draft..."
-                      className="min-h-[220px] resize-none rounded-xl border-white/10 bg-[#0d0d0d] font-mono text-base leading-relaxed text-[#f5efe6] placeholder:text-[#3a352d] focus-visible:ring-1 focus-visible:ring-[#ff8a3d]/30"
-                      onKeyDown={(event) => {
-                        if (
-                          event.key === "Enter" &&
-                          (event.metaKey || event.ctrlKey)
-                        ) {
-                          void handleSendMessage();
-                        }
-                      }}
-                    />
-                    <div className="absolute bottom-4 right-4 flex items-center gap-3">
-                      <span className="text-[10px] uppercase tracking-widest text-[#4a453d]">
-                        ⌘ + Enter to run
-                      </span>
-                      <Button
-                        onClick={() => void handleSendMessage()}
-                        disabled={isTyping || !inputValue.trim()}
-                        className="h-10 rounded-lg bg-[#ff8a3d] px-5 text-sm font-semibold text-[#111111] transition-all hover:bg-[#ff9b5b] hover:shadow-[0_0_20px_rgba(255,138,61,0.2)] disabled:opacity-50"
-                      >
-                        {isTyping ? (
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Running...</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <PaperAirplaneIcon className="h-4 w-4" />
-                            <span>Run Tests</span>
-                          </div>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+          <div className="flex w-[600px] shrink-0 flex-col h-full overflow-hidden bg-[#0e0e0e]">
+            {/* Editor Workspace Panel */}
+            <div className="h-[46%] min-h-[300px] flex flex-col border-b border-border bg-[#111111]">
+              <div className="flex items-center justify-between border-b border-border/50 px-5 py-3 shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    Editor
+                  </span>
                 </div>
+                <div>
+                  {promptAnalysis?.improved_prompts?.[0] && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 rounded-md border border-border bg-secondary/30 px-2.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      onClick={() =>
+                        setInputValue(
+                          promptAnalysis.improved_prompts?.[0]?.prompt ??
+                            "",
+                        )
+                      }
+                    >
+                      <Sparkle className="mr-1 h-2.5 w-2.5 text-primary" />
+                      Apply Suggestion
+                    </Button>
+                  )}
+                </div>
+              </div>
 
-                {/* Score & ELO Result */}
-                {score !== null && (
-                  <div
-                    className={`mb-8 flex items-center justify-between rounded-xl border p-5 ${
-                      passed
-                        ? "border-emerald-500/20 bg-emerald-500/[0.02]"
-                        : "border-red-500/20 bg-red-500/[0.02]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-full text-xl font-bold ${
-                          passed
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-red-500/10 text-red-400"
-                        }`}
-                      >
-                        {score}
-                      </div>
-                      <div>
-                        <div
-                          className={`text-sm font-bold uppercase tracking-widest ${
-                            passed ? "text-emerald-400" : "text-red-400"
-                          }`}
-                        >
-                          {passed ? "Accepted" : "Needs Tweak"}
-                        </div>
-                        <div className="text-xs text-[#6a6255]">
-                          Overall score from {activeProblem.testCases.length}{" "}
-                          scenarios
-                        </div>
-                      </div>
-                    </div>
+              {/* Textarea container */}
+              <div className="flex-1 min-h-0 w-full overflow-hidden bg-[#0a0a0a]">
+                <Textarea
+                  value={inputValue}
+                  onChange={(event) => setInputValue(event.target.value)}
+                  placeholder="Write your prompt here..."
+                  className="h-full w-full rounded-none resize-none bg-transparent p-5 font-mono text-xs leading-relaxed text-foreground placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-none"
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Enter" &&
+                      (event.metaKey || event.ctrlKey)
+                    ) {
+                      void handleSendMessage();
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <div
-                          className={`font-mono text-lg font-bold ${
-                            (eloResult?.eloChange ?? 0) >= 0
-                              ? "text-emerald-400"
-                              : "text-red-400"
-                          }`}
-                        >
-                          {eloResult ? (
-                            <>
-                              {eloResult.eloChange >= 0 ? "+" : ""}
-                              {eloResult.eloChange}
-                            </>
-                          ) : (
-                            "--"
-                          )}
-                        </div>
-                        <div className="text-[10px] uppercase tracking-tighter text-[#6a6255]">
-                          ELO RATING
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => void handleNextProblem()}
-                        className={`h-10 rounded-lg px-6 text-xs font-bold transition-all ${
-                          passed
-                            ? "bg-[#ff8a3d] text-[#111111] hover:bg-[#ff9b5b] hover:shadow-[0_0_20px_rgba(255,138,61,0.2)]"
-                            : "bg-white/5 text-[#f5efe6] hover:bg-white/10"
-                        }`}
-                      >
-                        Next Problem
-                        <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+            {/* Execution Console Panel */}
+            <div className="flex-1 flex flex-col bg-[#0a0a0a] overflow-y-auto no-scrollbar">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-[#0a0a0a]/95 backdrop-blur px-5 py-3 shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    Execution Console
+                  </span>
+                </div>
+                {promptEvaluation && (
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-primary font-bold">
+                    {promptEvaluation.testCasesPassed}/{promptEvaluation.testCasesTotal} Scenarios Passed
+                  </span>
+                )}
+              </div>
+
+              {/* Console Body */}
+              <div className="flex-1 p-5 space-y-5">
+                {/* 1. IDLE STATE */}
+                {score === null && !isTyping && (
+                  <div className="flex flex-col items-center justify-center text-center py-10 text-muted-foreground/60">
+                    <Sparkle className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                    <p className="text-sm font-semibold text-foreground/80">Console Ready</p>
+                    <p className="text-xs text-muted-foreground/50 mt-1 max-w-[280px]">
+                      Write your prompt above and click Submit to evaluate it.
+                    </p>
                   </div>
                 )}
 
-                {/* Visual Test Runner */}
-                <div className="mb-8">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="text-sm font-medium uppercase tracking-wider text-[#6a6255]">
-                      Test Execution
-                    </div>
-                    {promptEvaluation && (
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-[#ff8a3d]">
-                        {promptEvaluation.testCasesPassed}/
-                        {promptEvaluation.testCasesTotal} Passed
-                      </div>
-                    )}
+                {/* 2. RUNNING STATE */}
+                {isTyping && (
+                  <div className="flex flex-col items-center justify-center text-center py-10 text-primary/80">
+                    <CircleNotch className="h-8 w-8 animate-spin text-primary mb-3" />
+                    <p className="text-sm font-semibold text-foreground/80">Evaluating your prompt...</p>
+                    <p className="text-xs text-muted-foreground/50 mt-1 max-w-[280px]">
+                      Running your draft against evaluation scenarios. This might take a few seconds.
+                    </p>
                   </div>
+                )}
 
-                  <div className="space-y-2">
-                    {activeProblem.testCases.map((tc, idx) => {
-                      const result = promptEvaluation?.results[idx];
-                      const isPending = isTyping;
+                {/* 3. EVALUATION RESULTS SUMMARY */}
+                {score !== null && (
+                  <div className="space-y-5 animate-in fade-in duration-300">
+                    {/* Score Summary Panel */}
+                    <div className={`rounded border p-4 bg-card ${passed ? "border-primary/20 shadow-sm shadow-primary/5" : "border-border"}`}>
+                      <div className="flex items-center justify-between border-b border-border/40 pb-2.5 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-1.5 w-1.5 rounded-full ${passed ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
+                          <span className={`font-sans text-[10px] font-bold uppercase tracking-wider ${passed ? "text-primary" : "text-muted-foreground"}`}>
+                            {passed ? "Passed" : "Needs Work"}
+                          </span>
+                        </div>
+                        <span className="font-sans text-[9px] text-muted-foreground/60 uppercase">
+                          {activeProblem.testCases.length} Scenarios
+                        </span>
+                      </div>
 
-                      return (
-                        <div
-                          key={idx}
-                          className="group rounded-xl border border-white/5 bg-[#111111]/50 p-4 transition-all hover:border-white/10"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              {isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-[#ff8a3d]" />
-                              ) : result ? (
-                                result.passed ? (
-                                  <CheckCircleIcon className="h-5 w-5 text-emerald-400" />
-                                ) : (
-                                  <XCircleIcon className="h-5 w-5 text-red-400" />
-                                )
-                              ) : (
-                                <div className="h-2 w-2 rounded-full bg-white/10" />
-                              )}
-                              <span className="font-mono text-sm text-[#a0978a]">
-                                {tc.description || `Scenario ${idx + 1}`}
+                      <div className="flex items-center gap-8">
+                        <div>
+                          <div className="font-sans text-[9px] uppercase tracking-wider text-muted-foreground/60">
+                            Result Score
+                          </div>
+                          <div className={`font-sans text-xl font-bold mt-0.5 ${passed ? "text-primary" : "text-muted-foreground"}`}>
+                            {score}
+                            <span className="text-[11px] font-normal text-muted-foreground/40">/100</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Test cases list & debugging compiler log panels */}
+                    <div className="space-y-2">
+                      <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 mb-1">
+                        Evaluation Scenarios
+                      </div>
+                      {activeProblem.testCases.map((tc, idx) => {
+                        const result = promptEvaluation?.results[idx];
+                        const isTestCasePassed = result?.passed ?? false;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="rounded border border-border bg-card overflow-hidden"
+                          >
+                            {/* Scenario Header */}
+                            <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/30 bg-[#141414]">
+                              <div className="flex items-center gap-2">
+                                <span className={`h-1.5 w-1.5 rounded-full ${isTestCasePassed ? "bg-primary" : "bg-red-400"}`} />
+                                <span className="font-sans text-xs text-muted-foreground">
+                                  {tc.description || `Scenario ${idx + 1}`}
+                                </span>
+                              </div>
+                              <span className={`font-mono text-xs font-bold ${isTestCasePassed ? "text-primary" : "text-red-400"}`}>
+                                {result ? `${result.score}%` : "--"}
                               </span>
                             </div>
-                            {!isPending && result && (
-                              <span
-                                className={`font-mono text-xs font-bold ${
-                                  result.passed
-                                    ? "text-emerald-400"
-                                    : "text-red-400"
-                                }`}
-                              >
-                                {result.score}%
-                              </span>
+
+                            {/* Compiler-style logs inside scenario details (only if failed) */}
+                            {result && !isTestCasePassed && (
+                              <div className="p-4 font-sans text-[13px] leading-relaxed text-muted-foreground bg-[#0d0d0d]">
+                                {result.missing_elements && result.missing_elements.length > 0 && (
+                                  <div className="text-red-400 font-semibold text-xs uppercase tracking-wider">
+                                    Fixes Needed:
+                                    <ul className="list-disc pl-4 mt-1.5 space-y-1 font-normal text-muted-foreground/90 lowercase text-[12px]">
+                                      {result.missing_elements.slice(0, 4).map((el, i) => (
+                                        <li key={i}>{el}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
-
-                          {result && !result.passed && (
-                            <div className="mt-3 border-t border-white/5 pt-3">
-                              <p className="text-xs leading-relaxed text-[#6a6255]">
-                                {result.reasoning}
-                              </p>
-                              {result.missing_elements.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {result.missing_elements.map((el, i) => (
-                                    <span
-                                      key={i}
-                                      className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-400/80"
-                                    >
-                                      Missing: {el}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Actionable Feedback (formerly coach feedback) */}
-                {(promptAnalysis || promptEvaluation) && (
-                  <div className="rounded-xl border border-white/10 bg-[#111111] p-5">
-                    <div className="mb-4 flex items-center gap-2">
-                      <LightBulbIcon className="h-4 w-4 text-[#ff8a3d]" />
-                      <span className="text-sm font-bold uppercase tracking-wider text-[#f5efe6]">
-                        Quick Tweak
-                      </span>
+                        );
+                      })}
                     </div>
 
-                    <p className="text-sm leading-7 text-[#a0978a]">
-                      {promptAnalysis?.feedback ||
-                        "Focus on the missing elements highlighted in the failed test cases to improve your score."}
-                    </p>
-
-                    {promptAnalysis?.learning_points && (
-                      <div className="mt-4 space-y-2">
-                        {promptAnalysis.learning_points
-                          .slice(0, 2)
-                          .map((point, i) => (
-                            <div
-                              key={i}
-                              className="flex items-start gap-3 rounded-lg bg-white/[0.03] p-3"
-                            >
-                              <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff8a3d]/40" />
-                              <span className="text-xs text-[#d9d1c7]">
-                                {point}
-                              </span>
-                            </div>
-                          ))}
+                    {/* AI Coach tips */}
+                    {promptAnalysis?.learning_points && promptAnalysis.learning_points.length > 0 && (
+                      <div className="rounded border border-border bg-card">
+                        <div className="border-b border-border/50 px-4 py-2 bg-[#141414]">
+                          <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-foreground">
+                            Coach Tips
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          {promptAnalysis.learning_points
+                            .slice(0, 4)
+                            .map((point, i) => (
+                              <div
+                                key={i}
+                                className="flex items-start gap-2.5 border-l-2 border-primary/45 bg-[#111111] px-3 py-2 animate-in fade-in"
+                              >
+                                <span className="font-mono text-[11px] text-foreground">
+                                  {point}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
                       </div>
                     )}
                   </div>

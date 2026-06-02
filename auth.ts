@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Github from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -10,6 +11,11 @@ const githubClientId =
 const githubClientSecret =
   process.env.GITHUB_CLIENT_SECRET ?? process.env.AUTH_GITHUB_SECRET ?? "";
 
+const googleClientId =
+  process.env.GOOGLE_CLIENT_ID ?? process.env.AUTH_GOOGLE_ID ?? "";
+const googleClientSecret =
+  process.env.GOOGLE_CLIENT_SECRET ?? process.env.AUTH_GOOGLE_SECRET ?? "";
+
 export const {
   handlers: { GET, POST },
   signIn,
@@ -19,39 +25,31 @@ export const {
   adapter: PrismaAdapter(db),
   secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
+  trustHost: true,
   callbacks: {
     async jwt({ token, user }) {
       if (user?.id) {
         token.id = user.id;
+        token.picture = user.image;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.image = token.picture as string;
       }
       return session;
-    },
-  },
-  events: {
-    async createUser({ user }) {
-      if (!user.id) {
-        return;
-      }
-
-      await db.userProfile.upsert({
-        where: { userId: user.id },
-        update: {},
-        create: {
-          userId: user.id,
-        },
-      });
     },
   },
   providers: [
     Github({
       clientId: githubClientId,
       clientSecret: githubClientSecret,
+    }),
+    Google({
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
     }),
     Credentials({
       name: "Credentials",

@@ -1,51 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  LockClosedIcon,
-  ArrowRightStartOnRectangleIcon,
-} from "@heroicons/react/24/outline";
-import { Swords } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { useEffect, useState } from "react";
+import { CaretLeft, CaretRight, Lock, Target } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
 
 interface MainSidebarProps {
   userLevel?: string | null;
+  subLevel?: number;
+  activeProblemTitle?: string;
+  solvedProblems?: {
+    userLevel: string;
+    subLevel: number;
+    problemTitle: string;
+  }[];
   isExpanded: boolean;
   onToggle: () => void;
-}
-
-interface UserStats {
-  elo: number;
-  subLevel: number;
-  problemsSolved: number;
-  streak: number;
-  credits: number;
 }
 
 const levels = [
   {
     id: "beginner",
     label: "Beginner",
-    description: "Task, context, output",
-    eloRange: "0–1199",
   },
   {
     id: "intermediate",
     label: "Intermediate",
-    description: "Constraints & structure",
-    eloRange: "1200–1499",
   },
   {
     id: "expert",
     label: "Expert",
-    description: "Robustness & evaluation",
-    eloRange: "1500+",
   },
 ];
 
@@ -58,184 +41,146 @@ function getLevelIndex(level: string): number {
 
 export default function MainSidebar({
   userLevel,
+  subLevel: _subLevel = 1,
+  activeProblemTitle: _activeProblemTitle,
+  solvedProblems: _solvedProblems = [],
   isExpanded,
   onToggle,
 }: MainSidebarProps) {
-  const { data: session } = useSession();
   const pathname = usePathname();
-  const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? "P";
   const currentIndex = getLevelIndex(userLevel ?? "beginner");
-  const [stats, setStats] = useState<UserStats>({
-    elo: 1000,
-    subLevel: 1,
-    problemsSolved: 0,
-    streak: 0,
-    credits: 50,
-  });
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/user/profile");
-        if (!res.ok) return;
-        const data = await res.json();
-        setStats({
-          elo: data.elo ?? 1000,
-          subLevel: data.subLevel ?? 1,
-          problemsSolved: data.problemsSolved ?? 0,
-          streak: data.streak ?? 0,
-          credits: data.credits ?? 50,
-        });
-      } catch {
-        // ignore
-      }
-    };
-    void fetchStats();
-  }, []);
+  const showPracticeButton = pathname !== "/dashboard";
 
   return (
     <>
-      {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[260px] flex-col border-r border-white/10 bg-[#0d0d0d] transition-transform duration-300 lg:relative lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[260px] flex-col border-r border-border bg-[#070707] transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 ${
           isExpanded
             ? "translate-x-0"
-            : "-translate-x-full lg:w-[60px] lg:translate-x-0"
+            : "-translate-x-full lg:w-[68px] lg:translate-x-0"
         }`}
       >
-        {/* Header with toggle */}
-        <div className="flex items-center justify-between px-4 py-4">
+        {/* Header — plain wordmark + toggle */}
+        <div className="flex items-center justify-between px-4 py-4 min-h-[64px]">
           {isExpanded && (
-            <Link href="/" className="text-sm font-semibold text-[#f5efe6]">
+            <Link
+              href="/"
+              className="text-[14px] font-semibold tracking-tight text-foreground transition-colors hover:text-foreground/80"
+            >
               Promptr
             </Link>
           )}
           <button
             onClick={onToggle}
-            className="ml-auto rounded-md p-1.5 text-[#6a6255] hover:bg-white/5 hover:text-[#a0978a]"
+            aria-label="Toggle sidebar"
+            className={`rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${!isExpanded ? "mx-auto" : ""}`}
           >
             {isExpanded ? (
-              <ChevronLeftIcon className="h-4 w-4" />
+              <CaretLeft size={16} weight="bold" />
             ) : (
-              <ChevronRightIcon className="h-4 w-4" />
+              <CaretRight size={16} weight="bold" />
             )}
           </button>
         </div>
 
-        {/* Levels */}
+        {/* Progression — LeetCode-style flat list */}
         {isExpanded && (
-          <div className="flex-1 px-4 py-2">
-            <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.28em] text-[#4a453d]">
-              Progression
-            </div>
-            <div className="space-y-1">
+          <div className="px-2 py-5">
+            <ol>
               {levels.map((level, index) => {
-                const isUnlocked = index <= currentIndex;
                 const isActive = index === currentIndex;
+                const isLocked = index > currentIndex;
 
                 return (
-                  <div
+                  <li
                     key={level.id}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
+                    className={`group relative flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${
                       isActive
-                        ? "bg-white/5 text-[#f5efe6]"
-                        : isUnlocked
-                          ? "text-[#6a6255]"
-                          : "text-[#3a3530]"
+                        ? "bg-white/[0.04]"
+                        : "hover:bg-white/[0.02]"
                     }`}
                   >
-                    {isUnlocked ? (
-                      <div
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          isActive ? "bg-[#ff8a3d]" : "bg-[#4a453d]"
-                        }`}
+                    {/* Active indicator: 2px left bar */}
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r bg-[#ff8a3d]"
                       />
-                    ) : (
-                      <LockClosedIcon className="h-3 w-3" />
                     )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>{level.label}</span>
-                        <span className="text-[10px] text-[#4a453d]">
-                          {level.eloRange}
-                        </span>
-                      </div>
-                      {isUnlocked && (
-                        <div className="text-[10px] text-[#4a453d]">
-                          {level.description}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+
+                    {/* Numbered index — mono, tabular */}
+                    <span
+                      className={`w-5 font-mono text-[10px] tabular-nums tracking-wide ${
+                        isActive
+                          ? "font-bold text-foreground"
+                          : isLocked
+                            ? "text-muted-foreground/25"
+                            : "text-muted-foreground/50"
+                      }`}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    {/* Level label */}
+                    <span
+                      className={`flex-1 text-[12.5px] ${
+                        isActive
+                          ? "font-semibold text-foreground"
+                          : isLocked
+                            ? "text-muted-foreground/35"
+                            : "text-muted-foreground/80"
+                      }`}
+                    >
+                      {level.label}
+                    </span>
+
+                    {/* Status indicator: orange dot (current) | nothing (unlocked) | lock (locked) */}
+                    {isActive ? (
+                      <span
+                        aria-label="Current level"
+                        className="h-1.5 w-1.5 rounded-full bg-[#ff8a3d]"
+                      />
+                    ) : isLocked ? (
+                      <Lock
+                        size={10}
+                        weight="regular"
+                        className="text-muted-foreground/30"
+                      />
+                    ) : null}
+                  </li>
                 );
               })}
-            </div>
+            </ol>
           </div>
         )}
 
-        {/* Navigation */}
-        {isExpanded && (
-          <div className="space-y-1 px-4 py-2">
-            {pathname !== "/dashboard" && (
+        {/* Spacer pushes nav to bottom */}
+        <div className="flex-1" />
+
+        {/* Action Buttons */}
+        {showPracticeButton && (
+          <div className={`px-4 py-4 border-t border-border ${!isExpanded ? "flex flex-col items-center gap-4" : ""}`}>
+            {isExpanded ? (
               <Link
                 href="/dashboard"
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[#f5efe6] transition hover:bg-white/10"
+                className="group flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-xs font-mono text-muted-foreground transition-all hover:border-primary/30 hover:bg-secondary hover:text-foreground"
               >
-                <div className="h-4 w-4 rounded-full bg-[#ff8a3d]/20 flex items-center justify-center">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#ff8a3d]" />
-                </div>
-                Practice Mode
+                <span className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  Practice Mode
+                </span>
               </Link>
-            )}
-            {pathname !== "/battles" && (
+            ) : (
               <Link
-                href="/battles"
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-[#f5efe6] transition hover:bg-white/10"
+                href="/dashboard"
+                title="Practice Mode"
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all hover:border-primary/35 hover:bg-secondary hover:text-foreground"
               >
-                <Swords className="h-4 w-4 text-[#ff8a3d]" />
-                Prompt Battles
+                <Target size={16} />
               </Link>
             )}
           </div>
         )}
-
-        {/* User */}
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            {isExpanded && (
-              <>
-                <Avatar className="h-8 w-8 shrink-0 border border-white/10 bg-white/5">
-                  <AvatarImage src="" alt="User Avatar" />
-                  <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-[#f5efe6]">
-                    {userInitial}
-                  </span>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="truncate text-xs font-medium text-[#f5efe6]">
-                      {session?.user?.name ?? "Prompt learner"}
-                    </div>
-                    <div className="flex items-center gap-1 rounded-full bg-[#ff8a3d]/10 px-1.5 py-0.5 text-[9px] font-bold text-[#ff8a3d]">
-                      <span>⚡️</span>
-                      <span>{stats.credits}</span>
-                    </div>
-                  </div>
-                  <div className="text-[10px] text-[#6a6255]">
-                    {stats.problemsSolved} solved · {stats.streak} streak
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => signOut()}
-                  className="h-7 w-7 shrink-0 rounded-full text-[#4a453d] hover:bg-white/10 hover:text-[#f5efe6]"
-                >
-                  <ArrowRightStartOnRectangleIcon className="h-3.5 w-3.5" />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
       </aside>
 
       {/* Overlay for mobile */}

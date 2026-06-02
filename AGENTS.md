@@ -60,6 +60,8 @@ promptr/
 
 ## Package Managers & Core Commands
 
+MUST DO - ALWAYS ADD UNIT TESTS FOR EVERY NEW CODE ADDED
+
 ### Frontend (Next.js + TypeScript)
 
 Always use **pnpm** — never npm or yarn.

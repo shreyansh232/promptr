@@ -7,7 +7,9 @@ export default {
   theme: {
   	extend: {
   		fontFamily: {
-  			sans: ["var(--font-geist-sans)", ...fontFamily.sans]
+  			sans: ["var(--font-sans)", ...fontFamily.sans],
+  			display: ["var(--font-display)", ...fontFamily.sans],
+  			mono: ["var(--font-mono)", ...fontFamily.mono],
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -17,7 +19,6 @@ export default {
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
-			second: '#8D81FF',
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
