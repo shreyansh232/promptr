@@ -10,7 +10,7 @@ export function parseBrief(brief: string | null | undefined): ParsedBrief {
 
   // Helper to split into sentences
   const splitIntoSentences = (text: string): string[] => {
-    let processed = text
+    const processed = text
       .replace(/e\.g\./gi, "e___g___")
       .replace(/i\.e\./gi, "i___e___")
       .replace(/vs\./gi, "vs___");

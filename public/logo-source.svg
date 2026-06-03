@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Sharp outer square frame - slightly dim -->
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="#000000"/>
+
   <rect
     x="8"
     y="8"
@@ -11,17 +12,20 @@
     stroke-width="3"
     stroke-opacity="0.4"
   />
-  <!-- Terminal Caret - bold and sharp (using filled polygon path) -->
+
   <path
-    d="M22 20 L34 32 L22 44 L16 44 L28 32 L16 20 Z"
-    fill="#48d8a4"
+    d="M21 21 L33 32 L21 43"
+    fill="none"
+    stroke="#48d8a4"
+    stroke-width="4"
+    stroke-opacity="1"
   />
-  <!-- Vertical Cursor - thin and sharp (using filled rect) -->
+
   <rect
-    x="40"
-    y="20"
+    x="39"
+    y="19"
     width="4"
-    height="24"
+    height="26"
     fill="#48d8a4"
   />
 </svg>
