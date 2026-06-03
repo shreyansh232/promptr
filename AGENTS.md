@@ -63,6 +63,8 @@ promptr/
 
 MUST DO - ALWAYS ADD UNIT TESTS FOR EVERY NEW CODE ADDED
 
+Always check for linting errors at the end
+
 ### Frontend (Next.js + TypeScript)
 
 Always use **pnpm** — never npm or yarn.

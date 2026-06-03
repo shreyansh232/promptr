@@ -15,10 +15,22 @@ async def check_is_admin(user_id: str, db: AgnosticDatabase) -> bool:
     """Helper to check if a user has the admin role."""
     try:
         if not ObjectId.is_valid(user_id):
+            logger.warning(f"Invalid ObjectId for user_id: {user_id}")
             return False
         user = await db.User.find_one({"_id": ObjectId(user_id)})
-        return user and user.get("role") == "admin"
-    except Exception:
+        if not user:
+            logger.warning(f"User not found in 'User' collection for id: {user_id}")
+            return False
+        
+        role = user.get("role")
+        is_admin = isinstance(role, str) and role.lower() == "admin"
+        if is_admin:
+            logger.info(f"User {user_id} verified as ADMIN")
+        else:
+            logger.debug(f"User {user_id} role is '{role}', not admin")
+        return is_admin
+    except Exception as e:
+        logger.error(f"Error checking admin status for {user_id}: {e}")
         return False
 
 
@@ -66,9 +78,12 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
             status_code=500, detail="Failed to create or retrieve profile"
         )
 
-    # For admins, always return a high number if somehow it got low
+    # For admins, always return a high number and sync to DB if it got low
     if is_admin and profile.get("credits", 0) < 500:
         profile["credits"] = 999
+        await db.profiles.update_one(
+            {"userId": user_id}, {"$set": {"credits": 999}}
+        )
 
     profile["id"] = str(profile.pop("_id"))
     return profile

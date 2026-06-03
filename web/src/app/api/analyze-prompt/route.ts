@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            session.user.role === "admin"
+            session.user.role?.toLowerCase() === "admin"
               ? "Admin account error. Please contact support."
               : `Insufficient credits. You have ${creditCheck.remaining} left.`,
         },

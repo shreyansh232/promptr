@@ -37,7 +37,7 @@ interface UserInfo {
   learningStyle: string;
   goals: string[];
   industry: string;
-  credits: number;
+  credits: number | string;
   role?: string;
   solvedProblems?: {
     userLevel: string;

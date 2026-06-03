@@ -98,7 +98,7 @@ export async function GET() {
 
     return NextResponse.json({
       ...profileData,
-      credits,
+      credits: profileData.role?.toLowerCase() === "admin" ? "Unlimited" : credits,
       solvedProblems,
     });
   } catch (error) {
