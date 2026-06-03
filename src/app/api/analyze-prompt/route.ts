@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { env } from "@/env";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { deductCredits, CREDIT_COSTS } from "@/lib/credits";
 import { fetchWithTimeout } from "@/lib/utils";

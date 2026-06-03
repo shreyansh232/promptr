@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "auth";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { env } from "@/env";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 

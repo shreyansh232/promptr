@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { PromptrLogo } from "@/components/PromptrLogo";
+import { PromptrLogo } from "@/components/shared/PromptrLogo";
 
 describe("PromptrLogo", () => {
   it("renders the Promptr wordmark by default", () => {

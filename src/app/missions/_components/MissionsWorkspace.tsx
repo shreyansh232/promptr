@@ -15,10 +15,10 @@ import { EvaluationReport } from "./EvaluationReport";
 import { MissionEditor } from "./MissionEditor";
 import { ProgressRail } from "./ProgressRail";
 
-import { UserMenu } from "@/components/UserMenu";
+import { UserMenu } from "@/components/shared/UserMenu";
 import Link from "next/link";
 import { CaretLeft, CaretRight, Fire } from "@phosphor-icons/react";
-import { NewScenarioModal } from "@/components/NewScenarioModal";
+import { NewScenarioModal } from "@/components/playground/NewScenarioModal";
 import type { CustomScenario } from "@/app/lab/_components/Sidebar";
 import {
   Dialog,

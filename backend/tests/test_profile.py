@@ -74,3 +74,50 @@ def test_solved_problems_no_overwrite(client):
     titles = [sp["problemTitle"] for sp in solved_problems]
     assert "Intro to Prompting" in titles
     assert "Intermediate Prompting" in titles
+
+
+def test_deduct_credits_success(client):
+    user_id = "credit_test_user_1"
+
+    # 1. Fetch profile to initialize default credits (50)
+    response = client.get(f"/profiles/{user_id}")
+    assert response.status_code == 200
+    assert response.json()["credits"] == 50
+
+    # 2. Deduct 20 credits
+    response = client.post(f"/profiles/{user_id}/deduct?amount=20")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["allowed"] is True
+    assert data["remaining"] == 30
+
+    # 3. Verify in DB
+    response = client.get(f"/profiles/{user_id}")
+    assert response.status_code == 200
+    assert response.json()["credits"] == 30
+
+
+def test_deduct_credits_insufficient(client):
+    user_id = "credit_test_user_2"
+
+    # 1. Fetch profile to initialize default credits (50)
+    response = client.get(f"/profiles/{user_id}")
+    assert response.status_code == 200
+
+    # 2. Try to deduct 60 credits (more than 50)
+    response = client.post(f"/profiles/{user_id}/deduct?amount=60")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["allowed"] is False
+    assert data["remaining"] == 50
+
+
+def test_deduct_credits_non_existent(client):
+    user_id = "credit_test_user_3"
+
+    # Deduct 10 credits directly (should initialize profile first and deduct successfully)
+    response = client.post(f"/profiles/{user_id}/deduct?amount=10")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["allowed"] is True
+    assert data["remaining"] == 40

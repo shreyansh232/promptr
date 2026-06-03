@@ -36,7 +36,7 @@ async def generate_mission(
             if cached and "mission" in cached:
                 return AgentMissionResponse(mission=cached["mission"])
 
-        response = generate_agent_mission(profile)
+        response = await generate_agent_mission(profile)
 
         if profile.userId and response.mission:
             await db.generated_agent_missions.replace_one(
@@ -59,7 +59,7 @@ async def evaluate_instructions(
     request: AgentEvaluationRequest,
 ) -> AgentEvaluationResponse:
     try:
-        return evaluate_agent_instructions(request)
+        return await evaluate_agent_instructions(request)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

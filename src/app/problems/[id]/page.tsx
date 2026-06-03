@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { ProblemDescription } from "@/components/problem-description";
-import { ProblemSidebar } from "@/components/problem-sidebar";
-import { PromptEditor } from "@/components/prompt-editor";
+import { ProblemDescription } from "@/components/playground/problem-description";
+import { ProblemSidebar } from "@/components/playground/problem-sidebar";
+import { PromptEditor } from "@/components/playground/prompt-editor";
 import { problems, problemsList } from "@/data/problems";
 import {
   ResizableHandle,

@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 import MainSidebar from "./Sidebar";
 import type { CustomScenario } from "./Sidebar";
-import { NewScenarioModal } from "@/components/NewScenarioModal";
+import { NewScenarioModal } from "@/components/playground/NewScenarioModal";
 
 interface UserInfo {
   level: string;

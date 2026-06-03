@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { PUBLIC_AGENT_MISSION } from "@/data/agent-dojo";
-import { PromptrLogo } from "@/components/PromptrLogo";
+import { PromptrLogo } from "@/components/shared/PromptrLogo";
 const proofStats = [
   { value: "3-part loop", label: "Draft, test, patch" },
   { value: "Tool-aware", label: "Practice real agent constraints" },

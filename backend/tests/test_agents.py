@@ -6,13 +6,13 @@ from services.agent_service import (
 )
 
 
-def test_generate_agent_mission_success(mock_openai):
+async def test_generate_agent_mission_success(mock_openai):
     mock_response = mock_openai.chat.completions.create.return_value
     mock_response.choices[0].message.content = (
         '{"mission": ' + AGENT_MISSION_FALLBACK.model_dump_json() + "}"
     )
 
-    result = generate_agent_mission(
+    result = await generate_agent_mission(
         AgentLearnerProfile(
             userId="u1",
             level="beginner",
@@ -26,11 +26,11 @@ def test_generate_agent_mission_success(mock_openai):
     assert result.mission.availableTools[0].name == "check_order_status"
 
 
-def test_evaluate_agent_instructions_fallback_on_bad_json(mock_openai):
+async def test_evaluate_agent_instructions_fallback_on_bad_json(mock_openai):
     mock_response = mock_openai.chat.completions.create.return_value
     mock_response.choices[0].message.content = "not json"
 
-    result = evaluate_agent_instructions(
+    result = await evaluate_agent_instructions(
         AgentEvaluationRequest(
             instructions="You are helpful.",
             mission=AGENT_MISSION_FALLBACK,
@@ -43,7 +43,7 @@ def test_evaluate_agent_instructions_fallback_on_bad_json(mock_openai):
     assert result.improvedInstructions
 
 
-def test_critical_failure_prevents_pass(mock_openai):
+async def test_critical_failure_prevents_pass(mock_openai):
     mock_response = mock_openai.chat.completions.create.return_value
     mock_response.choices[0].message.content = """
     {
@@ -75,7 +75,7 @@ def test_critical_failure_prevents_pass(mock_openai):
     }
     """
 
-    result = evaluate_agent_instructions(
+    result = await evaluate_agent_instructions(
         AgentEvaluationRequest(
             instructions="Refund customers immediately.",
             mission=AGENT_MISSION_FALLBACK,

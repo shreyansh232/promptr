@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { AgentMission } from "@/types/agent-dojo";
 import { usePathname } from "next/navigation";
-import { parseBrief } from "@/utils/brief-formatter";
+import { parseBrief } from "@/lib/brief-formatter";
 
 type EditorTab = "instructions" | "tools" | "scenarios";
 
@@ -36,7 +36,7 @@ export function MissionEditor({
   onInstructionsChange,
   onTabChange,
   onRun,
-  isLabMode = false,
+  isLabMode: _isLabMode = false,
 }: MissionEditorProps) {
   const pathname = usePathname();
 

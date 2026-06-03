@@ -56,14 +56,23 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
 async def deduct_credits(
     user_id: str, amount: int, db: AgnosticDatabase = Depends(get_db)
 ):
-    profile = await get_profile(user_id, db)
+    # Ensure profile exists (creates default if missing)
+    await get_profile(user_id, db)
 
-    if profile["credits"] < amount:
-        return {"allowed": False, "remaining": profile["credits"]}
+    # Perform atomic check-and-decrement to prevent race conditions
+    res = await db.profiles.update_one(
+        {"userId": user_id, "credits": {"$gte": amount}},
+        {"$inc": {"credits": -amount}}
+    )
 
-    await db.profiles.update_one({"userId": user_id}, {"$inc": {"credits": -amount}})
+    profile = await db.profiles.find_one({"userId": user_id})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
 
-    return {"allowed": True, "remaining": profile["credits"] - amount}
+    if res.modified_count == 0:
+        return {"allowed": False, "remaining": profile.get("credits", 0)}
+
+    return {"allowed": True, "remaining": profile.get("credits", 0)}
 
 
 @router.post("/")

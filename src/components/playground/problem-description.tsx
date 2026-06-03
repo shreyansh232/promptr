@@ -1,7 +1,7 @@
 import type { Problem } from "@/types/problem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { parseBrief } from "@/utils/brief-formatter";
+import { parseBrief } from "@/lib/brief-formatter";
 
 interface ProblemDescriptionProps {
   problem: Problem;

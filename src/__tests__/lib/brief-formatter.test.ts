@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBrief } from "../../utils/brief-formatter";
+import { parseBrief } from "@/lib/brief-formatter";
 
 describe("parseBrief", () => {
   it("should handle null, undefined, and empty inputs", () => {

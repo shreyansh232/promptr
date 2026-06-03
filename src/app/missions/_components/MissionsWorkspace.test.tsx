@@ -4,7 +4,7 @@ import { PUBLIC_AGENT_MISSION } from "@/data/agent-dojo";
 import type { AgentProfile } from "@/types/agent-dojo";
 import { MissionsWorkspace } from "./MissionsWorkspace";
 
-vi.mock("@/components/UserMenu", () => ({
+vi.mock("@/components/shared/UserMenu", () => ({
   UserMenu: () => <div data-testid="user-menu">User Menu</div>,
 }));
 

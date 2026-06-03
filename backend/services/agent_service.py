@@ -141,8 +141,8 @@ def _build_agent_mission_prompt(profile: AgentLearnerProfile) -> str:
     ).strip()
 
 
-def generate_agent_mission(profile: AgentLearnerProfile) -> AgentMissionResponse:
-    raw_response = _send_prompt(_build_agent_mission_prompt(profile))
+async def generate_agent_mission(profile: AgentLearnerProfile) -> AgentMissionResponse:
+    raw_response = await _send_prompt(_build_agent_mission_prompt(profile))
 
     try:
         return AgentMissionResponse.model_validate(_parse_gemini_json(raw_response))
@@ -251,10 +251,10 @@ def _evaluation_fallback(request: AgentEvaluationRequest) -> AgentEvaluationResp
     )
 
 
-def evaluate_agent_instructions(
+async def evaluate_agent_instructions(
     request: AgentEvaluationRequest,
 ) -> AgentEvaluationResponse:
-    raw_response = _send_prompt(_build_agent_evaluation_prompt(request), timeout=90)
+    raw_response = await _send_prompt(_build_agent_evaluation_prompt(request), timeout=90)
 
     try:
         data = _parse_gemini_json(raw_response)

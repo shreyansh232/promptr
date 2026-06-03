@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CircleNotch, TerminalWindow, X } from "@phosphor-icons/react";
 
 interface NewScenarioModalProps {
   isOpen: boolean;

@@ -36,7 +36,7 @@ async def generate_battle(request: BattleGenerationRequest) -> BattleGenerationR
     """Generate AI content for a battle."""
     from services.llm_service import generate_battle_content
 
-    result = generate_battle_content(request.title, request.description)
+    result = await generate_battle_content(request.title, request.description)
     return BattleGenerationResponse(**result)
 
 
@@ -165,20 +165,24 @@ async def submit_prompt(request: SubmitPromptRequest, db=Depends(get_db)) -> dic
 async def _evaluate_battle(
     battle_id: str, battle: dict, participants: list[dict], db: AgnosticDatabase
 ) -> dict:
-    """Evaluate both prompts and determine winner."""
+    """Evaluate both prompts concurrently and determine winner."""
+    import asyncio
     from services.llm_service import evaluate_prompt_full
 
     test_cases = battle["testCases"]
-    results = []
 
-    for i, participant in enumerate(participants):
-        if participant.get("prompt"):
-            eval_result = evaluate_prompt_full(participant["prompt"], test_cases)
-            participant["score"] = eval_result["overallScore"]
-            participant["passed"] = eval_result["passed"]
-            participant["testCasesPassed"] = eval_result["testCasesPassed"]
-            participant["testCasesTotal"] = eval_result["testCasesTotal"]
-            results.append(eval_result)
+    async def eval_participant(p: dict):
+        if p.get("prompt"):
+            eval_result = await evaluate_prompt_full(p["prompt"], test_cases)
+            p["score"] = eval_result["overallScore"]
+            p["passed"] = eval_result["passed"]
+            p["testCasesPassed"] = eval_result["testCasesPassed"]
+            p["testCasesTotal"] = eval_result["testCasesTotal"]
+            return eval_result
+        return None
+
+    eval_results = await asyncio.gather(*(eval_participant(p) for p in participants))
+    results = [res for res in eval_results if res is not None]
 
     # Determine winner
     p1 = participants[0]

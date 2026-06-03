@@ -1,9 +1,10 @@
+import asyncio
 import json
 import os
 import re
 from textwrap import dedent
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from core.config import BACKEND_DIR
 from schemas.analysis import (
@@ -23,7 +24,7 @@ if not API_KEY:
         f"Missing 'OPENAI_API_KEY' in environment. Set it in {BACKEND_DIR / '.env'}"
     )
 
-client = OpenAI(api_key=API_KEY)
+client = AsyncOpenAI(api_key=API_KEY)
 MODEL = "gpt-5.4-nano"
 
 
@@ -519,8 +520,8 @@ def _build_problems_prompt(user_info: UserType) -> str:
     ).strip()
 
 
-def _send_prompt(prompt: str, timeout: int = 60) -> str:
-    response = client.chat.completions.create(
+async def _send_prompt(prompt: str, timeout: int = 60) -> str:
+    response = await client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
@@ -529,7 +530,7 @@ def _send_prompt(prompt: str, timeout: int = 60) -> str:
     return response.choices[0].message.content or ""
 
 
-def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisResponse:
+async def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisResponse:
     prompt = request.messages[-1].content
 
     is_injection, reason = check_for_direct_injection_patterns(prompt)
@@ -548,7 +549,7 @@ def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisResponse:
             improved_prompts=[],
         )
 
-    raw_response = _send_prompt(_build_analysis_prompt(request.user_type, prompt))
+    raw_response = await _send_prompt(_build_analysis_prompt(request.user_type, prompt))
 
     try:
         analysis = _parse_gemini_json(raw_response)
@@ -573,8 +574,8 @@ def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisResponse:
         return fallback
 
 
-def generate_practice_problems(user_info: UserType) -> PracticeProblemsResponse:
-    raw_response = _send_prompt(_build_problems_prompt(user_info))
+async def generate_practice_problems(user_info: UserType) -> PracticeProblemsResponse:
+    raw_response = await _send_prompt(_build_problems_prompt(user_info))
 
     try:
         return PracticeProblemsResponse.model_validate(_parse_gemini_json(raw_response))
@@ -582,7 +583,7 @@ def generate_practice_problems(user_info: UserType) -> PracticeProblemsResponse:
         return PROBLEMS_FALLBACK
 
 
-def generate_battle_content(title: str, description: str) -> dict:
+async def generate_battle_content(title: str, description: str) -> dict:
     """Generate dynamic goal and test cases for a user-created battle."""
     prompt = dedent(
         f"""
@@ -612,7 +613,7 @@ def generate_battle_content(title: str, description: str) -> dict:
         """
     ).strip()
 
-    raw_response = _send_prompt(prompt)
+    raw_response = await _send_prompt(prompt)
     try:
         return _parse_gemini_json(raw_response)
     except (json.JSONDecodeError, KeyError, ValueError):
@@ -634,7 +635,7 @@ def generate_battle_content(title: str, description: str) -> dict:
         }
 
 
-def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
+async def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
     """Generate dynamic goal, tools, rules, and test cases for a user-created agent prompt test."""
     prompt = dedent(
         f"""
@@ -695,7 +696,7 @@ def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
         """
     ).strip()
 
-    raw_response = _send_prompt(prompt)
+    raw_response = await _send_prompt(prompt)
     try:
         return _parse_gemini_json(raw_response)
     except (json.JSONDecodeError, KeyError, ValueError):
@@ -831,7 +832,7 @@ def _build_evaluation_prompt(
     ).strip()
 
 
-def evaluate_prompt_against_test_case(
+async def evaluate_prompt_against_test_case(
     user_prompt: str,
     test_input: str,
     expected_output: str,
@@ -851,7 +852,7 @@ def evaluate_prompt_against_test_case(
             "strengths": [],
         }
 
-    raw_response = _send_prompt(
+    raw_response = await _send_prompt(
         _build_evaluation_prompt(
             user_prompt,
             test_input,
@@ -882,19 +883,16 @@ def evaluate_prompt_against_test_case(
         }
 
 
-def evaluate_prompt_full(
+async def evaluate_prompt_full(
     user_prompt: str,
     test_cases: list[dict],
     problem_title: str = "",
     problem_description: str = "",
     problem_goal: str = "",
 ) -> dict:
-    """Evaluate a user's prompt against all test cases and return aggregate results."""
-    results = []
-    total_score = 0
-
-    for tc in test_cases:
-        result = evaluate_prompt_against_test_case(
+    """Evaluate a user's prompt against all test cases concurrently and return aggregate results."""
+    async def evaluate_single(tc: dict) -> dict:
+        result = await evaluate_prompt_against_test_case(
             user_prompt=user_prompt,
             test_input=tc.get("input", ""),
             expected_output=tc.get("expectedOutput", ""),
@@ -904,10 +902,22 @@ def evaluate_prompt_full(
             problem_goal=problem_goal,
         )
         result["testCase"] = tc.get("description", "")
-        results.append(result)
-        total_score += result["score"]
+        return result
 
-    avg_score = round(total_score / len(test_cases)) if test_cases else 0
+    if not test_cases:
+        return {
+            "overallScore": 0,
+            "passed": False,
+            "testCasesPassed": 0,
+            "testCasesTotal": 0,
+            "results": [],
+        }
+
+    # Evaluate all test cases concurrently using asyncio.gather
+    results = await asyncio.gather(*(evaluate_single(tc) for tc in test_cases))
+
+    total_score = sum(r["score"] for r in results)
+    avg_score = round(total_score / len(test_cases))
     passed_count = sum(1 for r in results if r["passed"])
 
     return {

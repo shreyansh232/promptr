@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PromptrLogo } from "@/components/PromptrLogo";
+import { PromptrLogo } from "./PromptrLogo";
 
 const footerGroups = [
   {

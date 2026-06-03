@@ -4,7 +4,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { db } from "./db";
+import { db } from "@/lib/prisma";
 
 const githubClientId =
   process.env.GITHUB_CLIENT_ID ?? process.env.AUTH_GITHUB_ID ?? "";

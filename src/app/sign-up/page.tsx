@@ -3,8 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import AuthButton from "@/components/AuthButton";
-import AuthShell from "@/components/AuthShell";
+import AuthButton from "@/components/shared/AuthButton";
+import AuthShell from "@/components/shared/AuthShell";
 import {
   Form,
   FormControl,
@@ -14,8 +14,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import LoginGithub from "@/components/LoginGithub";
-import LoginGoogle from "@/components/LoginGoogle";
+import LoginGithub from "@/components/shared/LoginGithub";
+import LoginGoogle from "@/components/shared/LoginGoogle";
 import { registerWithCreds } from "@/actions/auth";
 import { toast } from "react-hot-toast";
 

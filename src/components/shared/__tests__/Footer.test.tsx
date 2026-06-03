@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/shared/Footer";
 
 describe("Footer", () => {
   it("renders the logo, stack badges, and grouped landing links", () => {

@@ -1,5 +1,5 @@
 import { auth } from "auth";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { CURRICULUM_MISSIONS } from "@/data/missions";
 import type { AgentProfile } from "@/types/agent-dojo";

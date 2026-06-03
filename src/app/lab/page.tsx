@@ -1,6 +1,6 @@
 import { auth } from "auth";
 import { redirect } from "next/navigation";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { PUBLIC_AGENT_MISSION } from "@/data/agent-dojo";
 import type { AgentProfile } from "@/types/agent-dojo";
 import { MissionsWorkspace } from "../missions/_components/MissionsWorkspace";

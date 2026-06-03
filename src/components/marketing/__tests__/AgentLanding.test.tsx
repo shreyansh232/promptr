@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { AgentLanding } from "@/components/AgentLanding";
+import { AgentLanding } from "@/components/marketing/AgentLanding";
 import { PUBLIC_AGENT_MISSION } from "@/data/agent-dojo";
 
 describe("AgentLanding", () => {

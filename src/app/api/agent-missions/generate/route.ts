@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { env } from "@/env";
 import { PUBLIC_AGENT_MISSION } from "@/data/agent-dojo";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";

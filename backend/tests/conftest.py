@@ -27,4 +27,6 @@ def client(app):
 @pytest.fixture(autouse=True)
 def mock_openai():
     with patch("services.llm_service.client") as mock:
+        from unittest.mock import AsyncMock
+        mock.chat.completions.create = AsyncMock()
         yield mock

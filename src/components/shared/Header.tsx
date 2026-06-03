@@ -3,16 +3,10 @@ import Link from "next/link";
 import { GithubLogo, Star } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
 import { auth } from "auth";
-import { UserMenu } from "@/components/UserMenu";
-import { PromptrLogo } from "@/components/PromptrLogo";
+import { UserMenu } from "./UserMenu";
+import { PromptrLogo } from "./PromptrLogo";
 
-const navLinks = [
-  { label: "Features", href: "/#features" },
-  { label: "Workflow", href: "/#workflow" },
-  { label: "Missions", href: "/missions" },
-  { label: "Lab", href: "/lab" },
-  { label: "FAQ", href: "/#faq" },
-];
+import { navLinks } from "@/config/navigation";
 
 export async function Header() {
   const session = await auth();

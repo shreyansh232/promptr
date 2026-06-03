@@ -25,7 +25,7 @@ router = APIRouter()
 @router.post("/analyze-prompt")
 async def analyze_prompt(request: ChatRequest) -> PromptAnalysisResponse:
     try:
-        return analyze_prompt_response(request)
+        return await analyze_prompt_response(request)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -53,7 +53,7 @@ async def generate_problems(
                 ):
                     return PracticeProblemsResponse(problems=problems)
 
-        response = generate_practice_problems(user_info)
+        response = await generate_practice_problems(user_info)
 
         if user_info.userId and response.problems:
             # Do NOT save fallback problems to the database cache
@@ -89,7 +89,7 @@ async def evaluate_prompt(
 ) -> TestCaseEvaluationResponse:
     try:
         test_cases = [tc.model_dump() for tc in request.testCases]
-        result = evaluate_prompt_full(
+        result = await evaluate_prompt_full(
             request.prompt,
             test_cases,
             problem_title=request.problemTitle,
@@ -106,6 +106,6 @@ async def generate_custom_scenario_endpoint(
     request: CustomScenarioRequest,
 ) -> dict:
     try:
-        return generate_custom_scenario(request.agentDescription, request.tools)
+        return await generate_custom_scenario(request.agentDescription, request.tools)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

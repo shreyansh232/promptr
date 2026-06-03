@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "auth";
 import { env } from "@/env";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { fetchWithTimeout } from "@/lib/utils";
 
 const MAX_BODY_BYTES = 10_000; // 10 KB limit (user type is small)

@@ -1,6 +1,6 @@
 import { auth } from "auth";
 import { redirect } from "next/navigation";
-import { db } from "db";
+import { db } from "@/lib/prisma";
 import { ProfileForm } from "./ProfileForm";
 
 export const dynamic = "force-dynamic";
