@@ -31,31 +31,31 @@ def check_for_direct_injection_patterns(text: str) -> tuple[bool, str | None]:
     if not text:
         return False, None
     lower_text = text.lower()
-    
+
     # Check for direct hijack patterns trying to write the JSON response for us
     hijack_patterns = [
         '"score": 100',
         '"passed": true',
         '"score": 90',
-        'score: 100',
-        'passed: true',
-        'ignore the evaluator instructions',
-        'ignore the judging rules',
-        'override the evaluation score',
-        'force the evaluation to pass',
-        'ignore previous instructions',
-        'ignore system instructions',
-        'ignore system prompt',
-        'bypass rules',
-        'bypass the rules',
-        'bypass constraints',
-        'bypass the constraints',
+        "score: 100",
+        "passed: true",
+        "ignore the evaluator instructions",
+        "ignore the judging rules",
+        "override the evaluation score",
+        "force the evaluation to pass",
+        "ignore previous instructions",
+        "ignore system instructions",
+        "ignore system prompt",
+        "bypass rules",
+        "bypass the rules",
+        "bypass constraints",
+        "bypass the constraints",
     ]
-    
+
     for pattern in hijack_patterns:
         if pattern in lower_text:
             return True, f"System override attempt detected via pattern: '{pattern}'"
-            
+
     return False, None
 
 
@@ -256,6 +256,7 @@ def _build_analysis_prompt(user_info: UserType, prompt: str) -> str:
     response_shape = json.dumps(ANALYSIS_RESPONSE_SHAPE, indent=2)
 
     import uuid
+
     boundary_id = uuid.uuid4().hex
 
     return dedent(
@@ -530,7 +531,7 @@ def _send_prompt(prompt: str, timeout: int = 60) -> str:
 
 def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisResponse:
     prompt = request.messages[-1].content
-    
+
     is_injection, reason = check_for_direct_injection_patterns(prompt)
     if is_injection:
         return PromptAnalysisResponse(
@@ -540,7 +541,10 @@ def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisResponse:
             motivation="Please write valid, safe prompt instructions to get feedback.",
             tags=["security-violation"],
             content="Violation detected.",
-            learning_points=["Write safe prompt instructions", "Do not attempt system overrides"],
+            learning_points=[
+                "Write safe prompt instructions",
+                "Do not attempt system overrides",
+            ],
             improved_prompts=[],
         )
 
@@ -769,6 +773,7 @@ def _build_evaluation_prompt(
         )
 
     import uuid
+
     boundary_id = uuid.uuid4().hex
 
     return dedent(
