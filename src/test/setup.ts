@@ -14,3 +14,19 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({}),
 }));
 
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({
+    data: [],
+    isLoading: false,
+    error: null,
+  }),
+  useMutation: () => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+  }),
+  useQueryClient: () => ({
+    setQueryData: vi.fn(),
+    invalidateQueries: vi.fn(),
+  }),
+}));
+

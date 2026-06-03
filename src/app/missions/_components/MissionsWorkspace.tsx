@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import type {
   AgentEvaluation,
@@ -112,7 +113,24 @@ export function MissionsWorkspace({
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const [customScenarios, setCustomScenarios] = useState<CustomScenario[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data: customScenarios = [] } = useQuery<CustomScenario[]>({
+    queryKey: ["customScenarios"],
+    queryFn: async () => {
+      const response = await fetch("/api/custom-scenarios");
+      if (!response.ok) {
+        throw new Error("Failed to fetch scenarios");
+      }
+      const data = (await response.json()) as {
+        customScenarios?: CustomScenario[];
+      };
+      return data.customScenarios ?? [];
+    },
+    enabled: isLabMode,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [activeCustomScenarioId, setActiveCustomScenarioId] = useState<
     string | null
   >(null);
@@ -122,25 +140,6 @@ export function MissionsWorkspace({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const completedCount = profile?.missionsCompleted ?? 0;
-
-  // Load custom scenarios on mount if in lab mode
-  useEffect(() => {
-    if (!isLabMode) return;
-    const fetchCustomScenarios = async () => {
-      try {
-        const response = await fetch("/api/custom-scenarios");
-        if (response.ok) {
-          const data = (await response.json()) as {
-            customScenarios?: CustomScenario[];
-          };
-          setCustomScenarios(data.customScenarios ?? []);
-        }
-      } catch (error) {
-        console.error("Error fetching custom scenarios:", error);
-      }
-    };
-    void fetchCustomScenarios();
-  }, [isLabMode]);
 
   // Set default sidebar open on desktop
   useEffect(() => {
@@ -315,7 +314,9 @@ export function MissionsWorkspace({
         customScenario: CustomScenario;
       };
       const scenario = data.customScenario;
-      setCustomScenarios((prev) => [scenario, ...prev]);
+      queryClient.setQueryData<CustomScenario[]>(["customScenarios"], (prev) =>
+        prev ? [scenario, ...prev] : [scenario]
+      );
       setIsNewScenarioModalOpen(false);
       handleSelectCustomScenario(scenario);
       toast.success("Custom prompt test generated and loaded!");
@@ -342,8 +343,8 @@ export function MissionsWorkspace({
         },
       );
       if (response.ok) {
-        setCustomScenarios((prev) =>
-          prev.filter((s) => s.id !== deleteTargetId),
+        queryClient.setQueryData<CustomScenario[]>(["customScenarios"], (prev) =>
+          prev ? prev.filter((s) => s.id !== deleteTargetId) : []
         );
         if (activeCustomScenarioId === deleteTargetId) {
           setActiveCustomScenarioId(null);
@@ -479,7 +480,7 @@ export function MissionsWorkspace({
                   onClick={() => setIsNewScenarioModalOpen(true)}
                   className="mb-4 flex w-full shrink-0 items-center justify-center gap-2 bg-[#48d8a4] px-3 py-2.5 font-mono text-sm font-bold text-[#10110f] transition-colors hover:bg-[#62e2b7]"
                 >
-                  + New prompt test
+                  + New Prompt Test
                 </button>
 
                 {customScenarios.length > 0 ? (

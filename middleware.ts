@@ -18,7 +18,7 @@ export default auth((request) => {
   }
 
   if (request.auth && isAuthRoute) {
-    const absoluteURL = new URL("/missions", request.nextUrl.origin);
+    const absoluteURL = new URL("/", request.nextUrl.origin);
     return NextResponse.redirect(absoluteURL.toString());
   }
 

@@ -85,7 +85,7 @@ export default function OnboardingPage() {
       }
 
       router.refresh();
-      router.push("/missions");
+      router.push("/");
     } catch {
       toast.error("Failed to save your agent profile. Please try again.");
     } finally {

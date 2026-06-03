@@ -6,6 +6,7 @@ import { auth } from "auth";
 import { Toaster } from "react-hot-toast";
 import { Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import { QueryProvider } from "@/components/providers/query-provider";
 
 const sans = Manrope({
   subsets: ["latin"],
@@ -67,35 +68,37 @@ export default async function RootLayout({
         className={`${sans.variable} ${mono.variable} bg-background text-foreground`}
       >
         <SessionProvider session={session}>
-          <GradientBackground>{children}</GradientBackground>
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              style: {
-                background: "#101510",
-                color: "#f7f2e8",
-                border: "1px solid rgba(247, 242, 232, 0.15)",
-                borderRadius: "0px",
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: "11px",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-              },
-              success: {
-                iconTheme: {
-                  primary: "#48d8a4",
-                  secondary: "#101510",
+          <QueryProvider>
+            <GradientBackground>{children}</GradientBackground>
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                style: {
+                  background: "#101510",
+                  color: "#f7f2e8",
+                  border: "1px solid rgba(247, 242, 232, 0.15)",
+                  borderRadius: "0px",
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: "11px",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
                 },
-              },
-              error: {
-                iconTheme: {
-                  primary: "#ff8a3d",
-                  secondary: "#101510",
+                success: {
+                  iconTheme: {
+                    primary: "#48d8a4",
+                    secondary: "#101510",
+                  },
                 },
-              },
-            }}
-          />
-          <Analytics />
+                error: {
+                  iconTheme: {
+                    primary: "#ff8a3d",
+                    secondary: "#101510",
+                  },
+                },
+              }}
+            />
+            <Analytics />
+          </QueryProvider>
         </SessionProvider>
       </body>
     </html>
