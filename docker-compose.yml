@@ -11,11 +11,11 @@ services:
     networks:
       - promptr-network
 
-  backend:
+  server:
     build:
-      context: ./backend
+      context: ./server
       dockerfile: Dockerfile
-    container_name: promptr-backend
+    container_name: promptr-server
     ports:
       - '8000:8000'
     environment:
@@ -23,7 +23,7 @@ services:
       - DATABASE_URL=mongodb://db:27017
       - DATABASE_NAME=promptr
     env_file:
-      - ./backend/.env
+      - ./server/.env
     depends_on:
       - db
     networks:
@@ -32,19 +32,19 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: web/Dockerfile
     container_name: promptr-frontend
     ports:
       - '3000:3000'
     environment:
       - NODE_ENV=production
       - DATABASE_URL=mongodb://db:27017/promptr
-      - BACKEND_URL=http://backend:8000
+      - BACKEND_URL=http://server:8000
     env_file:
-      - .env
+      - ./web/.env
     depends_on:
       - db
-      - backend
+      - server
     networks:
       - promptr-network
 

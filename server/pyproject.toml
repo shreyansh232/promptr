@@ -1,0 +1,31 @@
+[project]
+name = "server"
+version = "0.1.0"
+description = "Promptr FastAPI backend"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.136.1",
+    "motor>=3.6.0",
+    "openai>=2.33.0",
+    "python-dotenv>=1.2.2",
+    "slowapi>=0.1.9",
+    "uvicorn>=0.46.0",
+]
+
+[project.scripts]
+promptr-api = "uvicorn:main"
+
+[tool.vercel]
+entrypoint = "app:app"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.409",
+    "ruff>=0.15.12",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+    "mongomock>=4.3.0",
+    "mongomock-motor>=0.0.35",
+]

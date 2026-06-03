@@ -2,21 +2,25 @@
 
 install:
 	pnpm install
+	make -C server install
 
 dev:
 	pnpm dev
 
 build:
-	pnpm build
+	pnpm build:web
 
 lint:
 	pnpm lint
+	make -C server check-lint
 
 format:
-	pnpm exec prettier --write .
+	pnpm exec prettier --write "web/src/**/*.{ts,tsx,css}"
+	make -C server format
 
 test:
 	pnpm test
 
 clean:
-	rm -rf .next node_modules
+	pnpm clean
+	rm -rf node_modules
