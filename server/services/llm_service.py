@@ -209,7 +209,7 @@ LEARNING_STYLE_GUIDANCE = {
 }
 
 
-def _parse_gemini_json(raw: str) -> dict:
+def _parse_llm_json(raw: str) -> dict:
     text = raw.strip()
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
@@ -552,7 +552,7 @@ async def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisRespons
     raw_response = await _send_prompt(_build_analysis_prompt(request.user_type, prompt))
 
     try:
-        analysis = _parse_gemini_json(raw_response)
+        analysis = _parse_llm_json(raw_response)
         return PromptAnalysisResponse.model_validate(
             {
                 "label": analysis["label"],
@@ -578,7 +578,7 @@ async def generate_practice_problems(user_info: UserType) -> PracticeProblemsRes
     raw_response = await _send_prompt(_build_problems_prompt(user_info))
 
     try:
-        return PracticeProblemsResponse.model_validate(_parse_gemini_json(raw_response))
+        return PracticeProblemsResponse.model_validate(_parse_llm_json(raw_response))
     except (json.JSONDecodeError, KeyError, ValueError):
         return PROBLEMS_FALLBACK
 
@@ -646,7 +646,7 @@ async def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
 
     raw_response = await _send_prompt(prompt)
     try:
-        return _parse_gemini_json(raw_response)
+        return _parse_llm_json(raw_response)
     except (json.JSONDecodeError, KeyError, ValueError):
         # Fallback dictionary
         return {
@@ -813,7 +813,7 @@ async def evaluate_prompt_against_test_case(
     )
 
     try:
-        result = _parse_gemini_json(raw_response)
+        result = _parse_llm_json(raw_response)
         return {
             "score": result.get("score", 50),
             "passed": result.get("passed", False),

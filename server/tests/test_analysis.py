@@ -4,9 +4,9 @@ def test_health(client):
     assert response.json() == {"message": "healthy"}
 
 
-def test_analyze_prompt(client, mock_openai):
+def test_analyze_prompt(client, mock_llm):
     # Setup mock
-    mock_response = mock_openai.chat.completions.create.return_value
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
     ].message.content = '{"label": "STRONG", "score": 90, "feedback": "Great!", "motivation": "Keep going", "tags": ["test"], "response": "OK", "learning_points": [], "improved_prompts": []}'
@@ -29,9 +29,9 @@ def test_analyze_prompt(client, mock_openai):
     assert data["score"] == 90
 
 
-def test_generate_problems(client, mock_openai):
+def test_generate_problems(client, mock_llm):
     # Setup mock
-    mock_response = mock_openai.chat.completions.create.return_value
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
     ].message.content = '{"problems": [{"id": 1, "title": "Test Problem", "difficulty": "Easy", "description": "Desc", "goal": "Goal", "examples": [], "testCases": [], "proTips": []}]}'
@@ -51,9 +51,9 @@ def test_generate_problems(client, mock_openai):
     assert data["problems"][0]["title"] == "Test Problem"
 
 
-def test_evaluate_prompt(client, mock_openai):
+def test_evaluate_prompt(client, mock_llm):
     # Setup mock
-    mock_response = mock_openai.chat.completions.create.return_value
+    mock_response = mock_llm.chat.completions.create.return_value
     # The evaluation service might call OpenAI multiple times or in a specific way
     # Let's check how evaluate_prompt_full is implemented in llm_service.py
     mock_response.choices[0].message.content = "Evaluated content"
@@ -73,9 +73,9 @@ def test_evaluate_prompt(client, mock_openai):
     assert response.status_code in [200, 500]
 
 
-def test_generate_problems_db_cache(client, mock_openai, mock_db):
-    # Setup mock for first call (Gemini call)
-    mock_response = mock_openai.chat.completions.create.return_value
+def test_generate_problems_db_cache(client, mock_llm, mock_db):
+    # Setup mock for first call (LLM call)
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
     ].message.content = '{"problems": [{"id": 1, "title": "Fresh Problem", "difficulty": "Easy", "description": "Desc", "goal": "Goal", "examples": [], "testCases": [], "proTips": []}]}'
@@ -89,15 +89,15 @@ def test_generate_problems_db_cache(client, mock_openai, mock_db):
         "subLevel": 1,
     }
 
-    # 1. First call - should call mock_openai and save to DB
+    # 1. First call - should call mock_llm and save to DB
     response1 = client.post("/generate-problems", json=user_info)
     assert response1.status_code == 200
     data1 = response1.json()
     assert len(data1["problems"]) == 1
     assert data1["problems"][0]["title"] == "Fresh Problem"
-    assert mock_openai.chat.completions.create.call_count == 1
+    assert mock_llm.chat.completions.create.call_count == 1
 
-    # 2. Modify mock_openai response to prove it doesn't get called again
+    # 2. Modify mock_llm response to prove it doesn't get called again
     mock_response.choices[
         0
     ].message.content = '{"problems": [{"id": 2, "title": "New Mock Problem", "difficulty": "Easy", "description": "Desc", "goal": "Goal", "examples": [], "testCases": [], "proTips": []}]}'
@@ -110,12 +110,12 @@ def test_generate_problems_db_cache(client, mock_openai, mock_db):
     assert len(data2["problems"]) == 1
     assert data2["problems"][0]["title"] == "Fresh Problem"
     # Call count should still be 1 (meaning OpenAI chat completion was NOT called on the second request)
-    assert mock_openai.chat.completions.create.call_count == 1
+    assert mock_llm.chat.completions.create.call_count == 1
 
 
-def test_generate_custom_scenario(client, mock_openai):
+def test_generate_custom_scenario(client, mock_llm):
     # Setup mock
-    mock_response = mock_openai.chat.completions.create.return_value
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = (
         '{"title": "Custom Test Agent", "difficulty": "Intermediate", '
         '"description": "Test description", "goal": "Test goal", '

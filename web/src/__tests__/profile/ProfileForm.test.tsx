@@ -20,7 +20,7 @@ const mockInitialData = {
   problemsSolved: 0,
   streak: 0,
   builderRole: "developer",
-  frameworks: ["OpenAI Agents SDK"],
+  frameworks: ["LLM Agents SDK"],
   workflowFocus: "coding agents",
   riskFocus: "Tool misuse",
 };

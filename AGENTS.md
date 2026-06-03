@@ -9,52 +9,22 @@ Promptr is a prompt testing & evaluation sandbox for AI agent builders. The plat
 
 ---
 
-## Codebase Structure (Next.js Monorepo + Python Backend)
+## Codebase Structure (Monorepo)
 
 ```
 promptr/
-├── backend/                        # FastAPI + Google Gemini AI
-│   ├── main.py                     # FastAPI app, /analyze-prompt & /generate-problems routes
-│   ├── schemas/
-│   │   └── user.py                 # Pydantic UserType schema
-│   └── venv/                       # Python virtualenv (gitignored)
-├── prisma/
-│   └── schema.prisma               # MongoDB + Prisma schema (User, UserProfile, Auth models)
-├── src/
-│   ├── actions/                    # Next.js Server Actions
-│   ├── app/                        # Next.js 14 App Router
-│   │   ├── api/                    # API route handlers
-│   │   ├── dashboard/              # Main app dashboard
-│   │   │   └── _components/        # Dashboard-specific components
-│   │   ├── playground/             # Agent sandbox playground
-│   │   ├── problems/               # Practice problems page
-│   │   ├── sign-in/                # Auth pages
-│   │   ├── sign-up/
-│   │   ├── layout.tsx
-│   │   └── page.tsx                # Landing page
-│   ├── components/                 # Shared UI components
-│   │   ├── ui/                     # shadcn/ui primitives
-│   │   ├── prompt-editor.tsx       # Main prompt input component
-│   │   ├── problem-sidebar.tsx     # Problem list sidebar
-│   │   ├── problem-description.tsx # Problem detail view
-│   │   └── ...                     # Landing page sections (Hero, Features, etc.)
-│   ├── data/                       # Curated mission data & static data
-│   ├── hooks/                      # Custom React hooks
-│   ├── lib/
-│   │   ├── prisma.ts               # Prisma client singleton
-│   │   ├── mongodb.ts              # MongoDB connection (for Auth adapter)
-│   │   └── utils.ts                # cn() and shared utilities
-│   ├── styles/                     # Global CSS
-│   ├── types/                      # TypeScript interfaces (AgentMission, AgentProfile, etc.)
-│   └── utils/                      # Utility functions
-├── auth.ts                         # NextAuth v5 config (GitHub OAuth + credentials)
-├── db.ts                           # DB connection export
-├── middleware.ts                   # Route protection middleware
-├── next.config.js
-├── tailwind.config.ts
-├── tsconfig.json
-├── .env.example
-└── AGENTS.md                       # ← this file
+├── web/                            # Next.js Frontend
+│   ├── src/app/                    # App Router pages
+│   ├── src/components/             # React components
+│   └── src/lib/                    # Utilities & Prisma client
+├── server/                         # FastAPI Backend
+│   ├── routers/                    # API Endpoints
+│   ├── services/                   # AI logic (LLM service)
+│   ├── schemas/                    # Pydantic models
+│   └── tests/                      # Python unit & integration tests
+├── prisma/                         # Shared database schema
+├── Makefile                        # Root orchestrator
+└── package.json                    # Root monorepo scripts
 ```
 
 ---
@@ -63,82 +33,64 @@ promptr/
 
 MUST DO - ALWAYS ADD UNIT TESTS FOR EVERY NEW CODE ADDED
 
-Always check for linting errors at the end
+Always check for linting and formatting errors at the end
+
+### Root (Monorepo)
+
+```bash
+# Install all dependencies
+pnpm install
+
+# Start both frontend and backend
+pnpm dev
+
+# Run all tests
+pnpm test
+
+# Format all codebases
+pnpm format
+
+# Lint all codebases
+pnpm lint
+```
 
 ### Frontend (Next.js + TypeScript)
 
 Always use **pnpm** — never npm or yarn.
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Add a dependency
-pnpm add <package>
-
-# Add a dev dependency
-pnpm add -D <package>
-
-# Run dev server (http://localhost:3000)
-pnpm dev
-
-# Build for production
-pnpm build
-
-# Lint (max 10 warnings)
-pnpm lint
-
-# Type check
-npx tsc --noEmit
+# Run from root
+pnpm --filter web dev
+pnpm --filter web build
+pnpm --filter web test
+pnpm --filter web lint
 ```
 
 ### Backend (FastAPI + Python)
 
-The backend lives in `./backend/`. Use the project's `venv` — avoid installing packages globally.
+The backend lives in `./server/`. Use `uv` for dependency management.
 
 ```bash
-# Activate virtual environment
-cd backend
-source venv/bin/activate        # macOS/Linux
-# venv\Scripts\activate         # Windows
-
-# Install a new dependency (then update requirements if one exists)
-pip install <package>
-
-# Run backend dev server (http://localhost:8000)
-uvicorn main:app --reload --port 8000
-
-# Run from project root (if venv is active)
-python -m uvicorn backend.main:app --reload --port 8000
-```
-
-### Database (Prisma + MongoDB)
-
-```bash
-# Generate Prisma client after schema changes
-npx prisma generate
-
-# Push schema to MongoDB (no migration files, direct push)
-npx prisma db push
-
-# Open Prisma Studio (GUI)
-npx prisma studio
+# Run from root
+make -C server dev
+make -C server test
+make -C server format
+make -C server lint
 ```
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in values. Add new variables to both `.env.example` (without secrets) and `src/env.js` (schema validation).
+Copy `.env.example` to `.env` and fill in values.
 
-| Variable                       | Description                                               |
-| ------------------------------ | --------------------------------------------------------- |
-| `DATABASE_URL`                 | MongoDB connection string                                 |
-| `AUTH_SECRET`                  | NextAuth secret (generate with `openssl rand -base64 32`) |
-| `GITHUB_CLIENT_ID`             | GitHub OAuth App client ID                                |
-| `GITHUB_CLIENT_SECRET`         | GitHub OAuth App client secret                            |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK)                   |
-| `api_key` (backend `.env`)     | Google Gemini API key for FastAPI backend                 |
+| Variable           | Description                                               |
+| ------------------ | --------------------------------------------------------- |
+| `DATABASE_URL`      | MongoDB connection string                                 |
+| `AUTH_SECRET`       | NextAuth secret (generate with `openssl rand -base64 32`) |
+| `GITHUB_CLIENT_ID`  | GitHub OAuth App client ID                                |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret                            |
+| `OPENAI_API_KEY`    | OpenAI API key for backend evaluations                    |
 
 ---
 
@@ -146,55 +98,19 @@ Copy `.env.example` to `.env` and fill in values. Add new variables to both `.en
 
 ### TypeScript (Frontend)
 
-- Strict mode enabled (`tsconfig.json`)
-- Functional components only — no class components, no `React.FC`
-- Prefer `interface` over `type` for object shapes
-- Prefer `const` and immutable patterns
-- Use Tailwind CSS for all styling — no inline styles, no CSS modules
-- Use **shadcn/ui** primitives from `src/components/ui/`
-- Use `cn()` from `src/lib/utils.ts` for conditional classNames
-
-```tsx
-interface PromptAnalysisProps {
-  label: "STRONG" | "MODERATE" | "WEAK";
-  feedback: string;
-  tags: string[];
-  isLoading?: boolean;
-}
-
-export function PromptAnalysis({
-  label,
-  feedback,
-  tags,
-  isLoading = false,
-}: PromptAnalysisProps) {
-  // implementation
-}
-```
+- Strict mode enabled
+- Functional components only
+- Use Tailwind CSS with the **Cyber-Mint** palette (`#48d8a4`)
+- Use **shadcn/ui** primitives
+- Bold Normal Case for primary buttons
 
 ### Python (Backend)
 
-- Keep `main.py` clean — one file, straightforward FastAPI routes
 - Use Pydantic `BaseModel` for all request/response bodies
 - Use `async def` for all route handlers
-- Parse Gemini JSON responses defensively — always handle `json.JSONDecodeError`
+- Parse LLM JSON responses defensively using `_parse_llm_json`
 - Return structured error messages via `HTTPException`
-
-```python
-from fastapi import HTTPException
-from pydantic import BaseModel
-
-class MyRequest(BaseModel):
-    field: str
-
-@app.post("/my-route")
-async def my_route(request: MyRequest):
-    try:
-        # call Gemini, parse result
-        ...
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-```
+- Use `loguru` for beautiful logging
 
 ---
 
@@ -204,80 +120,24 @@ async def my_route(request: MyRequest):
 
 ```
 User → Next.js frontend (App Router)
-     → Server Action or API Route
-     → FastAPI backend (POST /analyze-prompt)
-     → Google Gemini API
+     → API Route (web/src/app/api/...)
+     → FastAPI backend (POST /...)
+     → OpenAI API (or other LLM)
      → Structured JSON response
      → Frontend renders feedback
 ```
 
-### Authentication
-
-- **NextAuth v5** (`next-auth@5.0.0-beta`) configured in `auth.ts`
-- Supports **GitHub OAuth** and **credentials** (email/password with bcrypt)
-- Session-based auth; adapter dual-writes to MongoDB via `@auth/prisma-adapter` and `@auth/mongodb-adapter`
-- Route protection handled in `middleware.ts`
-- Always use `auth()` from `auth.ts` in Server Components/Actions, not the session hook
-
-### Database
-
-- **MongoDB** via Prisma ORM (MongoDB provider)
-- Schema: `User` → `UserProfile` (1-to-1), `Account`, `Session` (NextAuth managed)
-- `UserProfile` stores prompt engineering context: `level`, `expertise`, `learningStyle`, `goals`
-- Use `src/lib/prisma.ts` singleton — never instantiate `PrismaClient` directly in components
-
 ### AI Integration
 
-- **Frontend**: uses Vercel AI SDK (`ai` package, `@ai-sdk/google`) for streaming where applicable
-- **Backend**: uses `google-generativeai` Python SDK with `gemini-2.0-flash`
-- Gemini responses **always** return JSON — strip ` ```json ` fences before parsing
-
----
-
-## Common Development Workflows
-
-### Adding a new AI analysis feature
-
-1. Update `backend/main.py` — add a new `@app.post()` route
-2. Update `backend/schemas/user.py` if new input fields are needed
-3. Add a corresponding Server Action in `src/actions/` or API route in `src/app/api/`
-4. Create or update components in `src/components/` or `src/app/dashboard/_components/`
-5. Test JSON parsing edge cases (malformed Gemini response fallback)
-
-### Adding a new page/route
-
-1. Create directory in `src/app/<route-name>/`
-2. Add `page.tsx` (Server Component by default)
-3. Update `middleware.ts` if the route needs auth protection
-4. Add navigation links in `src/components/Header.tsx` if needed
-
-### Adding a new Prisma model
-
-1. Add model to `prisma/schema.prisma`
-2. Run `npx prisma db push` (MongoDB — no migration files)
-3. Run `npx prisma generate` to update the client
-4. Create/update types in `src/types/`
-
-### Adding a new shadcn/ui component
-
-```bash
-npx shadcn@latest add <component-name>
-```
-
-Components are added to `src/components/ui/`.
+- **Backend**: uses `openai` Python SDK with GPT models.
+- **JSON Output**: LLM responses **always** return JSON — strip fences before parsing using the shared utility.
 
 ---
 
 ## Testing Expectations
 
-- **Frontend**: Vitest + React Testing Library. Tests live in `src/components/__tests__/`. Run with `pnpm test`.
-- **Backend**: pytest with mocked Gemini API calls. Tests live in `backend/tests/`. Run with `cd backend && make test`.
-- Before submitting changes, also verify:
-  - Auth flow (sign in / sign up / sign out) works
-  - `/analyze-prompt` backend endpoint returns valid JSON
-  - Dashboard renders prompt editor and analysis correctly
-  - `pnpm lint` passes with ≤ 10 warnings
-  - `npx tsc --noEmit` exits with no errors
+- **Frontend**: Vitest + React Testing Library. Run with `pnpm --filter web test`.
+- **Backend**: pytest with mocked LLM API calls. Run with `make -C server test`.
 
 ---
 
@@ -285,22 +145,14 @@ Components are added to `src/components/ui/`.
 
 **Frontend**
 
-- Check `src/env.js` if environment variables are not loading — all vars must be declared there
-- NextAuth errors: verify `AUTH_SECRET` is set and `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` match the OAuth app's callback URL exactly (`http://localhost:3000/api/auth/callback/github`)
-- Prisma: if `PrismaClient` throws "not generated", run `npx prisma generate`
+- Next.js 404/Hydration errors? Run `pnpm clean`.
+- Check `web/src/env.js` for environment variable schema validation.
 
 **Backend**
 
-- Gemini 400 errors → usually a malformed prompt or missing `api_key` in `backend/.env`
-- CORS errors in development → the backend allows all origins (`*`); check the frontend is hitting `http://localhost:8000`
-- JSON parse failures → Gemini occasionally wraps responses in ` ```json ``` ` fences; the stripping logic in `main.py` handles this but verify the strip range is correct
-
-**Common failure points**
-
-- Missing `api_key` in `backend/.env` (separate from root `.env`)
-- MongoDB connection string missing auth credentials
-- `UserProfile` not yet created for a new user — check the sign-up flow creates the profile record
+- JSON parse failures? Check the stripping logic for ` ```json ` fences.
+- Use `loguru` logs to trace AI reasoning and backend state.
 
 ---
 
-Help make Promptr the best place to learn prompt engineering for AI agents. Contributions welcome — open a PR or an issue at https://github.com/shreyansh232/promptr.
+Help make Promptr the best place to learn prompt engineering for AI agents. Contributions welcome at https://github.com/shreyansh232/promptr.

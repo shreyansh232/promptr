@@ -50,7 +50,7 @@ const featureCards = [
   },
   {
     title: "Developer-first stack",
-    text: "Next.js + FastAPI + Google Gemini. The learning surface stays close to the systems developers actually ship.",
+    text: "Next.js + FastAPI + LLM Engine. The learning surface stays close to the systems developers actually ship.",
   },
 ];
 

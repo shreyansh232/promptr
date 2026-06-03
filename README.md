@@ -47,7 +47,7 @@ Promptr is primarily a prompt evaluation and testing sandbox:
 ### Backend (FastAPI)
 
 - **FastAPI** — Python REST API for heavy-duty evaluation logic.
-- **Google Gemini** (`gemini-2.0-flash`) — AI analysis and evaluation engine.
+- **LLM Engine** — AI analysis and evaluation powered by OpenAI.
 - **uv** + **Ruff** — High-performance package management and linting/formatting.
 - **Pydantic** — Robust request/response validation.
 
@@ -88,7 +88,7 @@ promptr/
 │   │   └── profile.py              # Credit & user state management
 │   ├── services/                   # Logic Layer
 │   │   ├── agent_service.py        # AI agent evaluation logic
-│   │   └── llm_service.py          # Gemini API orchestration
+│   │   └── llm_service.py          # LLM API orchestration
 │   ├── schemas/                    # Pydantic models (validation)
 │   ├── knowledge-base/             # Prompt engineering reference guide
 │   └── tests/                      # Python unit & integration tests
@@ -104,7 +104,7 @@ promptr/
 - **Node.js 18+** & **pnpm 9+**
 - **Python 3.12+** (Recommended: [uv](https://astral.sh/uv) for package management)
 - **MongoDB** (Local or Atlas)
-- **Google Gemini API Key**
+- **OpenAI API Key**
 
 ### Installation
 
@@ -120,7 +120,7 @@ promptr/
     Copy `.env.example` in both root and `server/` (if applicable) and fill in your values.
     *   `DATABASE_URL`: Your MongoDB connection string.
     *   `AUTH_SECRET`: Random string for NextAuth.
-    *   `GOOGLE_GENERATIVE_AI_API_KEY`: Your Gemini API key.
+    *   `OPENAI_API_KEY`: Your OpenAI API key.
 
 3.  **Database Migration**:
     ```bash

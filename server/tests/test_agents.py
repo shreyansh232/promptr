@@ -6,8 +6,8 @@ from services.agent_service import (
 )
 
 
-async def test_generate_agent_mission_success(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_generate_agent_mission_success(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = (
         '{"mission": ' + AGENT_MISSION_FALLBACK.model_dump_json() + "}"
     )
@@ -26,8 +26,8 @@ async def test_generate_agent_mission_success(mock_openai):
     assert result.mission.availableTools[0].name == "check_order_status"
 
 
-async def test_evaluate_agent_instructions_fallback_on_bad_json(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_evaluate_agent_instructions_fallback_on_bad_json(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = "not json"
 
     result = await evaluate_agent_instructions(
@@ -43,8 +43,8 @@ async def test_evaluate_agent_instructions_fallback_on_bad_json(mock_openai):
     assert result.improvedInstructions
 
 
-async def test_critical_failure_prevents_pass(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_critical_failure_prevents_pass(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = """
     {
       "overallScore": 95,
@@ -87,8 +87,8 @@ async def test_critical_failure_prevents_pass(mock_openai):
     assert result.results[0].criticalFailure is True
 
 
-def test_agent_mission_generation_db_cache(client, mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+def test_agent_mission_generation_db_cache(client, mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = (
         '{"mission": ' + AGENT_MISSION_FALLBACK.model_dump_json() + "}"
     )
@@ -101,7 +101,7 @@ def test_agent_mission_generation_db_cache(client, mock_openai):
         "learning_style": "visual",
         "subLevel": 1,
         "builderRole": "full-stack developer",
-        "frameworks": ["OpenAI Agents SDK"],
+        "frameworks": ["LLM Agents SDK"],
         "workflowFocus": "support automation",
         "riskFocus": "tool safety",
     }
@@ -112,4 +112,4 @@ def test_agent_mission_generation_db_cache(client, mock_openai):
     assert first.status_code == 200
     assert second.status_code == 200
     assert second.json()["mission"]["title"] == "Customer Support Bot"
-    assert mock_openai.chat.completions.create.call_count == 1
+    assert mock_llm.chat.completions.create.call_count == 1

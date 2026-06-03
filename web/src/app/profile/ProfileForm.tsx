@@ -30,7 +30,7 @@ interface ProfileData {
 }
 
 const frameworkOptions = [
-  "OpenAI Agents SDK",
+  "LLM Agents SDK",
   "LangGraph",
   "CrewAI",
   "Generic tool calling",

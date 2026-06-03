@@ -1,22 +1,22 @@
 from services.llm_service import (
     analyze_prompt_response,
     evaluate_prompt_full,
-    _parse_gemini_json,
+    _parse_llm_json,
 )
 from schemas.analysis import ChatRequest
 from schemas.user import UserType
 
 
-def test_parse_gemini_json():
+def test_parse_llm_json():
     raw = '```json\n{"key": "value"}\n```'
-    assert _parse_gemini_json(raw) == {"key": "value"}
+    assert _parse_llm_json(raw) == {"key": "value"}
 
     raw = '{"key": "value"}'
-    assert _parse_gemini_json(raw) == {"key": "value"}
+    assert _parse_llm_json(raw) == {"key": "value"}
 
 
-async def test_analyze_prompt_response_success(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_analyze_prompt_response_success(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
     ].message.content = '{"label": "STRONG", "score": 90, "feedback": "G", "motivation": "M", "tags": [], "response": "R", "learning_points": [], "improved_prompts": []}'
@@ -33,8 +33,8 @@ async def test_analyze_prompt_response_success(mock_openai):
     assert result.score == 90
 
 
-async def test_analyze_prompt_response_fallback(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_analyze_prompt_response_fallback(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = "Invalid JSON"
 
     request = ChatRequest(
@@ -49,8 +49,8 @@ async def test_analyze_prompt_response_fallback(mock_openai):
     assert "Invalid JSON" in result.content
 
 
-async def test_evaluate_prompt_against_test_case(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_evaluate_prompt_against_test_case(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
     ].message.content = '{"score": 75, "passed": true, "reasoning": "R", "missing_elements": [], "strengths": []}'
@@ -63,8 +63,8 @@ async def test_evaluate_prompt_against_test_case(mock_openai):
     assert result["passed"] is True
 
 
-async def test_evaluate_prompt_full(mock_openai):
-    mock_response = mock_openai.chat.completions.create.return_value
+async def test_evaluate_prompt_full(mock_llm):
+    mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
     ].message.content = '{"score": 80, "passed": false, "reasoning": "R", "missing_elements": [], "strengths": []}'

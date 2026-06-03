@@ -25,7 +25,7 @@ def client(app):
 
 
 @pytest.fixture(autouse=True)
-def mock_openai():
+def mock_llm():
     with patch("services.llm_service.client") as mock:
         from unittest.mock import AsyncMock
 
