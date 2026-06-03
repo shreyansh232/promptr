@@ -4,6 +4,17 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Preview
+
+### Home Page
+![Home Page](web/public/readme/home.png)
+
+### Agent Lab (Custom Scenarios)
+![Agent Lab](web/public/readme/lab.png)
+
+### Mission Workspace
+![Mission Workspace](web/public/readme/mission.png)
+
 ## What It Does
 
 Promptr is primarily a prompt evaluation and testing sandbox:
@@ -51,16 +62,37 @@ Promptr is organized as a monorepo for seamless full-stack development:
 
 ```
 promptr/
-├── web/                            # Next.js Frontend (React, TypeScript)
-│   ├── src/app/                    # App Router pages (missions, lab, onboarding)
-│   ├── src/components/             # Shared UI components
-│   └── src/lib/                    # Utilities, Prisma client
-├── server/                         # FastAPI Backend (Python)
-│   ├── routers/                    # API endpoints (analysis, missions)
-│   ├── services/                   # AI logic (LLM service, agent service)
-│   ├── schemas/                    # Pydantic models
-│   └── Makefile                    # Backend-specific dev commands
-├── prisma/                         # Shared database schema
+├── web/                            # Next.js Frontend
+│   ├── prisma/                     # Database schema & migrations
+│   ├── public/                     # Static assets (images, icons)
+│   └── src/
+│       ├── app/                    # App Router pages
+│       │   ├── api/                # Next.js API Routes (auth, profile, scenarios)
+│       │   ├── lab/                # Custom agent sandbox
+│       │   ├── missions/           # Curriculum workspace
+│       │   ├── onboarding/         # User profile setup
+│       │   └── profile/            # User settings & stats
+│       ├── components/             # React components
+│       │   ├── marketing/          # Landing page sections
+│       │   ├── playground/         # Editor & lab UI
+│       │   ├── shared/             # Layout, Header, Footer
+│       │   └── ui/                 # shadcn base components
+│       ├── lib/                    # Shared utilities & Prisma client
+│       ├── types/                  # TypeScript interfaces
+│       └── styles/                 # Global CSS & Tailwind config
+├── server/                         # FastAPI Backend
+│   ├── core/                       # App configuration & DB connection
+│   ├── routers/                    # API Endpoints
+│   │   ├── agents.py               # Mission generation & evaluation
+│   │   ├── analysis.py             # Prompt analysis & coaching
+│   │   └── profile.py              # Credit & user state management
+│   ├── services/                   # Logic Layer
+│   │   ├── agent_service.py        # AI agent evaluation logic
+│   │   └── llm_service.py          # Gemini API orchestration
+│   ├── schemas/                    # Pydantic models (validation)
+│   ├── knowledge-base/             # Prompt engineering reference guide
+│   └── tests/                      # Python unit & integration tests
+├── .github/                        # CI/CD Workflows (Backend & Frontend)
 ├── Makefile                        # Root orchestrator for common tasks
 └── package.json                    # Root monorepo scripts
 ```
