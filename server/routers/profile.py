@@ -21,7 +21,7 @@ async def check_is_admin(user_id: str, db: AgnosticDatabase) -> bool:
         if not user:
             logger.warning(f"User not found in 'User' collection for id: {user_id}")
             return False
-        
+
         role = user.get("role")
         is_admin = isinstance(role, str) and role.lower() == "admin"
         if is_admin:
@@ -81,9 +81,7 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
     # For admins, always return a high number and sync to DB if it got low
     if is_admin and profile.get("credits", 0) < 500:
         profile["credits"] = 999
-        await db.profiles.update_one(
-            {"userId": user_id}, {"$set": {"credits": 999}}
-        )
+        await db.profiles.update_one({"userId": user_id}, {"$set": {"credits": 999}})
 
     profile["id"] = str(profile.pop("_id"))
     return profile
