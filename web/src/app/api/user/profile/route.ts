@@ -66,6 +66,10 @@ export async function GET() {
       problemTitle: string;
     }
 
+    interface BackendProfile {
+      credits: number;
+    }
+
     let solvedProblems: SolvedProblem[] = [];
     let credits = 0;
 
@@ -76,7 +80,7 @@ export async function GET() {
         { cache: "no-store" },
       );
       if (backendProfileRes.ok) {
-        const backendProfile = await backendProfileRes.json();
+        const backendProfile = (await backendProfileRes.json()) as BackendProfile;
         credits = backendProfile.credits;
       }
 
