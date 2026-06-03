@@ -92,7 +92,6 @@ export async function POST(request: Request) {
       creditsRemaining = creditCheck.remaining;
     }
 
-
     const response = await fetchWithTimeout(
       `${env.BACKEND_URL}/evaluate-prompt`,
       {

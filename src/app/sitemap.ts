@@ -3,13 +3,8 @@ import { problemsList } from "@/data/problems";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://promptrai.vercel.app";
-  
-  const staticRoutes = [
-    "",
-    "/lab",
-    "/missions",
-    "/battles",
-  ];
+
+  const staticRoutes = ["", "/lab", "/missions", "/battles"];
 
   const sitemapEntries: MetadataRoute.Sitemap = [];
 

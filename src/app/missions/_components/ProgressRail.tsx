@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, Gauge, LockKey, Play } from "@phosphor-icons/react";
+import { CheckCircle, LockKey, Play } from "@phosphor-icons/react";
 import { CURRICULUM_MISSIONS } from "@/data/missions";
 import type { AgentMission, AgentProfile } from "@/types/agent-dojo";
 
@@ -11,7 +11,13 @@ interface ProgressRailProps {
   onSelectMission: (mission: AgentMission) => void;
 }
 
-const tracks = ["Agent basics", "Tool use", "Workflow control", "Guardrails", "Evals"];
+const tracks = [
+  "Agent basics",
+  "Tool use",
+  "Workflow control",
+  "Guardrails",
+  "Evals",
+];
 
 export function ProgressRail({
   activeMission,
@@ -23,34 +29,25 @@ export function ProgressRail({
 
   return (
     <aside className="flex h-full min-h-0 flex-col bg-[#080908]">
-      {/* Top Metrics */}
-      <div className="grid grid-cols-3 border-b border-white/10 text-center shrink-0">
-        <Metric
-          label="Reliability"
-          value={profile ? `${profile.reliabilityScore}` : "--"}
-        />
-        <Metric label="Completed" value={`${completedCount}/25`} />
-        <Metric label="Streak" value={`${profile?.streak ?? 0}`} />
-      </div>
-
       {/* Grouped Missions List */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-6 select-none no-scrollbar">
+      <div className="no-scrollbar min-h-0 flex-1 select-none space-y-6 overflow-y-auto px-3 py-4">
         {tracks.map((track, trackIdx) => {
           const trackMissions = CURRICULUM_MISSIONS.filter(
-            (m) => m.track.toLowerCase() === track.toLowerCase()
+            (m) => m.track.toLowerCase() === track.toLowerCase(),
           );
 
           return (
             <div key={track} className="space-y-2">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#8f978b] px-1">
+              <div className="flex items-center gap-2 px-1 text-xs font-semibold text-[#8f978b]">
                 Level {trackIdx + 1}: {track}
               </div>
               <ul className="space-y-1.5">
                 {trackMissions.map((item) => {
                   const overallIdx = CURRICULUM_MISSIONS.findIndex(
-                    (m) => m.id === item.id
+                    (m) => m.id === item.id,
                   );
-                  const isCompleted = isAuthenticated && overallIdx < completedCount;
+                  const isCompleted =
+                    isAuthenticated && overallIdx < completedCount;
                   const isUnlocked = !isAuthenticated
                     ? overallIdx === 0
                     : overallIdx <= completedCount;
@@ -65,31 +62,39 @@ export function ProgressRail({
                           }
                         }}
                         disabled={!isUnlocked}
-                        className={`w-full text-left border px-3 py-2.5 transition-colors flex items-center justify-between ${
+                        className={`flex w-full items-center justify-between border px-3 py-2.5 text-left transition-colors ${
                           isActive
-                            ? "border-[#b7ff5a]/60 bg-[#b7ff5a]/10 text-[#f7f2e8]"
+                            ? "border-[#48d8a4]/60 bg-[#48d8a4]/10 text-[#6be0b9]"
                             : isUnlocked
-                            ? "border-white/5 bg-white/[0.01] text-[#abb4a4] hover:bg-white/[0.04] hover:text-[#f7f2e8]"
-                            : "cursor-not-allowed border-white/5 bg-black/40 text-[#555d52]"
+                              ? "border-white/5 bg-white/[0.01] text-[#abb4a4] hover:bg-white/[0.04] hover:text-[#f7f2e8]"
+                              : "cursor-not-allowed border-white/5 bg-black/40 text-[#555d52]"
                         }`}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="font-mono text-[9px] text-[#71786d] uppercase">
+                          <div className="font-mono text-[10px] text-[#71786d]">
                             Mission {trackIdx + 1}.{(overallIdx % 5) + 1}
                           </div>
-                          <div className="text-xs font-semibold truncate mt-0.5">
+                          <div className="mt-0.5 truncate text-xs font-semibold">
                             {item.title}
                           </div>
                         </div>
 
                         <div className="ml-2 shrink-0">
                           {isCompleted ? (
-                            <CheckCircle size={14} className="text-[#b7ff5a]" weight="fill" />
+                            <CheckCircle
+                              size={14}
+                              className="text-[#48d8a4]"
+                              weight="fill"
+                            />
                           ) : isUnlocked ? (
                             isActive ? (
-                              <Play size={10} className="text-[#b7ff5a]" weight="fill" />
+                              <Play
+                                size={10}
+                                className="text-[#48d8a4]"
+                                weight="fill"
+                              />
                             ) : (
-                              <div className="h-1.5 w-1.5 rounded-full bg-[#b7ff5a]/40" />
+                              <div className="h-1.5 w-1.5 rounded-full bg-[#48d8a4]/40" />
                             )
                           ) : (
                             <LockKey size={12} className="text-[#555d52]" />
@@ -105,19 +110,5 @@ export function ProgressRail({
         })}
       </div>
     </aside>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-r border-white/10 px-2 py-4 last:border-r-0">
-      <div className="flex justify-center text-[#b7ff5a]">
-        <Gauge size={14} />
-      </div>
-      <div className="mt-1 font-mono text-lg text-[#f7f2e8]">{value}</div>
-      <div className="mt-1 text-[10px] uppercase tracking-[0.13em] text-[#71786d]">
-        {label}
-      </div>
-    </div>
   );
 }

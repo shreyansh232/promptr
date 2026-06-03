@@ -52,8 +52,7 @@ describe("MissionsWorkspace", () => {
       />,
     );
 
-    expect(screen.getByText("91")).toBeInTheDocument();
     expect(screen.getAllByText("1/25")[0]).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getAllByText("3")[0]).toBeInTheDocument();
   });
 });

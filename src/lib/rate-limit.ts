@@ -15,7 +15,7 @@ const store = new Map<string, RateLimitEntry>();
 
 // Cleanup interval: remove expired entries every 5 minutes
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
-setInterval(() => {
+const interval = setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of store.entries()) {
     // If the oldest timestamp is outside any possible window, remove the entry
@@ -25,6 +25,10 @@ setInterval(() => {
     }
   }
 }, CLEANUP_INTERVAL_MS);
+
+if (typeof interval.unref === "function") {
+  interval.unref();
+}
 
 /**
  * Check if a request is within rate limits.

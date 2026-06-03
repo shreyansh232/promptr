@@ -43,7 +43,7 @@ export async function Header() {
             href="https://github.com/shreyansh232/promptr"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden h-9 items-center gap-2 border border-[var(--landing-line)] px-3 font-mono text-xs text-[var(--landing-muted)] transition-colors hover:border-[var(--landing-signal)]/45 hover:text-[var(--landing-paper)] sm:inline-flex"
+            className="hover:border-[var(--landing-signal)]/45 hidden h-9 items-center gap-2 border border-[var(--landing-line)] px-3 font-mono text-xs text-[var(--landing-muted)] transition-colors hover:text-[var(--landing-paper)] sm:inline-flex"
           >
             <GithubLogo size={16} aria-hidden="true" />
             Star on GitHub
@@ -57,7 +57,7 @@ export async function Header() {
           {!session?.user ? (
             <Button
               asChild
-              className="h-10 rounded-none bg-[var(--landing-signal)] px-4 text-[var(--landing-ink)] shadow-none hover:bg-[var(--landing-signal-strong)] font-mono text-xs uppercase tracking-[0.1em]"
+              className="h-10 rounded-none bg-[var(--landing-signal)] px-4 font-mono text-xs uppercase tracking-[0.1em] text-[var(--landing-ink)] shadow-none hover:bg-[var(--landing-signal-strong)]"
             >
               <Link href="/sign-in">Sign in</Link>
             </Button>

@@ -106,7 +106,7 @@ export default function OnboardingPage() {
         <div className="text-lg font-semibold">Promptr</div>
 
         <div className="max-w-md">
-          <div className="mb-5 inline-flex border border-[#b7ff5a]/30 bg-[#b7ff5a]/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-[#c8ff76]">
+          <div className="mb-5 inline-flex border border-[#48d8a4]/30 bg-[#48d8a4]/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-[#6be0b9]">
             Agent profile
           </div>
           <h1 className="text-5xl font-semibold leading-tight">
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
         <div className="w-full max-w-md">
           <div className="mb-10 h-1.5 w-full bg-white/10">
             <div
-              className="h-1.5 bg-[#b7ff5a] transition-all duration-300"
+              className="h-1.5 bg-[#48d8a4] transition-all duration-300"
               style={{
                 width: `${((currentStep + 1) / steps.length) * 100}%`,
               }}
@@ -149,7 +149,7 @@ export default function OnboardingPage() {
                 onValueChange={(value) => updateField("level", value)}
                 value={formData.level}
               >
-                <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#b7ff5a]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#48d8a4]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Select level" />
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-[#10110f] text-[#f7f2e8]">
@@ -184,7 +184,7 @@ export default function OnboardingPage() {
                   updateField("builderRole", event.target.value)
                 }
                 placeholder="Example: full-stack developer"
-                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Input
                 value={formData.workflowFocus}
@@ -192,7 +192,7 @@ export default function OnboardingPage() {
                   updateField("workflowFocus", event.target.value)
                 }
                 placeholder="Example: support triage workflow"
-                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
           )}
@@ -238,13 +238,13 @@ export default function OnboardingPage() {
                     onClick={() => updateField("riskFocus", risk)}
                     className={`flex w-full items-center justify-between border px-4 py-4 text-left transition-colors ${
                       formData.riskFocus === risk
-                        ? "border-[#b7ff5a]/50 bg-[#b7ff5a]/10 text-[#f7f2e8]"
+                        ? "border-[#48d8a4]/50 bg-[#48d8a4]/10 text-[#f7f2e8]"
                         : "border-white/10 bg-[#10110f] text-[#abb4a4] hover:border-white/20"
                     }`}
                   >
                     <span>{risk}</span>
                     {formData.riskFocus === risk && (
-                      <Check size={16} className="text-[#b7ff5a]" />
+                      <Check size={16} className="text-[#48d8a4]" />
                     )}
                   </button>
                 ))}
@@ -265,7 +265,7 @@ export default function OnboardingPage() {
             <Button
               onClick={handleNext}
               disabled={isNextDisabled || isSaving}
-              className="rounded-none bg-[#b7ff5a] px-6 py-6 font-mono text-xs uppercase tracking-[0.12em] text-[#10110f] hover:bg-[#cbff82] disabled:opacity-40"
+              className="rounded-none bg-[#48d8a4] px-6 py-6 font-mono text-xs uppercase tracking-[0.12em] text-[#10110f] hover:bg-[#62e2b7] disabled:opacity-40"
             >
               {isSaving
                 ? "Saving"
@@ -295,7 +295,7 @@ function CheckboxRow({
       <span
         className={`flex h-5 w-5 items-center justify-center border ${
           checked
-            ? "border-[#b7ff5a] bg-[#b7ff5a]"
+            ? "border-[#48d8a4] bg-[#48d8a4]"
             : "border-white/20 bg-transparent"
         }`}
       >

@@ -564,6 +564,118 @@ def generate_battle_content(title: str, description: str) -> dict:
         }
 
 
+def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
+    """Generate dynamic goal, tools, rules, and test cases for a user-created agent prompt test."""
+    prompt = dedent(
+        f"""
+        You are a battle architect and testing suite designer for AI agents.
+        A developer wants to evaluate a prompt template for their custom agent.
+
+        Agent Description: {agent_desc}
+        Available Tools: {tools_desc}
+
+        Your task:
+        1. Design a prompt testing challenge for this agent.
+        2. Create 3 challenging, diverse, and specific test cases (1 basic/happy path, 1 edge case, 1 adversarial or safety guardrail check) to run against the user's agent instructions.
+        3. Identify and construct tools list matching the description.
+        4. Construct a clear set of workflow rules for evaluation.
+
+        Return a valid JSON object only. Do NOT wrap in markdown code blocks. Use this exact shape:
+        {{
+            "title": "A short, catchy, descriptive title for the custom agent scenario",
+            "difficulty": "Beginner | Intermediate | Expert",
+            "description": "Terse, LeetCode-style technical description of what the agent needs to do, workflow constraints, and tools behavior.",
+            "goal": "One sentence describing the core goal.",
+            "availableTools": [
+                {{
+                    "name": "tool_name",
+                    "description": "What it does.",
+                    "inputSchema": {{"param1": "string"}},
+                    "riskLevel": "low | high",
+                    "sideEffects": "What it changes, or 'None'",
+                    "expectedUsage": "When to call it."
+                }}
+            ],
+            "workflowRules": [
+                "Rule 1", "Rule 2"
+            ],
+            "visibleExamples": [
+                {{
+                    "input": "User query",
+                    "expectedBehavior": "What agent should output/do",
+                    "explanation": "Why this is correct"
+                }}
+            ],
+            "testCases": [
+                {{
+                    "id": "test-case-id-1",
+                    "input": "User query",
+                    "simulatedContext": "Details about context/status",
+                    "expectedBehavior": "Exactly what the agent must do",
+                    "expectedToolCalls": ["tool_name"],
+                    "forbiddenToolCalls": ["other_tool"],
+                    "failureType": "workflow-control | guardrails | tool-use",
+                    "hidden": false
+                }}
+            ],
+            "proTips": ["Tip 1", "Tip 2"],
+            "tags": ["tag1", "tag2"],
+            "hint": "A helpful hint for writing the prompt instructions."
+        }}
+        """
+    ).strip()
+
+    raw_response = _send_prompt(prompt)
+    try:
+        return _parse_gemini_json(raw_response)
+    except (json.JSONDecodeError, KeyError, ValueError):
+        # Fallback dictionary
+        return {
+            "title": "Custom Agent Scenario",
+            "difficulty": "Intermediate",
+            "description": f"Test instructions for an agent described as: {agent_desc}",
+            "goal": "Create prompt instructions that satisfy the custom agent behavior.",
+            "availableTools": [
+                {
+                    "name": "custom_tool",
+                    "description": "Custom tool based on user instructions",
+                    "inputSchema": {},
+                    "riskLevel": "low",
+                    "sideEffects": "None",
+                    "expectedUsage": "Use this tool as appropriate."
+                }
+            ],
+            "workflowRules": [
+                "Follow all operational constraints detailed in the description."
+            ],
+            "visibleExamples": [
+                {
+                    "input": "Sample user query",
+                    "expectedBehavior": "Sample response or tool call",
+                    "explanation": "Valid response based on agent rules"
+                }
+            ],
+            "testCases": [
+                {
+                    "id": "basic-check",
+                    "input": "Test input 1",
+                    "simulatedContext": "Verify basic request handling",
+                    "expectedBehavior": "Correct agent output matching description",
+                    "expectedToolCalls": [],
+                    "forbiddenToolCalls": [],
+                    "failureType": "workflow-control",
+                    "hidden": False
+                }
+            ],
+            "proTips": [
+                "Define a clear system role and persona.",
+                "Structure instructions with bullet points."
+            ],
+            "tags": ["custom-agent"],
+            "hint": "Make sure to explicitly write instructions for the specific role described."
+        }
+
+
 # ============================================================
 # PROMPT EVALUATION ENGINE
 # ============================================================

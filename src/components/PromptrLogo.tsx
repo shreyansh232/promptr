@@ -20,7 +20,7 @@ export function PromptrLogo({
       <svg
         aria-hidden="true"
         viewBox="0 0 64 64"
-        style={{ color: "#b7ff5a" }}
+        style={{ color: "#48d8a4" }}
         className={cn("h-10 w-10 shrink-0", markClassName)}
       >
         {/* Sharp outer square frame - slightly dim */}

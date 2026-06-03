@@ -47,7 +47,7 @@ describe("SEO - sitemap.ts", () => {
   it("generates entries for each individual problem dynamically", () => {
     const res = sitemap();
     const urls = res.map((entry) => entry.url);
-    
+
     // problemsList contains IDs 1 to 5
     expect(urls).toContain("https://promptrai.vercel.app/problems/1");
     expect(urls).toContain("https://promptrai.vercel.app/problems/2");
@@ -58,14 +58,18 @@ describe("SEO - sitemap.ts", () => {
 
   it("configures changeFrequency and priority correctly", () => {
     const res = sitemap();
-    
+
     // Check root priority
-    const rootEntry = res.find((entry) => entry.url === "https://promptrai.vercel.app");
+    const rootEntry = res.find(
+      (entry) => entry.url === "https://promptrai.vercel.app",
+    );
     expect(rootEntry?.priority).toBe(1.0);
     expect(rootEntry?.changeFrequency).toBe("daily");
 
     // Check problems priority
-    const problemEntry = res.find((entry) => entry.url === "https://promptrai.vercel.app/problems/1");
+    const problemEntry = res.find(
+      (entry) => entry.url === "https://promptrai.vercel.app/problems/1",
+    );
     expect(problemEntry?.priority).toBe(0.7);
     expect(problemEntry?.changeFrequency).toBe("weekly");
   });

@@ -46,9 +46,10 @@ export default async function PlaygroundPage() {
         workflowFocus: user.profile.workflowFocus,
         riskFocus: user.profile.riskFocus,
       };
-      
+
       const nextIndex = Math.min(user.profile.problemsSolved ?? 0, 24);
-      initialMission = (CURRICULUM_MISSIONS[nextIndex] ?? CURRICULUM_MISSIONS[0])!;
+      initialMission = (CURRICULUM_MISSIONS[nextIndex] ??
+        CURRICULUM_MISSIONS[0])!;
     }
   }
 

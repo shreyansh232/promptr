@@ -13,6 +13,11 @@ class ChatRequest(BaseModel):
     user_type: UserType
 
 
+class CustomScenarioRequest(BaseModel):
+    agentDescription: str
+    tools: str = ""
+
+
 class PromptSuggestion(BaseModel):
     title: str
     prompt: str

@@ -21,6 +21,7 @@ model User {
   Authenticator   Authenticator[]
   profile         UserProfile?
   completedMissions CompletedAgentMission[]
+  customScenarios CustomScenario[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 }
@@ -110,5 +111,27 @@ model CompletedAgentMission {
 
   @@unique([userId, missionId])
   @@map("completed_agent_missions")
+}
+
+model CustomScenario {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId
+  title            String
+  difficulty       String
+  description      String
+  goal             String
+  agentDescription String
+  tools            String
+  examples         String   // Stringified JSON of PracticeExample[]
+  testCases        String   // Stringified JSON of PracticeTestCase[]
+  proTips          String[] @default([])
+  tags             String[] @default([])
+  hint             String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("custom_scenarios")
 }
 

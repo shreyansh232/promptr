@@ -2,7 +2,9 @@
 
 import {
   BracketsCurly,
+  CircleNotch,
   Flask,
+  Play,
   ShieldWarning,
   TerminalWindow,
   Wrench,
@@ -37,7 +39,7 @@ export function MissionEditor({
       <section className="shrink-0 border-b border-white/10 px-5 py-4">
         <div className="grid grid-cols-[1fr_auto] items-start gap-4">
           <div className="min-w-0">
-            <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#b7ff5a]">
+            <div className="font-mono text-[11px] text-[#abb4a4]">
               {mission.track} / {mission.difficulty}
             </div>
             <h1 className="mt-2 truncate text-2xl font-semibold tracking-tight text-[#f7f2e8]">
@@ -50,9 +52,19 @@ export function MissionEditor({
           <Button
             onClick={onRun}
             disabled={isEvaluating || instructions.trim().length < 10}
-            className="h-11 rounded-none bg-[#b7ff5a] px-5 font-mono text-xs uppercase tracking-[0.12em] text-[#10110f] hover:bg-[#cbff82] disabled:opacity-40"
+            className="h-11 rounded-none bg-[#48d8a4] px-6 font-mono text-sm font-bold text-[#10110f] hover:bg-[#62e2b7] disabled:opacity-40"
           >
-            {isEvaluating ? "Running eval" : "Run scenarios"}
+            {isEvaluating ? (
+              <span className="flex items-center gap-2">
+                <CircleNotch size={16} className="animate-spin" />
+                Running...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Play size={14} weight="fill" />
+                Run Test
+              </span>
+            )}
           </Button>
         </div>
       </section>
@@ -83,7 +95,7 @@ export function MissionEditor({
           <div className="grid min-h-full grid-rows-[auto_1fr] gap-4">
             <div className="grid gap-3 border border-white/10 bg-black/20 p-4 md:grid-cols-[1fr_1fr]">
               <div>
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[#8f978b]">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#8f978b]">
                   <BracketsCurly size={14} />
                   Agent Goal
                 </div>
@@ -92,23 +104,20 @@ export function MissionEditor({
                 </p>
               </div>
               <div>
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-[#8f978b]">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-[#8f978b]">
                   <ShieldWarning size={14} />
                   Workflow Rules
                 </div>
-                <ul className="space-y-1.5 text-sm text-[#d8ddcf]">
+                <ul className="list-inside list-disc space-y-1.5 text-sm text-[#d8ddcf]">
                   {mission.workflowRules.map((rule) => (
-                    <li key={rule} className="flex gap-2">
-                      <span className="mt-2 h-1 w-1 bg-[#b7ff5a]" />
-                      <span>{rule}</span>
-                    </li>
+                    <li key={rule}>{rule}</li>
                   ))}
                 </ul>
               </div>
             </div>
 
             <label className="grid min-h-[380px] grid-rows-[auto_1fr] border border-white/10 bg-[#060706]">
-              <div className="border-b border-white/10 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.15em] text-[#8f978b]">
+              <div className="border-b border-white/10 px-4 py-3 font-mono text-[11px] text-[#8f978b]">
                 developer_instructions.md
               </div>
               <Textarea
@@ -134,12 +143,12 @@ export function MissionEditor({
                     {tool.name}
                   </h2>
                   <span
-                    className={`border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] ${
+                    className={`border px-2 py-1 font-mono text-[10px] ${
                       tool.riskLevel === "high"
                         ? "border-[#ff5a5a]/50 text-[#ff9b9b]"
                         : tool.riskLevel === "medium"
                           ? "border-[#ffcc66]/50 text-[#ffdb8f]"
-                          : "border-[#b7ff5a]/40 text-[#c8ff76]"
+                          : "border-green-400/40 text-green-400"
                     }`}
                   >
                     {tool.riskLevel} risk
@@ -174,14 +183,14 @@ export function MissionEditor({
                     <h2 className="font-mono text-sm text-[#f7f2e8]">
                       {scenario.id}
                     </h2>
-                    <span className="border border-white/10 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8f978b]">
+                    <span className="border border-white/10 px-2 py-1 font-mono text-[10px] text-[#8f978b]">
                       {scenario.failureType}
                     </span>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#d8ddcf]">
                     {scenario.input}
                   </p>
-                  <p className="mt-3 border-l border-[#b7ff5a]/40 pl-3 text-sm leading-6 text-[#abb4a4]">
+                  <p className="mt-3 border-l border-[#48d8a4]/40 pl-3 text-sm leading-6 text-[#abb4a4]">
                     {scenario.expectedBehavior}
                   </p>
                 </article>
@@ -208,9 +217,9 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-12 flex-1 items-center justify-center gap-2 border-r border-white/10 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors last:border-r-0 ${
+      className={`flex h-12 flex-1 items-center justify-center gap-2 border-r border-white/10 font-mono text-[11px] transition-colors last:border-r-0 ${
         active
-          ? "bg-[#b7ff5a]/10 text-[#c8ff76]"
+          ? "bg-[#48d8a4]/10 text-[#6be0b9]"
           : "bg-[#0b0c0a] text-[#777f72] hover:bg-white/[0.03] hover:text-[#d8ddcf]"
       }`}
     >
@@ -223,9 +232,7 @@ function TabButton({
 function ToolDetail({ label, value }: { label: string; value: string }) {
   return (
     <div className="border border-white/10 bg-[#060706] p-3">
-      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#71786d]">
-        {label}
-      </div>
+      <div className="font-mono text-[10px] text-[#71786d]">{label}</div>
       <div className="mt-2 break-words text-xs leading-5 text-[#d8ddcf]">
         {value}
       </div>

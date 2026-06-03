@@ -968,7 +968,7 @@ export default function BattlesPage() {
                 </div>
 
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#b7ff5a]" />
+                  <Loader2 className="h-8 w-8 animate-spin text-[#48d8a4]" />
                 </div>
 
                 {/* Cancel button for creator */}

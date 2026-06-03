@@ -8,7 +8,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Lab",
-  description: "Test and stress-test your AI agent prompts against adversarial inputs and workflow constraints.",
+  description:
+    "Test and stress-test your AI agent prompts against adversarial inputs and workflow constraints.",
 };
 
 export const dynamic = "force-dynamic";

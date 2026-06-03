@@ -23,6 +23,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
 import MainSidebar from "./Sidebar";
+import type { CustomScenario } from "./Sidebar";
+import { NewScenarioModal } from "@/components/NewScenarioModal";
 
 interface UserInfo {
   level: string;
@@ -114,34 +116,39 @@ Workflow Rules to Enforce:
   examples: [
     {
       input: "Where is my order ORD-5512?",
-      output: "Greet the customer and call check_order_status with order_id='ORD-5512'.",
-      explanation: "The customer provided a valid order ID, so the bot calls the tracking tool immediately."
-    }
+      output:
+        "Greet the customer and call check_order_status with order_id='ORD-5512'.",
+      explanation:
+        "The customer provided a valid order ID, so the bot calls the tracking tool immediately.",
+    },
   ],
   testCases: [
     {
       input: "Hello! Can you check the status of my order ORD-9931?",
       expectedOutput: "Call check_order_status with order_id='ORD-9931'.",
-      description: "Tests check_order_status tool."
+      description: "Tests check_order_status tool.",
     },
     {
       input: "Hi, where is my package? It is late.",
-      expectedOutput: "Ask the user to provide their order ID before looking up status.",
-      description: "Tests workflow constraint when order_id parameter is missing."
+      expectedOutput:
+        "Ask the user to provide their order ID before looking up status.",
+      description:
+        "Tests workflow constraint when order_id parameter is missing.",
     },
     {
       input: "I want a refund for order XYZ-123. The item was damaged.",
-      expectedOutput: "Refuse the refund because the order ID does not start with 'ORD-'.",
-      description: "Tests guardrail rejecting non-ORD- format refund attempts."
-    }
+      expectedOutput:
+        "Refuse the refund because the order ID does not start with 'ORD-'.",
+      description: "Tests guardrail rejecting non-ORD- format refund attempts.",
+    },
   ],
   proTips: [
     "Greet the customer politely.",
     "Validate input formats before invoking tools.",
-    "Refuse operations that violate format constraints."
+    "Refuse operations that violate format constraints.",
   ],
   tags: ["tool-use", "customer-care", "workflow-control"],
-  hint: "Write operating rules: greet the customer, ask for order_id if missing, run check_order_status or request_refund, and reject refunds for non-ORD- order formats."
+  hint: "Write operating rules: greet the customer, ask for order_id if missing, run check_order_status or request_refund, and reject refunds for non-ORD- order formats.",
 };
 
 // No browser local storage cache. All problems persist in MongoDB.
@@ -194,6 +201,14 @@ export default function ChatInterface() {
   const [problemIndex, setProblemIndex] = useState(1);
 
   const [showHint, setShowHint] = useState(false);
+
+  const [customScenarios, setCustomScenarios] = useState<CustomScenario[]>([]);
+  const [activeCustomScenarioId, setActiveCustomScenarioId] = useState<
+    string | null
+  >(null);
+  const [isNewScenarioModalOpen, setIsNewScenarioModalOpen] = useState(false);
+  const [isGeneratingCustomScenario, setIsGeneratingCustomScenario] =
+    useState(false);
 
   const { data: session } = useSession();
   const userInitial = session?.user?.name?.[0]?.toUpperCase() ?? "P";
@@ -308,6 +323,133 @@ export default function ChatInterface() {
     setShowHint(false);
   }, [activeProblem]);
 
+  // Auto-expand sidebar on desktop mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      setSidebarOpen(true);
+    }
+  }, []);
+
+  // Load custom scenarios on mount/session
+  useEffect(() => {
+    const fetchCustomScenarios = async () => {
+      if (!session) return;
+      try {
+        const response = await fetch("/api/custom-scenarios");
+        if (response.ok) {
+          const data = (await response.json()) as {
+            customScenarios?: CustomScenario[];
+          };
+          setCustomScenarios(data.customScenarios ?? []);
+        }
+      } catch (error) {
+        console.error("Error fetching custom scenarios:", error);
+      }
+    };
+    void fetchCustomScenarios();
+  }, [session]);
+
+  const handleSelectCustomScenario = (scenario: CustomScenario) => {
+    // Clear current state to avoid carryover
+    setPromptAnalysis(null);
+    setPromptEvaluation(null);
+    setScore(null);
+    setEloResult(null);
+    setMessages([]);
+
+    setActiveCustomScenarioId(scenario.id);
+    try {
+      setActiveProblem({
+        id: "9999",
+        title: scenario.title,
+        difficulty: scenario.difficulty,
+        description: scenario.description,
+        goal: scenario.goal,
+        examples: JSON.parse(scenario.examples) as {
+          input: string;
+          output: string;
+          explanation: string;
+        }[],
+        testCases: JSON.parse(scenario.testCases) as {
+          input: string;
+          expectedOutput: string;
+          description: string;
+        }[],
+        proTips: scenario.proTips,
+        tags: scenario.tags,
+        hint: scenario.hint,
+      });
+    } catch (e) {
+      console.error("Error parsing custom scenario examples/testCases:", e);
+      toast.error("Failed to load prompt test details.");
+    }
+  };
+
+  const handleCreateCustomScenario = async (
+    agentDescription: string,
+    tools: string,
+  ) => {
+    setIsGeneratingCustomScenario(true);
+    try {
+      const response = await fetch("/api/custom-scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentDescription, tools }),
+      });
+
+      if (!response.ok) {
+        const errData = (await response.json()) as { error?: string };
+        toast.error(errData.error ?? "Failed to create custom prompt test.");
+        return;
+      }
+
+      const data = (await response.json()) as {
+        customScenario: CustomScenario;
+      };
+      const scenario = data.customScenario;
+      setCustomScenarios((prev) => [scenario, ...prev]);
+      setIsNewScenarioModalOpen(false);
+      handleSelectCustomScenario(scenario);
+      toast.success("Custom prompt test generated and loaded!");
+    } catch (error) {
+      console.error("Error creating custom scenario:", error);
+      toast.error("An error occurred during generation.");
+    } finally {
+      setIsGeneratingCustomScenario(false);
+    }
+  };
+
+  const handleDeleteCustomScenario = async (
+    id: string,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this prompt test?")) return;
+    try {
+      const response = await fetch(`/api/custom-scenarios?id=${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setCustomScenarios((prev) => prev.filter((s) => s.id !== id));
+        if (activeCustomScenarioId === id) {
+          setActiveCustomScenarioId(null);
+          // Fallback to standard problem
+          if (normalizedUserInfo) {
+            void fetchProblems();
+          } else {
+            setActiveProblem(SUPPORT_TRIAGE_PROBLEM);
+          }
+        }
+        toast.success("Prompt test deleted successfully.");
+      } else {
+        toast.error("Failed to delete custom prompt test.");
+      }
+    } catch (error) {
+      console.error("Error deleting custom scenario:", error);
+      toast.error("An error occurred while deleting.");
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || !normalizedUserInfo || isTyping) return;
 
@@ -366,49 +508,51 @@ export default function ChatInterface() {
           );
         }
 
-        // Update progression and save solved problem based on evaluation score
-        const eloRes = await fetch("/api/user/elo", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            score: evalData.overallScore,
-            allPassed: evalData.passed,
-            problemId: activeProblem.id,
-            problemTitle: activeProblem.title,
-            problemJson: JSON.stringify(activeProblem),
-            userPrompt: promptText,
-          }),
-        });
+        // Update progression and save solved problem based on evaluation score (skip for custom scenarios)
+        if (activeProblem.id !== "9999") {
+          const eloRes = await fetch("/api/user/elo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              score: evalData.overallScore,
+              allPassed: evalData.passed,
+              problemId: activeProblem.id,
+              problemTitle: activeProblem.title,
+              problemJson: JSON.stringify(activeProblem),
+              userPrompt: promptText,
+            }),
+          });
 
-        if (eloRes.ok) {
-          const eloData = (await eloRes.json()) as {
-            elo: number;
-            eloChange: number;
-            level: string;
-            subLevel: number;
-            problemsSolved: number;
-            streak: number;
-            passed: boolean;
-            solvedProblems?: {
-              userLevel: string;
+          if (eloRes.ok) {
+            const eloData = (await eloRes.json()) as {
+              elo: number;
+              eloChange: number;
+              level: string;
               subLevel: number;
-              problemTitle: string;
-            }[];
-          };
-          setEloResult(eloData);
-          setUserInfo((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  elo: eloData.elo,
-                  level: eloData.level,
-                  subLevel: eloData.subLevel,
-                  problemsSolved: eloData.problemsSolved,
-                  streak: eloData.streak,
-                  solvedProblems: eloData.solvedProblems,
-                }
-              : null,
-          );
+              problemsSolved: number;
+              streak: number;
+              passed: boolean;
+              solvedProblems?: {
+                userLevel: string;
+                subLevel: number;
+                problemTitle: string;
+              }[];
+            };
+            setEloResult(eloData);
+            setUserInfo((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    elo: eloData.elo,
+                    level: eloData.level,
+                    subLevel: eloData.subLevel,
+                    problemsSolved: eloData.problemsSolved,
+                    streak: eloData.streak,
+                    solvedProblems: eloData.solvedProblems,
+                  }
+                : null,
+            );
+          }
         }
 
         setMessages((prev) => [
@@ -488,6 +632,9 @@ export default function ChatInterface() {
       toast.error("Sign in to solve more problems!");
       return;
     }
+
+    // Clear custom scenario state to return to curriculum progression
+    setActiveCustomScenarioId(null);
 
     // Clear all current state
     setPromptAnalysis(null);
@@ -572,6 +719,11 @@ export default function ChatInterface() {
         solvedProblems={normalizedUserInfo?.solvedProblems}
         isExpanded={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        customScenarios={customScenarios}
+        activeCustomScenarioId={activeCustomScenarioId}
+        onSelectCustomScenario={handleSelectCustomScenario}
+        onOpenNewScenarioModal={() => setIsNewScenarioModalOpen(true)}
+        onDeleteCustomScenario={handleDeleteCustomScenario}
       />
 
       {/* Main content area — top padding reserves space for the fixed top bar */}
@@ -582,10 +734,31 @@ export default function ChatInterface() {
         {/* Top bar - viewport-spanning so its center is always the viewport
             center, invariant to sidebar width. */}
         <div
-          className="fixed right-0 top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background px-6 transition-[left] duration-300 ease-in-out md:px-8"
-          style={{ left: sidebarOpen ? "260px" : "68px" }}
+          className={`fixed left-0 right-0 top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background px-6 transition-[left] duration-300 ease-in-out md:px-8 ${
+            sidebarOpen ? "lg:left-[260px]" : "lg:left-[68px]"
+          }`}
         >
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Mobile/Tablet Sidebar Toggle Button */}
+            <button
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label="Toggle sidebar"
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground lg:hidden"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
             {normalizedUserInfo && (
               <>
                 {/* Level */}
@@ -664,7 +837,7 @@ export default function ChatInterface() {
             {!session ? (
               <Link
                 href="/sign-in"
-                className="bg-[#b7ff5a] px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.11em] text-[#10110f] transition-colors hover:bg-[#cbff82] focus-visible:outline-none"
+                className="bg-[#48d8a4] px-4 py-2 font-mono text-xs font-semibold text-[#10110f] transition-colors hover:bg-[#62e2b7] focus-visible:outline-none"
               >
                 Sign in
               </Link>
@@ -1077,6 +1250,12 @@ export default function ChatInterface() {
               </div>
             </div>
           </div>
+          <NewScenarioModal
+            isOpen={isNewScenarioModalOpen}
+            onClose={() => setIsNewScenarioModalOpen(false)}
+            onSubmit={handleCreateCustomScenario}
+            isLoading={isGeneratingCustomScenario}
+          />
         </div>
       </div>
     </div>

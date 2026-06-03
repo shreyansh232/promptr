@@ -5,6 +5,7 @@ from datetime import datetime, UTC
 from core.db import get_db
 from schemas.analysis import (
     ChatRequest,
+    CustomScenarioRequest,
     PracticeProblemsResponse,
     PromptAnalysisResponse,
     TestCaseEvaluationRequest,
@@ -15,6 +16,7 @@ from services.llm_service import (
     analyze_prompt_response,
     evaluate_prompt_full,
     generate_practice_problems,
+    generate_custom_scenario,
 )
 
 router = APIRouter()
@@ -95,5 +97,15 @@ async def evaluate_prompt(
             problem_goal=request.problemGoal,
         )
         return TestCaseEvaluationResponse(**result)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/generate-custom-scenario")
+async def generate_custom_scenario_endpoint(
+    request: CustomScenarioRequest,
+) -> dict:
+    try:
+        return generate_custom_scenario(request.agentDescription, request.tools)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

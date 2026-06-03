@@ -31,7 +31,10 @@ export function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button type="button" className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 transition-colors hover:bg-white/10">
+        <button
+          type="button"
+          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 transition-colors hover:bg-white/10"
+        >
           {image ? (
             <Image
               className="h-full w-full object-cover"
@@ -49,14 +52,14 @@ export function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-48 rounded-none border border-white/10 bg-[#060706] p-1 text-[#f7f2e8] z-[9999]"
+        className="z-[9999] w-48 rounded-none border border-white/10 bg-[#060706] p-1 text-[#f7f2e8]"
       >
         <DropdownMenuItem asChild className="!rounded-none">
           <Link
             href="/profile?from=landing"
-            className="flex cursor-pointer items-center gap-2.5 px-3 py-2.5 font-mono text-xs uppercase tracking-[0.12em] text-[#abb4a4] hover:bg-[#b7ff5a]/10 hover:text-[#c8ff76] focus:bg-[#b7ff5a]/10 focus:text-[#c8ff76] w-full"
+            className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 font-mono text-xs uppercase tracking-[0.12em] text-[#abb4a4] hover:bg-[#48d8a4]/10 hover:text-[#6be0b9] focus:bg-[#48d8a4]/10 focus:text-[#6be0b9]"
           >
-            <User size={14} className="shrink-0 text-[#b7ff5a]" />
+            <User size={14} className="shrink-0 text-[#48d8a4]" />
             <span>View profile</span>
           </Link>
         </DropdownMenuItem>
@@ -71,4 +74,3 @@ export function UserMenu({
     </DropdownMenu>
   );
 }
-

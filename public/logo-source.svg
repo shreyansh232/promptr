@@ -5,9 +5,9 @@
     y="8"
     width="48"
     height="48"
-    fill="#b7ff5a"
+    fill="#48d8a4"
     fill-opacity="0.08"
-    stroke="#b7ff5a"
+    stroke="#48d8a4"
     stroke-width="3"
     stroke-opacity="0.4"
   />
@@ -15,7 +15,7 @@
   <path
     d="M22 20 l12 12 -12 12"
     fill="none"
-    stroke="#b7ff5a"
+    stroke="#48d8a4"
     stroke-width="4.5"
     stroke-linecap="square"
     stroke-linejoin="miter"
@@ -26,7 +26,7 @@
     y1="20"
     x2="42"
     y2="44"
-    stroke="#b7ff5a"
+    stroke="#48d8a4"
     stroke-width="3.5"
     stroke-linecap="square"
   />

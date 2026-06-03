@@ -136,9 +136,9 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
           <Button
             onClick={saveProfile}
             disabled={isSaving}
-            className="rounded-none bg-[#b7ff5a] px-5 py-2 font-mono text-xs uppercase tracking-[0.12em] text-[#10110f] hover:bg-[#cbff82] disabled:opacity-50"
+            className="rounded-none bg-[#48d8a4] px-6 py-2.5 font-mono text-sm font-bold text-[#10110f] hover:bg-[#62e2b7] disabled:opacity-50"
           >
-            <Save className="mr-2 h-3.5 w-3.5" />
+            <Save className="mr-2 h-4 w-4" />
             {isSaving ? "Saving" : "Save"}
           </Button>
         </div>
@@ -146,13 +146,13 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
 
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-14">
         <div className="mb-14">
-          <div className="mb-3 font-mono text-xs uppercase tracking-[0.18em] text-[#b7ff5a]">
+          <div className="mb-3 font-mono text-xs uppercase tracking-[0.18em] text-[#48d8a4]">
             Progress
           </div>
           <h1 className="text-5xl font-semibold tracking-tight">
             Agent builder profile
           </h1>
-          <div className="mt-6 h-px w-24 bg-[#b7ff5a]" />
+          <div className="mt-6 h-px w-24 bg-[#48d8a4]" />
         </div>
 
         <div className="mb-16 grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -191,7 +191,7 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
                   setProfile((current) => ({ ...current, level: value }))
                 }
               >
-                <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#b7ff5a]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#48d8a4]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Select your level" />
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-[#10110f] text-[#f7f2e8]">
@@ -214,7 +214,7 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
                     }))
                   }
                   placeholder="full-stack developer"
-                  className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
                 <Input
                   value={profile.workflowFocus}
@@ -226,7 +226,7 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
                     }))
                   }
                   placeholder="support triage workflow"
-                  className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
             </FieldBlock>
@@ -258,13 +258,13 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
                     }
                     className={`flex items-center justify-between border px-4 py-4 text-left transition-colors ${
                       profile.riskFocus === risk
-                        ? "border-[#b7ff5a]/50 bg-[#b7ff5a]/10 text-[#f7f2e8]"
+                        ? "border-[#48d8a4]/50 bg-[#48d8a4]/10 text-[#f7f2e8]"
                         : "border-white/10 bg-[#10110f] text-[#abb4a4] hover:border-white/20"
                     }`}
                   >
                     <span>{risk}</span>
                     {profile.riskFocus === risk && (
-                      <Check size={16} className="text-[#b7ff5a]" />
+                      <Check size={16} className="text-[#48d8a4]" />
                     )}
                   </button>
                 ))}
@@ -319,7 +319,7 @@ function FieldBlock({
   return (
     <div>
       <div className="mb-4 flex items-baseline gap-4">
-        <span className="font-mono text-xs text-[#b7ff5a]">{index}</span>
+        <span className="font-mono text-xs text-[#48d8a4]">{index}</span>
         <h2 className="text-xl font-semibold">{title}</h2>
       </div>
       {children}
@@ -341,7 +341,7 @@ function CheckboxRow({
       <span
         className={`flex h-5 w-5 items-center justify-center border ${
           checked
-            ? "border-[#b7ff5a] bg-[#b7ff5a]"
+            ? "border-[#48d8a4] bg-[#48d8a4]"
             : "border-white/20 bg-transparent"
         }`}
       >

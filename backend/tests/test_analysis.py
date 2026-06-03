@@ -111,3 +111,32 @@ def test_generate_problems_db_cache(client, mock_openai, mock_db):
     assert data2["problems"][0]["title"] == "Fresh Problem"
     # Call count should still be 1 (meaning OpenAI chat completion was NOT called on the second request)
     assert mock_openai.chat.completions.create.call_count == 1
+
+
+def test_generate_custom_scenario(client, mock_openai):
+    # Setup mock
+    mock_response = mock_openai.chat.completions.create.return_value
+    mock_response.choices[0].message.content = (
+        '{"title": "Custom Test Agent", "difficulty": "Intermediate", '
+        '"description": "Test description", "goal": "Test goal", '
+        '"availableTools": [], "workflowRules": ["Rule 1"], '
+        '"visibleExamples": [], "testCases": [{"id": "tc1", "input": "in", '
+        '"simulatedContext": "sc", "expectedBehavior": "eb", "expectedToolCalls": [], '
+        '"forbiddenToolCalls": [], "failureType": "workflow-control", "hidden": false}], '
+        '"proTips": [], "tags": [], "hint": ""}'
+    )
+
+    request_data = {
+        "agentDescription": "A helpful agent",
+        "tools": "my_tool(param)"
+    }
+
+    response = client.post("/generate-custom-scenario", json=request_data)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "Custom Test Agent"
+    assert data["difficulty"] == "Intermediate"
+    assert len(data["testCases"]) == 1
+    assert data["testCases"][0]["id"] == "tc1"
+

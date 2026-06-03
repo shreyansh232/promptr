@@ -9,7 +9,7 @@
     --card-foreground: 0 0% 8%;
     --popover: 30 25% 98%;
     --popover-foreground: 0 0% 8%;
-    --primary: 25 95% 53%;
+    --primary: 158 64% 56%;
     --primary-foreground: 0 0% 100%;
     --secondary: 30 15% 93%;
     --secondary-foreground: 0 0% 8%;
@@ -21,7 +21,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 30 10% 88%;
     --input: 30 10% 88%;
-    --ring: 25 95% 53%;
+    --ring: 158 64% 56%;
     --radius: 1rem;
     --sidebar-background: 30 20% 97%;
     --sidebar-foreground: 0 0% 8%;
@@ -39,7 +39,7 @@
     --card-foreground: 30 20% 96%;
     --popover: 0 0% 9%;
     --popover-foreground: 30 20% 96%;
-    --primary: 25 95% 53%;
+    --primary: 158 64% 56%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 14%;
     --secondary-foreground: 30 20% 96%;
@@ -51,7 +51,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14%;
     --input: 0 0% 14%;
-    --ring: 25 95% 53%;
+    --ring: 158 64% 56%;
     --sidebar-background: 0 0% 5%;
     --sidebar-foreground: 30 20% 96%;
     --sidebar-primary: 25 95% 53%;
@@ -93,8 +93,8 @@
     --landing-on-signal: #1d2a16;
     --landing-dim: #747f70;
     --landing-line: rgba(247, 242, 232, 0.13);
-    --landing-signal: #b7ff5a;
-    --landing-signal-strong: #ccff84;
+    --landing-signal: #48d8a4;
+    --landing-signal-strong: #62e2b7;
     --landing-heat: #ff8a3d;
     --landing-sky: #84d9ff;
     --landing-caution: #f6c65b;

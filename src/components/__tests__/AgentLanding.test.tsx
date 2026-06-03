@@ -15,12 +15,14 @@ describe("AgentLanding", () => {
         name: /stress-test prompts for ai agents/i,
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /try lab/i }),
-    ).toHaveAttribute("href", "/lab");
-    expect(
-      screen.getByRole("link", { name: /try missions/i }),
-    ).toHaveAttribute("href", "/missions");
+    expect(screen.getByRole("link", { name: /try lab/i })).toHaveAttribute(
+      "href",
+      "/lab",
+    );
+    expect(screen.getByRole("link", { name: /try missions/i })).toHaveAttribute(
+      "href",
+      "/missions",
+    );
     expect(
       screen.getByRole("heading", {
         name: /a deliberate loop for getting better at prompting/i,
@@ -48,9 +50,10 @@ describe("AgentLanding", () => {
     expect(
       screen.getByRole("link", { name: /open missions/i }),
     ).toHaveAttribute("href", "/missions");
-    expect(
-      screen.getByRole("link", { name: /go to lab/i }),
-    ).toHaveAttribute("href", "/lab");
+    expect(screen.getByRole("link", { name: /go to lab/i })).toHaveAttribute(
+      "href",
+      "/lab",
+    );
     expect(screen.getByRole("link", { name: /tune profile/i })).toHaveAttribute(
       "href",
       "/profile",

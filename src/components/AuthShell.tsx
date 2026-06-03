@@ -59,7 +59,7 @@ export default function AuthShell({
               </span>
               <Link
                 href={isSignIn ? "/sign-up" : "/sign-in"}
-                className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-[#b7ff5a] hover:text-[#cbff82]"
+                className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-[#48d8a4] hover:text-[#62e2b7]"
               >
                 {isSignIn ? "Sign up" : "Sign in"}
                 <ArrowUpRight className="h-4 w-4" />

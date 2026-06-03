@@ -15,13 +15,13 @@ Promptr is primarily a prompt evaluation and testing sandbox:
 
 ## Mission Curriculum
 
-| Level | Track | What You Learn |
-|-------|-------|----------------|
-| 1 | Agent Basics | Persona, constraints, output formatting, refusal boundaries |
-| 2 | Tool Use | When to call tools, input validation, confirmation gates |
-| 3 | Workflow Control | Multi-step pipelines, fail-fast behavior, error recovery |
-| 4 | Guardrails | Prompt injection defense, PII protection, RBAC, rate limits |
-| 5 | Evals | Confidence calibration, fact-checking, reasoning audit trails |
+| Level | Track            | What You Learn                                                |
+| ----- | ---------------- | ------------------------------------------------------------- |
+| 1     | Agent Basics     | Persona, constraints, output formatting, refusal boundaries   |
+| 2     | Tool Use         | When to call tools, input validation, confirmation gates      |
+| 3     | Workflow Control | Multi-step pipelines, fail-fast behavior, error recovery      |
+| 4     | Guardrails       | Prompt injection defense, PII protection, RBAC, rate limits   |
+| 5     | Evals            | Confidence calibration, fact-checking, reasoning audit trails |
 
 ## Tech Stack
 
@@ -107,14 +107,14 @@ Copy `.env.example` to `.env` and fill in your values:
 cp .env.example .env
 ```
 
-| Variable                       | Description                                               |
-| ------------------------------ | --------------------------------------------------------- |
-| `DATABASE_URL`                 | MongoDB connection string                                 |
-| `AUTH_SECRET`                  | NextAuth secret (`openssl rand -base64 32`)               |
-| `GITHUB_CLIENT_ID`             | GitHub OAuth App client ID                                |
-| `GITHUB_CLIENT_SECRET`         | GitHub OAuth App client secret                            |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK)                   |
-| `api_key` (backend `.env`)     | Google Gemini API key for FastAPI backend                 |
+| Variable                       | Description                                 |
+| ------------------------------ | ------------------------------------------- |
+| `DATABASE_URL`                 | MongoDB connection string                   |
+| `AUTH_SECRET`                  | NextAuth secret (`openssl rand -base64 32`) |
+| `GITHUB_CLIENT_ID`             | GitHub OAuth App client ID                  |
+| `GITHUB_CLIENT_SECRET`         | GitHub OAuth App client secret              |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK)     |
+| `api_key` (backend `.env`)     | Google Gemini API key for FastAPI backend   |
 
 ### Install Dependencies
 

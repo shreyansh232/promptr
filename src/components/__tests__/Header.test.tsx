@@ -34,10 +34,9 @@ describe("Header", () => {
       "href",
       "/lab",
     );
-    expect(screen.getByRole("link", { name: /star on github/i })).toHaveAttribute(
-      "href",
-      "https://github.com/shreyansh232/promptr",
-    );
+    expect(
+      screen.getByRole("link", { name: /star on github/i }),
+    ).toHaveAttribute("href", "https://github.com/shreyansh232/promptr");
     expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute(
       "href",
       "/sign-in",

@@ -45,8 +45,8 @@ const featureCards = [
     text: "Start with greeting bots and output formatting. Finish writing meta-agents that evaluate other agents' prompts.",
   },
   {
-    title: "Customizable & extensible",
-    text: "Add your own missions, plug in your team's evaluation criteria, or run the evaluation harness locally.",
+    title: "Custom Prompt Tests",
+    text: "Create custom prompt tests for any agent with custom descriptions and tools. Stress-test instructions against dynamically generated adversarial scenarios.",
   },
   {
     title: "Developer-first stack",
@@ -62,8 +62,8 @@ const practicePaths = [
     action: "Open missions",
   },
   {
-    title: "Prompt evaluation lab",
-    text: "Submit prompts, get scored feedback, and analyze them in our evaluation interface.",
+    title: "Custom Prompt Testing Lab",
+    text: "Create custom prompt tests for your own agents. Describe your agent and its tools to generate evaluation scenarios instantly.",
     href: "/lab",
     action: "Go to lab",
   },
@@ -82,7 +82,8 @@ const faqs = [
       "You can — but you won't get structured evaluation against adversarial scenarios, tool-use correctness, guardrail enforcement, and workflow control. Promptr runs your prompt through curated test cases that expose the exact failure modes production agents hit. ChatGPT tells you if a prompt sounds good; Promptr tells you if it survives edge cases.",
   },
   {
-    question: "How is Promptr different from agent reliability tools like Galileo or Patronus?",
+    question:
+      "How is Promptr different from agent reliability tools like Galileo or Patronus?",
     answer:
       "Those tools monitor agents in production — they catch failures after deployment. Promptr works upstream: it trains the developer to write better instructions before the agent ships. Think of it as the gym before the game. Better prompts mean fewer production failures to monitor in the first place.",
   },
@@ -138,10 +139,12 @@ function HeroSection({ isAuthenticated }: { isAuthenticated: boolean }) {
           </div>
           <h1 className="max-w-none text-4xl font-semibold leading-[1.08] text-[var(--landing-paper)] sm:text-5xl md:text-6xl lg:text-7xl">
             Stress-test prompts for{" "}
-            <span className="text-[var(--landing-signal)]"> AI agents</span>
+            <span className="text-[#48d8a4]"> AI agents</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-[var(--landing-muted)] sm:text-lg">
-            Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.
+            Test your prompts before seeing them fail in production, and learn
+            the fundamentals of creating prompts that are stress-tested and work
+            perfectly in production through our curated missions.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -149,7 +152,7 @@ function HeroSection({ isAuthenticated }: { isAuthenticated: boolean }) {
               <>
                 <Link
                   href="/lab"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-none bg-[var(--landing-signal)] px-5 font-mono text-xs uppercase text-[var(--landing-ink)] transition-colors hover:bg-[var(--landing-signal-strong)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--landing-signal)]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-none bg-[#48d8a4] px-5 font-mono text-xs uppercase text-[var(--landing-ink)] transition-colors hover:bg-[var(--landing-signal-strong)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--landing-signal)]"
                 >
                   Go to Lab
                   <ArrowRight size={16} aria-hidden="true" />
@@ -193,14 +196,14 @@ function HeroWorkbench() {
   return (
     <div
       aria-hidden="true"
-      className="hidden md:block landing-grid-bg pointer-events-none absolute inset-x-3 top-28 z-0 h-[460px] opacity-35 sm:inset-x-8 md:relative md:bottom-auto md:left-auto md:right-auto md:top-auto md:ml-auto md:h-[510px] md:w-full md:max-w-[660px] md:translate-y-0 md:opacity-100"
+      className="landing-grid-bg pointer-events-none absolute inset-x-3 top-28 z-0 hidden h-[460px] opacity-35 sm:inset-x-8 md:relative md:bottom-auto md:left-auto md:right-auto md:top-auto md:ml-auto md:block md:h-[510px] md:w-full md:max-w-[660px] md:translate-y-0 md:opacity-100"
     >
       <div className="bg-[var(--landing-panel)]/90 h-full border border-[var(--landing-line)] shadow-[0_36px_120px_rgba(0,0,0,0.44)]">
         <div className="flex h-12 items-center justify-between border-b border-[var(--landing-line)] px-4">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-[var(--landing-heat)]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[var(--landing-caution)]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[var(--landing-signal)]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
           </div>
           <span className="font-mono text-[11px] uppercase text-[var(--landing-muted)]">
             eval console
@@ -547,7 +550,9 @@ function CTASection() {
             Start with one mission. Leave with prompts that survive production.
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--landing-muted)]">
-            25 curated missions. 5 progressive levels. The fastest way to learn prompt engineering is to watch a prompt fail, patch it, and remember the pattern that made it stronger.
+            25 curated missions. 5 progressive levels. The fastest way to learn
+            prompt engineering is to watch a prompt fail, patch it, and remember
+            the pattern that made it stronger.
           </p>
         </div>
         <Link

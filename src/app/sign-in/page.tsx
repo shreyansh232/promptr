@@ -81,7 +81,7 @@ const SignIn = () => {
                   <Input
                     placeholder="Enter your email"
                     {...field}
-                    className="h-12 rounded-none border border-white/10 bg-[#060706] px-4 font-mono text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 rounded-none border border-white/10 bg-[#060706] px-4 font-mono text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </FormControl>
                 <FormMessage />
@@ -101,7 +101,7 @@ const SignIn = () => {
                     type="password"
                     placeholder="Enter your password"
                     {...field}
-                    className="h-12 rounded-none border border-white/10 bg-[#060706] px-4 font-mono text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 rounded-none border border-white/10 bg-[#060706] px-4 font-mono text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </FormControl>
                 <FormMessage />

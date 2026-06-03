@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "prisma generate && next build",
+    "clean": "rm -rf .next",
     "dev": "next dev",
     "lint": "next lint --max-warnings=10",
     "postinstall": "prisma generate",

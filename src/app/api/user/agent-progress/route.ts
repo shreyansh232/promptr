@@ -83,7 +83,10 @@ export async function POST(request: Request) {
           },
         });
       } catch (error) {
-        console.error("Failed to save completed agent mission via Prisma:", error);
+        console.error(
+          "Failed to save completed agent mission via Prisma:",
+          error,
+        );
       }
 
       try {
@@ -103,7 +106,10 @@ export async function POST(request: Request) {
           }),
         });
       } catch (error) {
-        console.error("Failed to save completed agent mission via backend fetch:", error);
+        console.error(
+          "Failed to save completed agent mission via backend fetch:",
+          error,
+        );
       }
 
       if (newSubLevel < 5) {
