@@ -23,6 +23,7 @@ export async function GET() {
     const profileData = user.profile
       ? {
           id: user.id,
+          role: user.role,
           level: user.profile.level,
           expertise: user.profile.expertise,
           application: user.profile.application,
@@ -41,6 +42,7 @@ export async function GET() {
         }
       : {
           id: user.id,
+          role: user.role,
           level: "beginner",
           expertise: "",
           application: "",
@@ -65,7 +67,20 @@ export async function GET() {
     }
 
     let solvedProblems: SolvedProblem[] = [];
+    let credits = 0;
+
     try {
+      // Fetch profile from backend to get credits
+      const backendProfileRes = await fetch(
+        `${env.BACKEND_URL}/profiles/${user.id}`,
+        { cache: "no-store" },
+      );
+      if (backendProfileRes.ok) {
+        const backendProfile = await backendProfileRes.json();
+        credits = backendProfile.credits;
+      }
+
+      // Fetch solved problems
       const solvedRes = await fetch(
         `${env.BACKEND_URL}/profiles/${user.id}/solved-problems`,
         { cache: "no-store" },
@@ -74,11 +89,12 @@ export async function GET() {
         solvedProblems = (await solvedRes.json()) as SolvedProblem[];
       }
     } catch (err) {
-      console.error("Failed to fetch solved problems in GET profile:", err);
+      console.error("Failed to fetch backend data in GET profile:", err);
     }
 
     return NextResponse.json({
       ...profileData,
+      credits,
       solvedProblems,
     });
   } catch (error) {

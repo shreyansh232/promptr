@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from motor.core import AgnosticDatabase
 from datetime import datetime, UTC
 from pydantic import BaseModel
+from bson import ObjectId
 
 from core.db import get_db
 from schemas.models import UserProfile
@@ -9,9 +10,21 @@ from schemas.models import UserProfile
 router = APIRouter()
 
 
+async def check_is_admin(user_id: str, db: AgnosticDatabase) -> bool:
+    """Helper to check if a user has the admin role."""
+    try:
+        if not ObjectId.is_valid(user_id):
+            return False
+        user = await db.User.find_one({"_id": ObjectId(user_id)})
+        return user and user.get("role") == "admin"
+    except Exception:
+        return False
+
+
 @router.get("/{user_id}")
 async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
     profile = await db.profiles.find_one({"userId": user_id})
+    is_admin = await check_is_admin(user_id, db)
 
     if not profile:
         # Create default profile if not found
@@ -26,7 +39,7 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
             "application": "",
             "learningStyle": "visual",
             "goals": [],
-            "credits": 50,
+            "credits": 50 if not is_admin else 999,
             "lastCreditRefresh": datetime.now(UTC),
             "createdAt": datetime.now(UTC),
             "updatedAt": datetime.now(UTC),
@@ -38,16 +51,23 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
         last_refresh = profile.get("lastCreditRefresh")
 
         if not last_refresh or last_refresh.date() < now.date():
+            refresh_amount = 999 if is_admin else 50
             await db.profiles.update_one(
-                {"userId": user_id}, {"$set": {"credits": 50, "lastCreditRefresh": now}}
+                {"userId": user_id},
+                {"$set": {"credits": refresh_amount, "lastCreditRefresh": now}},
             )
-            profile["credits"] = 50
+            profile["credits"] = refresh_amount
             profile["lastCreditRefresh"] = now
 
     if profile is None:
         raise HTTPException(
             status_code=500, detail="Failed to create or retrieve profile"
         )
+
+    # For admins, always return a high number if somehow it got low
+    if is_admin and profile.get("credits", 0) < 500:
+        profile["credits"] = 999
+
     profile["id"] = str(profile.pop("_id"))
     return profile
 
@@ -58,6 +78,10 @@ async def deduct_credits(
 ):
     # Ensure profile exists (creates default if missing)
     await get_profile(user_id, db)
+
+    # Admin check - admins get unlimited credits
+    if await check_is_admin(user_id, db):
+        return {"allowed": True, "remaining": 999}
 
     # Perform atomic check-and-decrement to prevent race conditions
     res = await db.profiles.update_one(

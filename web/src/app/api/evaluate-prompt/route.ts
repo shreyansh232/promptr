@@ -84,7 +84,10 @@ export async function POST(request: Request) {
       if (!creditCheck.allowed) {
         return NextResponse.json(
           {
-            error: `Insufficient credits. You have ${creditCheck.remaining} credits left.`,
+            error:
+              session.user.role === "admin"
+                ? "Admin account error. Please contact support."
+                : `Insufficient credits. You have ${creditCheck.remaining} credits left.`,
           },
           { status: 403 },
         );

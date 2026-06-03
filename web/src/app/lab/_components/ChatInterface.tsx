@@ -38,6 +38,7 @@ interface UserInfo {
   goals: string[];
   industry: string;
   credits: number;
+  role?: string;
   solvedProblems?: {
     userLevel: string;
     subLevel: number;
@@ -273,6 +274,7 @@ export default function ChatInterface() {
             goals: ["Build reliable agents"],
             industry: "tech",
             credits: 5,
+            role: "USER",
           });
           setActiveProblem(SUPPORT_TRIAGE_PROBLEM);
           return;
@@ -294,6 +296,7 @@ export default function ChatInterface() {
           goals: ["Build reliable agents"],
           industry: "tech",
           credits: 5,
+          role: "USER",
         });
         setActiveProblem(SUPPORT_TRIAGE_PROBLEM);
       } finally {

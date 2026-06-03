@@ -31,6 +31,7 @@ export const {
       if (user?.id) {
         token.id = user.id;
         token.picture = user.image;
+        token.role = (user as any).role;
       }
       return token;
     },
@@ -38,6 +39,7 @@ export const {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.image = token.picture as string;
+        (session.user as any).role = token.role as string;
       }
       return session;
     },
