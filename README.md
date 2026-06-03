@@ -17,184 +17,114 @@ Promptr is primarily a prompt evaluation and testing sandbox:
 
 | Level | Track            | What You Learn                                                |
 | ----- | ---------------- | ------------------------------------------------------------- |
-| 1     | Agent Basics     | Persona, constraints, output formatting, refusal boundaries   |
-| 2     | Tool Use         | When to call tools, input validation, confirmation gates      |
-| 3     | Workflow Control | Multi-step pipelines, fail-fast behavior, error recovery      |
+| 1     | Agent basics     | Persona, constraints, output formatting, refusal boundaries   |
+| 2     | Tool use         | When to call tools, input validation, confirmation gates      |
+| 3     | Workflow control | Multi-step pipelines, fail-fast behavior, error recovery      |
 | 4     | Guardrails       | Prompt injection defense, PII protection, RBAC, rate limits   |
 | 5     | Evals            | Confidence calibration, fact-checking, reasoning audit trails |
 
 ## Tech Stack
 
-### Frontend
+### Frontend (Next.js)
 
-- **Next.js 14** (App Router) — React framework with server components
-- **TypeScript** — Strict mode, functional components
-- **Tailwind CSS** + **shadcn/ui** — Styling and UI primitives
-- **NextAuth v5** — Authentication (GitHub OAuth + credentials)
-- **Vercel AI SDK** — Streaming AI responses
+- **Next.js 14** (App Router) — React framework with server components.
+- **TypeScript** — Strict mode, functional components.
+- **Tailwind CSS** + **shadcn/ui** — Professional, high-contrast dark theme styling.
+- **NextAuth v5** — Authentication (GitHub OAuth + credentials).
+- **Vercel AI SDK** — Streaming AI responses.
 
-### Backend
+### Backend (FastAPI)
 
-- **FastAPI** — Python REST API
-- **Google Gemini** (`gemini-2.0-flash`) — AI analysis and evaluation
-- **Pydantic** — Request/response validation
-- **uv** — Fast Python package management
+- **FastAPI** — Python REST API for heavy-duty evaluation logic.
+- **Google Gemini** (`gemini-2.0-flash`) — AI analysis and evaluation engine.
+- **uv** + **Ruff** — High-performance package management and linting/formatting.
+- **Pydantic** — Robust request/response validation.
 
 ### Database
 
-- **MongoDB** — Primary database
-- **Prisma ORM** — Type-safe database client
-
-## Architecture
-
-```
-User → Next.js Frontend (App Router)
-     → Server Action / API Route
-     → FastAPI Backend (POST /analyze-prompt, /generate-problems)
-     → Google Gemini API
-     → Structured JSON response
-     → Frontend renders feedback + scoring
-```
+- **MongoDB** — Primary database for users, missions, and custom scenarios.
+- **Prisma ORM** — Type-safe database client.
 
 ## Project Structure
 
+Promptr is organized as a monorepo for seamless full-stack development:
+
 ```
 promptr/
-├── backend/                        # FastAPI + Google Gemini AI
-│   ├── main.py                     # FastAPI app entry
-│   ├── routers/analysis.py         # /analyze-prompt & /generate-problems routes
-│   ├── services/llm_service.py     # AI service (prompt analysis + problem generation)
+├── web/                            # Next.js Frontend (React, TypeScript)
+│   ├── src/app/                    # App Router pages (missions, lab, onboarding)
+│   ├── src/components/             # Shared UI components
+│   └── src/lib/                    # Utilities, Prisma client
+├── server/                         # FastAPI Backend (Python)
+│   ├── routers/                    # API endpoints (analysis, missions)
+│   ├── services/                   # AI logic (LLM service, agent service)
 │   ├── schemas/                    # Pydantic models
-│   ├── tests/                      # pytest test suite
-│   ├── Makefile                    # install, test, format, lint commands
-│   └── knowledge-base/             # Prompt engineering reference
-├── prisma/
-│   └── schema.prisma               # MongoDB + Prisma schema
-├── src/
-│   ├── app/                        # Next.js App Router pages
-│   │   ├── dashboard/              # Main practice interface
-│   │   ├── playground/             # Agent sandbox playground
-│   │   ├── profile/                # User profile & stats
-│   │   ├── onboarding/             # Initial user setup
-│   │   └── api/                    # API route handlers
-│   ├── components/                 # Shared UI components
-│   ├── data/                       # Curated mission data & static data
-│   ├── types/                      # TypeScript interfaces (AgentMission, etc.)
-│   ├── actions/                    # Next.js Server Actions
-│   ├── lib/                        # Prisma client, utilities
-│   └── styles/                     # Global CSS
-├── auth.ts                         # NextAuth v5 configuration
-├── middleware.ts                   # Route protection
-├── AGENTS.md                       # Guide for agentic coding agents
-└── next.config.js
+│   └── Makefile                    # Backend-specific dev commands
+├── prisma/                         # Shared database schema
+├── Makefile                        # Root orchestrator for common tasks
+└── package.json                    # Root monorepo scripts
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm
-- Python 3.10+
-- MongoDB (local or Atlas)
-- Google Gemini API key
+- **Node.js 18+** & **pnpm 9+**
+- **Python 3.12+** (Recommended: [uv](https://astral.sh/uv) for package management)
+- **MongoDB** (Local or Atlas)
+- **Google Gemini API Key**
 
-### Environment Setup
+### Installation
 
-Copy `.env.example` to `.env` and fill in your values:
+1.  **Clone and Install**:
+    ```bash
+    git clone https://github.com/shreyansh232/promptr.git
+    cd promptr
+    pnpm install
+    make install
+    ```
 
+2.  **Environment Setup**:
+    Copy `.env.example` in both root and `server/` (if applicable) and fill in your values.
+    *   `DATABASE_URL`: Your MongoDB connection string.
+    *   `AUTH_SECRET`: Random string for NextAuth.
+    *   `GOOGLE_GENERATIVE_AI_API_KEY`: Your Gemini API key.
+
+3.  **Database Migration**:
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
+
+### Running Locally
+
+To start both the frontend and backend concurrently:
 ```bash
-cp .env.example .env
-```
-
-| Variable                       | Description                                 |
-| ------------------------------ | ------------------------------------------- |
-| `DATABASE_URL`                 | MongoDB connection string                   |
-| `AUTH_SECRET`                  | NextAuth secret (`openssl rand -base64 32`) |
-| `GITHUB_CLIENT_ID`             | GitHub OAuth App client ID                  |
-| `GITHUB_CLIENT_SECRET`         | GitHub OAuth App client secret              |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK)     |
-| `api_key` (backend `.env`)     | Google Gemini API key for FastAPI backend   |
-
-### Install Dependencies
-
-```bash
-# Frontend
-pnpm install
-
-# Backend
-cd backend
-# Recommended: Install uv (https://astral.sh/uv)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-make install
-```
-
-### Database Setup
-
-```bash
-npx prisma generate
-npx prisma db push
-```
-
-### Run the App
-
-```bash
-# Terminal 1 — Frontend (http://localhost:3000)
-pnpm dev
-
-# Terminal 2 — Backend (http://localhost:8000)
-cd backend
-make install
-uv run uvicorn main:app --reload --port 8000
-```
-
-## Commands
-
-### Frontend
-
-```bash
-pnpm dev          # Start dev server
-pnpm build        # Production build
-pnpm lint         # Lint (max 10 warnings)
-npx tsc --noEmit  # Type check
-pnpm test         # Run vitest test suite
-```
-
-### Backend
-
-```bash
-cd backend
-make install      # Install/Sync dependencies
-make test         # Run pytest suite
-make format       # Format code with ruff
-make lint         # Lint and fix with ruff
-make check-lint   # Check lint without fixing
-```
-
-## Testing & CI/CD
-
-### Frontend Tests
-
-The frontend uses **Vitest** + **React Testing Library** for component tests located in `src/components/__tests__/`.
-
-### Backend Tests
-
-The backend uses **pytest** with mocked Gemini API calls. Tests are in `backend/tests/`.
-
-### CI/CD Pipeline
-
-GitHub Actions (`.github/workflows/backend.yml`) runs formatting, linting, and tests on every push to `main`.
-
-## Contributing
-
-Promptr is MIT-licensed and welcomes contributions. Whether it's new missions, UI improvements, or evaluation logic — open a PR or an issue.
-
-```bash
-# Fork the repo, then:\ngit clone https://github.com/YOUR_USERNAME/promptr.git
-cd promptr
-pnpm install
 pnpm dev
 ```
+*   **Web**: `http://localhost:3000`
+*   **Server**: `http://localhost:8000`
+
+## Unified Commands
+
+Use these root-level commands to manage both parts of the platform:
+
+| Command | Action |
+| --- | --- |
+| `pnpm dev` | Start both frontend and backend development servers. |
+| `pnpm test` | Run all tests (Vitest for web, Pytest for server). |
+| `pnpm lint` | Run all linting checks and apply auto-fixes. |
+| `pnpm format` | Format both codebases (Prettier and Ruff). |
+| `pnpm clean` | **Troubleshooting**: Clear Next.js cache to fix 404/hydration errors. |
+
+## Developer Guidelines
+
+*   **Color Scheme**: Always use the **Cyber-Mint** palette (`#48d8a4`) for primary actions and accents.
+*   **Typography**: Use **Bold Normal Case** for primary buttons. Title descenders (like 'g') should have adequate padding (`py-1`) to avoid clipping.
+*   **Formatting**:
+    *   **Frontend**: Run `pnpm --filter web exec prettier --write .`
+    *   **Backend**: Run `make -C server format` (uses Ruff).
+*   **CI/CD**: Ensure both `pnpm lint` and `pnpm test` pass before pushing. CI will fail if formatting or tests are broken.
 
 ## License
 
