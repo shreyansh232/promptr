@@ -42,9 +42,18 @@ jobs:
 
       - name: Run lint
         run: pnpm --filter web lint
+        env:
+          AUTH_SECRET: "mock-secret"
+          DATABASE_URL: "mongodb://localhost:27017/test"
 
       - name: Run type check
         run: pnpm --filter web exec tsc --noEmit
+        env:
+          AUTH_SECRET: "mock-secret"
+          DATABASE_URL: "mongodb://localhost:27017/test"
 
       - name: Run tests
         run: pnpm --filter web test
+        env:
+          AUTH_SECRET: "mock-secret"
+          DATABASE_URL: "mongodb://localhost:27017/test"
