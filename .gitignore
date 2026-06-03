@@ -62,7 +62,6 @@ vercel.json
 evaluation-system-overhaul.md
 agent-pivot-overhaul.md
 backend/main.py
-backend/config.py
 backend/models/
 src/utils/cn.ts
 src/utils/helper.ts

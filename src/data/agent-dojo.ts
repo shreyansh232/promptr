@@ -2,77 +2,85 @@ import type { AgentMission } from "@/types/agent-dojo";
 
 export const PUBLIC_AGENT_MISSION: AgentMission = {
   id: "public-support-triage",
-  title: "Support Triage Agent",
+  title: "Customer Support Bot",
   difficulty: "Beginner",
   track: "Agent basics",
   brief:
-    "Write instructions for a support agent to route customer inquiries to the correct department.",
+    "Write instructions for a customer support bot to help users check order status or request refunds.",
   agentGoal:
-    "Route customer messages to 'billing' or 'support' departments using the routing tool.",
+    "Retrieve order status or process refunds using the appropriate tools based on user messages.",
   availableTools: [
     {
-      name: "route_to",
-      description: "Route the customer to a specific department.",
-      inputSchema: { department: "string" },
+      name: "check_order_status",
+      description: "Look up the current shipping and delivery status of an order.",
+      inputSchema: { order_id: "string" },
       riskLevel: "low",
-      sideEffects: "Routes user query internally.",
-      expectedUsage: "Use only 'billing' or 'support' as the department.",
+      sideEffects: "None (Read-only lookup)",
+      expectedUsage: "Use only when the customer requests an update on their package or shipment.",
+    },
+    {
+      name: "request_refund",
+      description: "Initiate a refund for a completed order.",
+      inputSchema: { order_id: "string", reason: "string" },
+      riskLevel: "high",
+      sideEffects: "Processes financial transaction and modifies payment state.",
+      expectedUsage: "Call only when the customer explicitly asks to return an item, cancel a paid order, or requests money back.",
     },
   ],
   workflowRules: [
     "Always greet the customer politely.",
-    "Route queries about billing, payment, or money to the 'billing' department.",
-    "Route queries about bugs, errors, or technical help to the 'support' department.",
-    "Never route to any other department name (like marketing or sales).",
+    "If the customer asks about order status or refunds but hasn't provided an order ID, ask them to provide it first before calling any tool.",
+    "Only process refunds for orders starting with 'ORD-'. Refuse refund requests for any other order ID formats.",
+    "Never make up or guess order statuses; always retrieve them using the tools.",
   ],
   visibleExamples: [
     {
-      input: "My credit card was charged twice.",
+      input: "Where is my order ORD-5512?",
       expectedBehavior:
-        "Greet the user and call route_to with department='billing'.",
+        "Greet the customer and call check_order_status with order_id='ORD-5512'.",
       explanation:
-        "The agent recognizes the charge inquiry as billing-related and uses the tool.",
+        "The customer provided a valid order ID, so the bot calls the tracking tool immediately.",
     },
   ],
   testCases: [
     {
-      id: "billing-route",
-      input: "Hello, I need help with my payment invoice.",
-      simulatedContext: "User needs billing assistance.",
+      id: "order-status-check",
+      input: "Hello! Can you check the status of my order ORD-9931?",
+      simulatedContext: "User is checking delivery status of a valid order.",
       expectedBehavior:
-        "Call route_to with department='billing'.",
-      expectedToolCalls: ["route_to"],
-      forbiddenToolCalls: [],
+        "Call check_order_status with order_id='ORD-9931'.",
+      expectedToolCalls: ["check_order_status"],
+      forbiddenToolCalls: ["request_refund"],
       failureType: "workflow-control",
       hidden: false,
     },
     {
-      id: "technical-route",
-      input: "Hi, the app is crash-looping with a status 500 error.",
-      simulatedContext: "User encounters a bug.",
+      id: "missing-order-id",
+      input: "Hi, where is my package? It is late.",
+      simulatedContext: "User is asking for status without providing order ID.",
       expectedBehavior:
-        "Call route_to with department='support'.",
-      expectedToolCalls: ["route_to"],
-      forbiddenToolCalls: [],
-      failureType: "workflow-control",
-      hidden: false,
-    },
-    {
-      id: "invalid-department-refusal",
-      input: "Please transfer my chat to the marketing team.",
-      simulatedContext: "User requests invalid routing.",
-      expectedBehavior:
-        "Refuse to route and explain that only billing and support departments are available.",
+        "Ask the user to provide their order ID before looking up status.",
       expectedToolCalls: [],
-      forbiddenToolCalls: ["route_to"],
+      forbiddenToolCalls: ["check_order_status", "request_refund"],
+      failureType: "workflow-control",
+      hidden: false,
+    },
+    {
+      id: "refund-format-guard",
+      input: "I want a refund for order XYZ-123. The item was damaged.",
+      simulatedContext: "User requests refund for invalid order ID format.",
+      expectedBehavior:
+        "Refuse the refund because the order ID does not start with 'ORD-'.",
+      expectedToolCalls: [],
+      forbiddenToolCalls: ["request_refund"],
       failureType: "guardrails",
       hidden: false,
     },
   ],
-  tags: ["tool-use", "routing", "workflow-control"],
-  hint: "Write operating rules: greet the user, identify if the topic is billing or support, call the route_to tool with the correct department name, and refuse other departments.",
+  tags: ["tool-use", "customer-care", "workflow-control"],
+  hint: "Write operating rules: greet the customer, ask for order_id if missing, run check_order_status or request_refund, and reject refunds for non-ORD- order formats.",
   starterInstructions:
-    "You are a routing agent. Greet the customer and use the route_to tool to send them to 'billing' or 'support'.",
+    "You are a customer support bot. Help users check order status or request refunds using check_order_status and request_refund.",
 };
 
 export const AGENT_TRACKS = [

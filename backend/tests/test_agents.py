@@ -22,8 +22,8 @@ def test_generate_agent_mission_success(mock_openai):
         )
     )
 
-    assert result.mission.title == "Support Triage Agent"
-    assert result.mission.availableTools[0].name == "lookup_customer"
+    assert result.mission.title == "Customer Support Bot"
+    assert result.mission.availableTools[0].name == "check_order_status"
 
 
 def test_evaluate_agent_instructions_fallback_on_bad_json(mock_openai):
@@ -111,5 +111,5 @@ def test_agent_mission_generation_db_cache(client, mock_openai):
 
     assert first.status_code == 200
     assert second.status_code == 200
-    assert second.json()["mission"]["title"] == "Support Triage Agent"
+    assert second.json()["mission"]["title"] == "Customer Support Bot"
     assert mock_openai.chat.completions.create.call_count == 1

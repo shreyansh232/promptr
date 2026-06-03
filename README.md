@@ -1,17 +1,17 @@
 # Promptr
 
-**The prompt engineering & evaluation platform for AI agent builders.** Practice with curated missions, stress-test your prompts against adversarial scenarios, and level up through a progressive curriculum — from greeting bots to self-evaluating meta-agents.
+**The prompt testing & evaluation sandbox for AI agent builders.** Promptr is built to evaluate, debug, and stress-test your agent instruction prompts against adversarial scenarios. It also features a curated curriculum of 25 progressive missions to help you learn and level up your prompt engineering skills.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What It Does
 
-Promptr teaches prompt engineering through hands-on practice, not passive tips:
+Promptr is primarily a prompt evaluation and testing sandbox:
 
-- **25 Curated Missions** — Five progressive levels covering agent basics, tool use, workflow control, guardrails, and evaluation. Each mission includes realistic tools, workflow rules, and adversarial test cases.
-- **Scenario-Based Evaluation** — Every prompt is stress-tested against tool-use correctness, workflow sequencing, guardrail enforcement, and prompt injection resistance.
+- **Agent Sandbox & Lab** — Load custom scenarios, define constraints, and instantly stress-test your prompts against multi-step workflows, tool calls, and adversarial test inputs.
+- **Scenario-Based Evaluation** — Every prompt you write is systematically evaluated against tool-use correctness, sequencing, guardrails, and prompt injection resistance.
 - **Rewrite Coaching** — Get scored feedback (STRONG / MODERATE / WEAK), see a stronger version of your prompt, and learn exactly why the patch improves reliability.
-- **Progressive Curriculum** — Start with basic persona control and output formatting. Finish writing meta-agents that generate evaluation test cases for other agents' prompts.
+- **Curated Mission Curriculum (Secondary)** — Level up through a curriculum of 25 progressive missions spanning five levels (from greeting bots to self-evaluating meta-agents) to build production-grade prompts.
 
 ## Mission Curriculum
 

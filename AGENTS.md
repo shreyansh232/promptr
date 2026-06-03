@@ -2,10 +2,10 @@
 
 This document provides essential information for agentic coding agents (Cursor, Claude, Copilot, Windsurf, etc.) working on **Promptr**.
 
-Promptr is a prompt engineering & evaluation platform for AI agent builders. The platform features a curated curriculum of 25 missions across 5 progressive levels (Agent Basics → Tool Use → Workflow Control → Guardrails → Evals). Users write agent instruction prompts, stress-test them against adversarial scenarios, and level up through structured practice — not generic prompting tips.
+Promptr is a prompt testing & evaluation sandbox for AI agent builders. The platform is designed primarily to load custom scenarios, define constraints, and systematically stress-test prompts against adversarial workflows. It also features a curated curriculum of 25 missions across 5 progressive levels (Agent Basics → Tool Use → Workflow Control → Guardrails → Evals) as a secondary tool for users to level up their prompting skills.
 
 **License:** MIT  
-**Target audience:** Developers building AI agents who want to write reliable, production-grade instruction prompts
+**Target audience:** Developers building AI agents who want to evaluate, stress-test, and write reliable, production-grade instruction prompts
 
 ---
 

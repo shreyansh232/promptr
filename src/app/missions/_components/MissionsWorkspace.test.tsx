@@ -39,7 +39,7 @@ describe("MissionsWorkspace", () => {
       />,
     );
 
-    expect(screen.getByText("Support Triage Agent")).toBeInTheDocument();
+    expect(screen.getByText(PUBLIC_AGENT_MISSION.title)).toBeInTheDocument();
     expect(screen.getByText("Save progress")).toBeInTheDocument();
   });
 
