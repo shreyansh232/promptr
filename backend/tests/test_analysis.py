@@ -126,10 +126,7 @@ def test_generate_custom_scenario(client, mock_openai):
         '"proTips": [], "tags": [], "hint": ""}'
     )
 
-    request_data = {
-        "agentDescription": "A helpful agent",
-        "tools": "my_tool(param)"
-    }
+    request_data = {"agentDescription": "A helpful agent", "tools": "my_tool(param)"}
 
     response = client.post("/generate-custom-scenario", json=request_data)
 
@@ -139,4 +136,3 @@ def test_generate_custom_scenario(client, mock_openai):
     assert data["difficulty"] == "Intermediate"
     assert len(data["testCases"]) == 1
     assert data["testCases"][0]["id"] == "tc1"
-

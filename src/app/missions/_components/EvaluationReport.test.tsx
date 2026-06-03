@@ -54,6 +54,7 @@ describe("EvaluationReport", () => {
   it("displays passed, failed, and critical-failure scenario details", () => {
     render(
       <EvaluationReport
+        mission={null}
         evaluation={evaluation}
         isEvaluating={false}
         isAuthenticated

@@ -609,6 +609,7 @@ export function MissionsWorkspace({
               onInstructionsChange={setInstructions}
               onTabChange={setActiveTab}
               onRun={runEvaluation}
+              isLabMode={isLabMode}
             />
           </div>
 

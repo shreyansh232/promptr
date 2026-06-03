@@ -642,7 +642,7 @@ def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
                     "inputSchema": {},
                     "riskLevel": "low",
                     "sideEffects": "None",
-                    "expectedUsage": "Use this tool as appropriate."
+                    "expectedUsage": "Use this tool as appropriate.",
                 }
             ],
             "workflowRules": [
@@ -652,7 +652,7 @@ def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
                 {
                     "input": "Sample user query",
                     "expectedBehavior": "Sample response or tool call",
-                    "explanation": "Valid response based on agent rules"
+                    "explanation": "Valid response based on agent rules",
                 }
             ],
             "testCases": [
@@ -664,15 +664,15 @@ def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
                     "expectedToolCalls": [],
                     "forbiddenToolCalls": [],
                     "failureType": "workflow-control",
-                    "hidden": False
+                    "hidden": False,
                 }
             ],
             "proTips": [
                 "Define a clear system role and persona.",
-                "Structure instructions with bullet points."
+                "Structure instructions with bullet points.",
             ],
             "tags": ["custom-agent"],
-            "hint": "Make sure to explicitly write instructions for the specific role described."
+            "hint": "Make sure to explicitly write instructions for the specific role described.",
         }
 
 

@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { AgentMission } from "@/types/agent-dojo";
+import { usePathname } from "next/navigation";
+import { parseBrief } from "@/utils/brief-formatter";
 
 type EditorTab = "instructions" | "tools" | "scenarios";
 
@@ -23,6 +25,7 @@ interface MissionEditorProps {
   onInstructionsChange: (value: string) => void;
   onTabChange: (tab: EditorTab) => void;
   onRun: () => void;
+  isLabMode?: boolean;
 }
 
 export function MissionEditor({
@@ -33,21 +36,40 @@ export function MissionEditor({
   onInstructionsChange,
   onTabChange,
   onRun,
+  isLabMode = false,
 }: MissionEditorProps) {
+  const pathname = usePathname();
+
   return (
     <main className="flex h-full min-h-0 flex-col bg-[#10110f]">
       <section className="shrink-0 border-b border-white/10 px-5 py-4">
         <div className="grid grid-cols-[1fr_auto] items-start gap-4">
           <div className="min-w-0">
-            <div className="font-mono text-[11px] text-[#abb4a4]">
-              {mission.track} / {mission.difficulty}
-            </div>
+            {pathname !== "/lab" && (
+              <div className="font-mono text-[11px] text-[#abb4a4]">
+                {mission.track} / {mission.difficulty}
+              </div>
+            )}
             <h1 className="mt-2 truncate text-2xl font-semibold tracking-tight text-[#f7f2e8]">
               {mission.title}
             </h1>
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#abb4a4] lg:line-clamp-none">
-              {mission.brief}
-            </p>
+            {(() => {
+              const { intro, points } = parseBrief(mission.brief);
+              return (
+                <div className="mt-3 text-sm leading-6 text-[#abb4a4]">
+                  {intro && <p className="mb-2 font-medium text-[#d8ddcf]">{intro}</p>}
+                  {points.length > 0 && (
+                    <ul className="list-inside list-disc space-y-1.5 pl-1 text-[#abb4a4]">
+                      {points.map((pt, idx) => (
+                        <li key={idx} className="leading-6">
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <Button
             onClick={onRun}

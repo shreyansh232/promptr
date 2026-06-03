@@ -1,6 +1,7 @@
 import type { Problem } from "@/types/problem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { parseBrief } from "@/utils/brief-formatter";
 
 interface ProblemDescriptionProps {
   problem: Problem;
@@ -20,8 +21,8 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
                 problem.difficulty === "Easy"
                   ? "default"
                   : problem.difficulty === "Medium"
-                    ? "secondary"
-                    : "destructive"
+                  ? "secondary"
+                  : "destructive"
               }
             >
               {problem.difficulty}
@@ -33,7 +34,23 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
             <CardTitle className="text-2xl">Problem Description</CardTitle>
           </CardHeader>
           <CardContent className="prose prose-invert max-w-none">
-            <div className="whitespace-pre-wrap">{problem.description}</div>
+            {(() => {
+              const { intro, points } = parseBrief(problem.description);
+              return (
+                <div className="text-sm leading-6 text-white/90">
+                  {intro && <p className="mb-2 font-medium text-white">{intro}</p>}
+                  {points.length > 0 && (
+                    <ul className="list-inside list-disc space-y-1.5 pl-1 text-white/80">
+                      {points.map((pt, idx) => (
+                        <li key={idx} className="leading-6">
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
         {problem.examples.map((example, index) => (
