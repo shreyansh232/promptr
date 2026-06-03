@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Sharp outer square frame - slightly dim -->
+  <rect
+    x="8"
+    y="8"
+    width="48"
+    height="48"
+    fill="#b7ff5a"
+    fill-opacity="0.08"
+    stroke="#b7ff5a"
+    stroke-width="3"
+    stroke-opacity="0.4"
+  />
+  <!-- Terminal Caret - bold and sharp -->
+  <path
+    d="M22 20 l12 12 -12 12"
+    fill="none"
+    stroke="#b7ff5a"
+    stroke-width="4.5"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+  <!-- Vertical Blinking Cursor - thin and sharp -->
+  <line
+    x1="42"
+    y1="20"
+    x2="42"
+    y2="44"
+    stroke="#b7ff5a"
+    stroke-width="3.5"
+    stroke-linecap="square"
+  />
+</svg>

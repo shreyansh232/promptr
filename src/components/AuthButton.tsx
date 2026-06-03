@@ -10,7 +10,7 @@ const AuthButton = ({ label = "Submit", pending = false }: AuthButtonProps) => {
     <button
       disabled={pending}
       type="submit"
-      className="w-full rounded-full bg-[#ff8a3d] px-5 py-3.5 text-sm font-semibold text-[#111111] transition hover:bg-[#ff9b5b] disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-11 w-full rounded-none bg-[#b7ff5a] font-mono text-xs font-semibold uppercase tracking-[0.12em] text-[#10110f] transition hover:bg-[#cbff82] disabled:cursor-not-allowed disabled:opacity-40"
     >
       {pending ? "Loading..." : label}
     </button>

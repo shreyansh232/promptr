@@ -43,9 +43,12 @@ export async function POST(request: Request) {
         },
       );
     }
-    
+
     // Check and use credits
-    const creditCheck = await deductCredits(user.id, CREDIT_COSTS.ANALYZE_PROMPT);
+    const creditCheck = await deductCredits(
+      user.id,
+      CREDIT_COSTS.ANALYZE_PROMPT,
+    );
     if (!creditCheck.allowed) {
       return NextResponse.json(
         {

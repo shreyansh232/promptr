@@ -28,7 +28,7 @@ const getUserByEmail = async (email: string) => {
 };
 
 export const login = async (provider: string) => {
-  await signIn(provider, { redirectTo: "/" });
+  await signIn(provider, { redirectTo: "/missions" });
   revalidatePath("/");
 };
 
@@ -43,23 +43,29 @@ export const loginWithCreds = async (
   const email = formData.get("email");
   const password = formData.get("password");
 
-  const validatedFields = AuthSchema.pick({ email: true, password: true }).safeParse({
+  const validatedFields = AuthSchema.pick({
+    email: true,
+    password: true,
+  }).safeParse({
     email,
     password,
   });
 
   if (!validatedFields.success) {
-    return { error: validatedFields.error.errors[0]?.message ?? "Invalid input" };
+    return {
+      error: validatedFields.error.errors[0]?.message ?? "Invalid input",
+    };
   }
 
-  const { email: normalizedEmail, password: normalizedPassword } = validatedFields.data;
+  const { email: normalizedEmail, password: normalizedPassword } =
+    validatedFields.data;
 
   try {
     await signIn("credentials", {
       email: normalizedEmail,
       password: normalizedPassword,
       redirect: true,
-      redirectTo: "/dashboard",
+      redirectTo: "/missions",
     });
     return { success: true };
   } catch (error) {
@@ -89,10 +95,16 @@ export const registerWithCreds = async (formData: FormData): Promise<void> => {
   });
 
   if (!validatedFields.success) {
-    throw new Error(validatedFields.error.errors[0]?.message ?? "Invalid input");
+    throw new Error(
+      validatedFields.error.errors[0]?.message ?? "Invalid input",
+    );
   }
 
-  const { email: normalizedEmail, password: normalizedPassword, name: normalizedName } = validatedFields.data;
+  const {
+    email: normalizedEmail,
+    password: normalizedPassword,
+    name: normalizedName,
+  } = validatedFields.data;
 
   const existingUser = await getUserByEmail(normalizedEmail);
 
@@ -113,7 +125,7 @@ export const registerWithCreds = async (formData: FormData): Promise<void> => {
     email: normalizedEmail,
     password: normalizedPassword,
     redirect: true,
-    redirectTo: "/dashboard",
+    redirectTo: "/missions",
   });
 
   revalidatePath("/");

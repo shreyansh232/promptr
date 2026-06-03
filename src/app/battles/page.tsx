@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import MainSidebar from "../dashboard/_components/Sidebar";
+import MainSidebar from "../lab/_components/Sidebar";
 import { toast } from "react-hot-toast";
 
 interface BattleTestCase {
@@ -173,9 +173,7 @@ export default function BattlesPage() {
         setBattles(data.battles ?? []);
 
         if (activeBattle) {
-          const updated = data.battles.find(
-            (b) => b.id === activeBattle.id,
-          );
+          const updated = data.battles.find((b) => b.id === activeBattle.id);
           if (updated) {
             const prevStatus = activeBattle.status;
             setActiveBattle(updated);
@@ -336,7 +334,8 @@ export default function BattlesPage() {
       (t) => (
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium text-foreground">
-            Forfeit this battle? You&apos;ll lose 15 ELO and your opponent will win.
+            Forfeit this battle? You&apos;ll lose 15 ELO and your opponent will
+            win.
           </p>
           <div className="flex justify-end gap-2">
             <Button
@@ -349,7 +348,7 @@ export default function BattlesPage() {
             </Button>
             <Button
               size="sm"
-              className="h-8 rounded-full bg-secondary border border-border text-xs font-semibold text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+              className="h-8 rounded-full border border-border bg-secondary text-xs font-semibold text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
               onClick={async () => {
                 toast.dismiss(t.id);
                 await performForfeit(battleId);
@@ -418,13 +417,9 @@ export default function BattlesPage() {
         if (data.status === "completed") {
           setActiveBattle(data.battle);
           const participants = data.battle.participants ?? [];
-          const winner =
-            participants.find((p) => p.result === "WIN") ?? null;
-          const loser =
-            participants.find((p) => p.result === "LOSS") ?? null;
-          const isDraw = participants.some(
-            (p) => p.result === "DRAW",
-          );
+          const winner = participants.find((p) => p.result === "WIN") ?? null;
+          const loser = participants.find((p) => p.result === "LOSS") ?? null;
+          const isDraw = participants.some((p) => p.result === "DRAW");
           setBattleResults({ winner, loser, isDraw });
           setView("results");
           toast.success("Battle evaluation complete!");
@@ -588,13 +583,22 @@ export default function BattlesPage() {
 
                           <div className="mt-4 flex gap-6 text-xs text-muted-foreground/60">
                             <span>
-                              Win <span className="text-primary font-semibold">+30</span>
+                              Win{" "}
+                              <span className="font-semibold text-primary">
+                                +30
+                              </span>
                             </span>
                             <span>
-                              Loss <span className="text-muted-foreground font-semibold">-15</span>
+                              Loss{" "}
+                              <span className="font-semibold text-muted-foreground">
+                                -15
+                              </span>
                             </span>
                             <span>
-                              Draw <span className="text-primary/70 font-semibold">+5</span>
+                              Draw{" "}
+                              <span className="font-semibold text-primary/70">
+                                +5
+                              </span>
                             </span>
                           </div>
                         </div>
@@ -964,7 +968,7 @@ export default function BattlesPage() {
                 </div>
 
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-[#b7ff5a]" />
                 </div>
 
                 {/* Cancel button for creator */}
@@ -1172,7 +1176,7 @@ export default function BattlesPage() {
                             <span
                               className={
                                 p.eloChange > 0
-                                  ? "text-primary font-bold"
+                                  ? "font-bold text-primary"
                                   : "text-muted-foreground"
                               }
                             >

@@ -14,45 +14,6 @@ interface EvaluationRequestBody {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id || !session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check and use credits
-    const creditCheck = await deductCredits(
-      session.user.id,
-      CREDIT_COSTS.EVALUATE_PROMPT,
-    );
-    if (!creditCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: `Insufficient credits. You have ${creditCheck.remaining} credits left.`,
-        },
-        { status: 403 },
-      );
-    }
-
-    // Rate limit check
-    const limit = checkRateLimit(
-      `evaluate:${session.user.email}`,
-      RATE_LIMITS.analyzePrompt.maxRequests,
-      RATE_LIMITS.analyzePrompt.windowMs,
-    );
-    if (!limit.allowed) {
-      return NextResponse.json(
-        { error: "Rate limit exceeded. Try again later." },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(
-              Math.ceil((limit.resetAt - Date.now()) / 1000),
-            ),
-          },
-        },
-      );
-    }
-
     const bodyText = await request.text();
     let parsed: EvaluationRequestBody;
     try {
@@ -61,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const { prompt, testCases: providedTestCases } = parsed;
+    const { prompt, problemId, testCases: providedTestCases } = parsed;
 
     if (!prompt || typeof prompt !== "string") {
       return NextResponse.json(
@@ -80,6 +41,57 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    const session = await auth();
+    const isPublicProblem = problemId === "public-support-triage";
+
+    if (!session?.user?.id || !session?.user?.email) {
+      if (!isPublicProblem) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
+    // Rate limit check
+    const rateKey = session?.user?.email
+      ? `evaluate:${session.user.email}`
+      : `evaluate-public:${request.headers.get("x-forwarded-for") ?? "local"}`;
+    const limit = checkRateLimit(
+      rateKey,
+      session?.user?.email ? RATE_LIMITS.analyzePrompt.maxRequests : 5,
+      RATE_LIMITS.analyzePrompt.windowMs,
+    );
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((limit.resetAt - Date.now()) / 1000),
+            ),
+          },
+        },
+      );
+    }
+
+    let creditsRemaining: number | undefined;
+    if (session?.user?.id) {
+      // Check and use credits
+      const creditCheck = await deductCredits(
+        session.user.id,
+        CREDIT_COSTS.EVALUATE_PROMPT,
+      );
+      if (!creditCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: `Insufficient credits. You have ${creditCheck.remaining} credits left.`,
+          },
+          { status: 403 },
+        );
+      }
+      creditsRemaining = creditCheck.remaining;
+    }
+
 
     const response = await fetchWithTimeout(
       `${env.BACKEND_URL}/evaluate-prompt`,
@@ -105,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ...evalResult,
-      creditsRemaining: creditCheck.remaining,
+      creditsRemaining,
     });
   } catch (error) {
     console.error("Evaluation error:", error);

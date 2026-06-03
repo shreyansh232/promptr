@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,7 +14,19 @@ import {
 } from "@/components/ui/select";
 import toast from "react-hot-toast";
 
-const steps = ["Level", "Industry", "Application"];
+const steps = ["Level", "Builder", "Stack", "Risk"];
+const frameworkOptions = [
+  "OpenAI Agents SDK",
+  "LangGraph",
+  "CrewAI",
+  "Generic tool calling",
+];
+const riskOptions = [
+  "Tool misuse",
+  "Prompt injection",
+  "Privacy leaks",
+  "Human escalation",
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -22,12 +34,23 @@ export default function OnboardingPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     level: "",
-    industry: "",
-    application: "",
+    builderRole: "",
+    workflowFocus: "",
+    frameworks: [] as string[],
+    riskFocus: "",
   });
 
   const updateField = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleFramework = (framework: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      frameworks: prev.frameworks.includes(framework)
+        ? prev.frameworks.filter((item) => item !== framework)
+        : [...prev.frameworks, framework],
+    }));
   };
 
   const handleNext = async () => {
@@ -36,7 +59,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Save profile
     setIsSaving(true);
     try {
       const response = await fetch("/api/user/profile", {
@@ -44,9 +66,17 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           level: formData.level,
-          expertise: formData.industry,
-          application: formData.application,
-          goals: ["Write clearer prompts"],
+          expertise: formData.builderRole,
+          application: formData.workflowFocus,
+          goals: [
+            `Build reliable ${formData.workflowFocus || "agent"} workflows`,
+            `Improve ${formData.riskFocus || "agent safety"} handling`,
+          ],
+          learningStyle: "kinesthetic",
+          builderRole: formData.builderRole,
+          frameworks: formData.frameworks,
+          workflowFocus: formData.workflowFocus,
+          riskFocus: formData.riskFocus,
         }),
       });
 
@@ -54,15 +84,10 @@ export default function OnboardingPage() {
         throw new Error("Failed to save profile");
       }
 
-      // Ensure the server-side router and cache are fresh before redirecting
       router.refresh();
-
-      // Small delay to ensure DB persistence and cache revalidation
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      router.push("/dashboard");
+      router.push("/missions");
     } catch {
-      toast.error("Failed to save your profile. Please try again.");
+      toast.error("Failed to save your agent profile. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -70,130 +95,169 @@ export default function OnboardingPage() {
 
   const isNextDisabled =
     (currentStep === 0 && !formData.level) ||
-    (currentStep === 1 && !formData.industry.trim()) ||
-    (currentStep === 2 && !formData.application.trim());
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">
-                What&apos;s your experience level?
-              </h2>
-              <p className="mt-2 text-base text-muted-foreground">
-                We&apos;ll tailor problems and feedback to match your ability.
-              </p>
-            </div>
-            <Select
-              onValueChange={(v) => updateField("level", v)}
-              value={formData.level}
-            >
-              <SelectTrigger className="h-14 rounded-2xl border-border bg-background text-base text-foreground">
-                <SelectValue placeholder="Select your level" />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-secondary text-foreground">
-                <SelectItem value="beginner">
-                  Beginner — New to prompt engineering
-                </SelectItem>
-                <SelectItem value="intermediate">
-                  Intermediate — Some experience, want to improve
-                </SelectItem>
-                <SelectItem value="expert">
-                  Expert — Looking to master advanced techniques
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        );
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">
-                What industry do you work in?
-              </h2>
-              <p className="mt-2 text-base text-muted-foreground">
-                We&apos;ll personalize practice problems to your field.
-              </p>
-            </div>
-            <Input
-              value={formData.industry}
-              onChange={(e) => updateField("industry", e.target.value)}
-              placeholder="Examples: tech, healthcare, finance, education, marketing"
-              className="h-14 rounded-2xl border-border bg-background text-base text-foreground placeholder:text-muted-foreground/40"
-            />
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">
-                Where will you apply prompt engineering?
-              </h2>
-              <p className="mt-2 text-base text-muted-foreground">
-                Tell us how you plan to use these skills in your work.
-              </p>
-            </div>
-            <Input
-              value={formData.application}
-              onChange={(e) => updateField("application", e.target.value)}
-              placeholder="Examples: writing reports, coding, content creation, data analysis"
-              className="h-14 rounded-2xl border-border bg-background text-base text-foreground placeholder:text-muted-foreground/40"
-            />
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+    (currentStep === 1 &&
+      (!formData.builderRole.trim() || !formData.workflowFocus.trim())) ||
+    (currentStep === 2 && formData.frameworks.length === 0) ||
+    (currentStep === 3 && !formData.riskFocus);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left side — branding */}
-      <div className="hidden w-1/2 flex-col justify-between border-r border-border bg-secondary/20 px-12 py-10 lg:flex">
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold text-foreground">Promptr</span>
-        </div>
+    <div className="flex min-h-screen bg-[#080908] text-[#f7f2e8]">
+      <div className="hidden w-1/2 flex-col justify-between border-r border-white/10 bg-[#0d0f0c] px-12 py-10 lg:flex">
+        <div className="text-lg font-semibold">Promptr</div>
 
         <div className="max-w-md">
-          <h1 className="text-4xl leading-tight text-foreground">
-            Learn prompt engineering by doing, not reading.
+          <div className="mb-5 inline-flex border border-[#b7ff5a]/30 bg-[#b7ff5a]/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-[#c8ff76]">
+            Agent profile
+          </div>
+          <h1 className="text-5xl font-semibold leading-tight">
+            Calibrate your Playground missions.
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Practice with real problems. Get scored. Improve. Repeat.
+          <p className="mt-5 text-base leading-7 text-[#abb4a4]">
+            Promptr will tune missions around your agent stack, workflows, and
+            highest-risk failure modes.
           </p>
         </div>
 
-        <div className="text-sm text-muted-foreground/40">
-          Step {currentStep + 1} of {steps.length}
+        <div className="font-mono text-xs uppercase tracking-[0.16em] text-[#71786d]">
+          Step {currentStep + 1} / {steps.length}
         </div>
       </div>
 
-      {/* Right side — form */}
       <div className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-1/2 lg:px-16">
         <div className="w-full max-w-md">
-          {/* Progress bar */}
-          <div className="mb-10 h-1.5 w-full rounded-full bg-secondary/40">
+          <div className="mb-10 h-1.5 w-full bg-white/10">
             <div
-              className="h-1.5 rounded-full bg-primary transition-all duration-300"
+              className="h-1.5 bg-[#b7ff5a] transition-all duration-300"
               style={{
                 width: `${((currentStep + 1) / steps.length) * 100}%`,
               }}
             />
           </div>
 
-          {renderStep()}
+          {currentStep === 0 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  How experienced are you with agents?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
+                  This controls mission complexity and how much scaffolding you
+                  get.
+                </p>
+              </div>
+              <Select
+                onValueChange={(value) => updateField("level", value)}
+                value={formData.level}
+              >
+                <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#b7ff5a]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent className="border-white/10 bg-[#10110f] text-[#f7f2e8]">
+                  <SelectItem value="beginner">
+                    Beginner - learning agent basics
+                  </SelectItem>
+                  <SelectItem value="intermediate">
+                    Intermediate - building tool workflows
+                  </SelectItem>
+                  <SelectItem value="expert">
+                    Expert - hardening production agents
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {/* Navigation */}
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  What kind of agent are you building?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
+                  Be concrete: support automation, coding agent, sales ops,
+                  research workflow.
+                </p>
+              </div>
+              <Input
+                value={formData.builderRole}
+                onChange={(event) =>
+                  updateField("builderRole", event.target.value)
+                }
+                placeholder="Example: full-stack developer"
+                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <Input
+                value={formData.workflowFocus}
+                onChange={(event) =>
+                  updateField("workflowFocus", event.target.value)
+                }
+                placeholder="Example: support triage workflow"
+                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+          )}
+
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  Which stack should examples reference?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
+                  Promptr stays framework-agnostic but can use familiar terms.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {frameworkOptions.map((framework) => (
+                  <CheckboxRow
+                    key={framework}
+                    label={framework}
+                    checked={formData.frameworks.includes(framework)}
+                    onChange={() => toggleFramework(framework)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  What failure mode matters most?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
+                  Missions will bias toward the risk you most need to control.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {riskOptions.map((risk) => (
+                  <button
+                    key={risk}
+                    type="button"
+                    onClick={() => updateField("riskFocus", risk)}
+                    className={`flex w-full items-center justify-between border px-4 py-4 text-left transition-colors ${
+                      formData.riskFocus === risk
+                        ? "border-[#b7ff5a]/50 bg-[#b7ff5a]/10 text-[#f7f2e8]"
+                        : "border-white/10 bg-[#10110f] text-[#abb4a4] hover:border-white/20"
+                    }`}
+                  >
+                    <span>{risk}</span>
+                    {formData.riskFocus === risk && (
+                      <Check size={16} className="text-[#b7ff5a]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-10 flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
               disabled={currentStep === 0}
-              className="rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
+              className="rounded-none text-[#8f978b] hover:bg-white/5 hover:text-[#f7f2e8] disabled:opacity-30"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -201,25 +265,49 @@ export default function OnboardingPage() {
             <Button
               onClick={handleNext}
               disabled={isNextDisabled || isSaving}
-              className="rounded-full bg-primary px-8 py-6 text-base text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
+              className="rounded-none bg-[#b7ff5a] px-6 py-6 font-mono text-xs uppercase tracking-[0.12em] text-[#10110f] hover:bg-[#cbff82] disabled:opacity-40"
             >
-              {isSaving ? (
-                "Saving..."
-              ) : currentStep === steps.length - 1 ? (
-                <>
-                  Open workspace
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
+              {isSaving
+                ? "Saving"
+                : currentStep === steps.length - 1
+                  ? "Open Playground"
+                  : "Continue"}
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CheckboxRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-4 border border-white/10 bg-[#10110f] px-4 py-4 text-[#abb4a4] transition-colors hover:border-white/20">
+      <span
+        className={`flex h-5 w-5 items-center justify-center border ${
+          checked
+            ? "border-[#b7ff5a] bg-[#b7ff5a]"
+            : "border-white/20 bg-transparent"
+        }`}
+      >
+        {checked && <Check size={13} className="text-[#10110f]" />}
+      </span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="sr-only"
+      />
+      <span className={checked ? "text-[#f7f2e8]" : undefined}>{label}</span>
+    </label>
   );
 }

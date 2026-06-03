@@ -2,10 +2,10 @@
 
 This document provides essential information for agentic coding agents (Cursor, Claude, Copilot, Windsurf, etc.) working on **Promptr**.
 
-Promptr is an open-source prompt engineering learning platform. Users submit prompts and receive AI-powered analysis — scoring (STRONG / MODERATE / WEAK), encouraging feedback, improved prompt suggestions, and personalized practice problems — all tailored to each user's skill level, expertise, and learning goals.
+Promptr is a prompt engineering & evaluation platform for AI agent builders. The platform features a curated curriculum of 25 missions across 5 progressive levels (Agent Basics → Tool Use → Workflow Control → Guardrails → Evals). Users write agent instruction prompts, stress-test them against adversarial scenarios, and level up through structured practice — not generic prompting tips.
 
 **License:** MIT  
-**Target audience:** Developers and learners who want to improve their prompt engineering skills  
+**Target audience:** Developers building AI agents who want to write reliable, production-grade instruction prompts
 
 ---
 
@@ -26,6 +26,7 @@ promptr/
 │   │   ├── api/                    # API route handlers
 │   │   ├── dashboard/              # Main app dashboard
 │   │   │   └── _components/        # Dashboard-specific components
+│   │   ├── playground/             # Agent sandbox playground
 │   │   ├── problems/               # Practice problems page
 │   │   ├── sign-in/                # Auth pages
 │   │   ├── sign-up/
@@ -37,14 +38,14 @@ promptr/
 │   │   ├── problem-sidebar.tsx     # Problem list sidebar
 │   │   ├── problem-description.tsx # Problem detail view
 │   │   └── ...                     # Landing page sections (Hero, Features, etc.)
-│   ├── data/                       # Static data / seed data
+│   ├── data/                       # Curated mission data & static data
 │   ├── hooks/                      # Custom React hooks
 │   ├── lib/
 │   │   ├── prisma.ts               # Prisma client singleton
 │   │   ├── mongodb.ts              # MongoDB connection (for Auth adapter)
 │   │   └── utils.ts                # cn() and shared utilities
 │   ├── styles/                     # Global CSS
-│   ├── types/                      # Global TypeScript interfaces
+│   ├── types/                      # TypeScript interfaces (AgentMission, AgentProfile, etc.)
 │   └── utils/                      # Utility functions
 ├── auth.ts                         # NextAuth v5 config (GitHub OAuth + credentials)
 ├── db.ts                           # DB connection export
@@ -128,14 +129,14 @@ npx prisma studio
 
 Copy `.env.example` to `.env` and fill in values. Add new variables to both `.env.example` (without secrets) and `src/env.js` (schema validation).
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | MongoDB connection string |
-| `AUTH_SECRET` | NextAuth secret (generate with `openssl rand -base64 32`) |
-| `GITHUB_CLIENT_ID` | GitHub OAuth App client ID |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK) |
-| `api_key` (backend `.env`) | Google Gemini API key for FastAPI backend |
+| Variable                       | Description                                               |
+| ------------------------------ | --------------------------------------------------------- |
+| `DATABASE_URL`                 | MongoDB connection string                                 |
+| `AUTH_SECRET`                  | NextAuth secret (generate with `openssl rand -base64 32`) |
+| `GITHUB_CLIENT_ID`             | GitHub OAuth App client ID                                |
+| `GITHUB_CLIENT_SECRET`         | GitHub OAuth App client secret                            |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK)                   |
+| `api_key` (backend `.env`)     | Google Gemini API key for FastAPI backend                 |
 
 ---
 
@@ -153,13 +154,18 @@ Copy `.env.example` to `.env` and fill in values. Add new variables to both `.en
 
 ```tsx
 interface PromptAnalysisProps {
-  label: 'STRONG' | 'MODERATE' | 'WEAK'
-  feedback: string
-  tags: string[]
-  isLoading?: boolean
+  label: "STRONG" | "MODERATE" | "WEAK";
+  feedback: string;
+  tags: string[];
+  isLoading?: boolean;
 }
 
-export function PromptAnalysis({ label, feedback, tags, isLoading = false }: PromptAnalysisProps) {
+export function PromptAnalysis({
+  label,
+  feedback,
+  tags,
+  isLoading = false,
+}: PromptAnalysisProps) {
   // implementation
 }
 ```
@@ -262,8 +268,9 @@ Components are added to `src/components/ui/`.
 
 ## Testing Expectations
 
-- No testing framework is currently configured — avoid breaking existing functionality
-- Before submitting changes, manually verify:
+- **Frontend**: Vitest + React Testing Library. Tests live in `src/components/__tests__/`. Run with `pnpm test`.
+- **Backend**: pytest with mocked Gemini API calls. Tests live in `backend/tests/`. Run with `cd backend && make test`.
+- Before submitting changes, also verify:
   - Auth flow (sign in / sign up / sign out) works
   - `/analyze-prompt` backend endpoint returns valid JSON
   - Dashboard renders prompt editor and analysis correctly
@@ -275,20 +282,23 @@ Components are added to `src/components/ui/`.
 ## Debugging Tips
 
 **Frontend**
+
 - Check `src/env.js` if environment variables are not loading — all vars must be declared there
 - NextAuth errors: verify `AUTH_SECRET` is set and `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` match the OAuth app's callback URL exactly (`http://localhost:3000/api/auth/callback/github`)
 - Prisma: if `PrismaClient` throws "not generated", run `npx prisma generate`
 
 **Backend**
+
 - Gemini 400 errors → usually a malformed prompt or missing `api_key` in `backend/.env`
 - CORS errors in development → the backend allows all origins (`*`); check the frontend is hitting `http://localhost:8000`
 - JSON parse failures → Gemini occasionally wraps responses in ` ```json ``` ` fences; the stripping logic in `main.py` handles this but verify the strip range is correct
 
 **Common failure points**
+
 - Missing `api_key` in `backend/.env` (separate from root `.env`)
 - MongoDB connection string missing auth credentials
 - `UserProfile` not yet created for a new user — check the sign-up flow creates the profile record
 
 ---
 
-Help make Promptr the best place to learn prompt engineering.
+Help make Promptr the best place to learn prompt engineering for AI agents. Contributions welcome — open a PR or an issue at https://github.com/shreyansh232/promptr.

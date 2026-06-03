@@ -1,4 +1,4 @@
-import { Problem, ProblemsListItem } from "@/types/problem";
+import type { Problem, ProblemsListItem } from "@/types/problem";
 
 export const problemsList: ProblemsListItem[] = [
   {

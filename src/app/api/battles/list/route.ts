@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { backendFetch, type Battle, type SubmitPromptRequest } from "@/lib/backend";
+import {
+  backendFetch,
+  type Battle,
+  type SubmitPromptRequest,
+} from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 

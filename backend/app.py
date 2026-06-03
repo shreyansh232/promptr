@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import get_settings
 from core.db import connect_to_mongo, close_mongo_connection
 from routers.analysis import router as analysis_router
+from routers.agents import router as agents_router
 from routers.battle import router as battle_router
 from routers.profile import router as profile_router
 
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(analysis_router)
+    app.include_router(agents_router)
     app.include_router(battle_router, prefix="/battles")
     app.include_router(profile_router, prefix="/profiles")
 

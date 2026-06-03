@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
-import { backendFetch, type Battle, type SubmitPromptRequest } from "@/lib/backend";
+import {
+  backendFetch,
+  type Battle,
+  type SubmitPromptRequest,
+} from "@/lib/backend";
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = (await request.json()) as SubmitPromptRequest;

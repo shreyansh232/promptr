@@ -19,6 +19,10 @@ const mockInitialData = {
   subLevel: 1,
   problemsSolved: 0,
   streak: 0,
+  builderRole: "developer",
+  frameworks: ["OpenAI Agents SDK"],
+  workflowFocus: "coding agents",
+  riskFocus: "Tool misuse",
 };
 
 describe("ProfileForm Navigation", () => {
@@ -26,12 +30,12 @@ describe("ProfileForm Navigation", () => {
     mockGet.mockReset();
   });
 
-  it("renders back to Dashboard link by default (no from param)", () => {
+  it("renders back to Missions link by default (no from param)", () => {
     mockGet.mockReturnValue(null);
     render(<ProfileForm initialData={mockInitialData} />);
-    const link = screen.getByRole("link", { name: /dashboard/i });
+    const link = screen.getByRole("link", { name: /missions/i });
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute("href", "/dashboard");
+    expect(link).toHaveAttribute("href", "/missions");
   });
 
   it("renders back to Home link if from=landing is specified", () => {

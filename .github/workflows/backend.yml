@@ -2,9 +2,9 @@ name: Backend CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   backend-test:
@@ -12,7 +12,7 @@ jobs:
     defaults:
       run:
         working-directory: backend
-    
+
     steps:
       - uses: actions/checkout@v4
 

@@ -118,7 +118,8 @@ export async function POST(request: Request) {
           level: parsedData.level,
           expertise: parsedData.expertise,
           application: parsedData.application ?? "",
-          learning_style: (parsedData.learning_style as string | undefined) ?? "",
+          learning_style:
+            (parsedData.learning_style as string | undefined) ?? "",
           goals: parsedData.goals,
           subLevel: parsedData.subLevel ?? 1,
         }),

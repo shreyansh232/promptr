@@ -89,26 +89,26 @@ describe("checkRateLimit", () => {
 
 describe("RATE_LIMITS", () => {
   it("has elo config", () => {
-    expect(RATE_LIMITS.elo).toEqual({ maxRequests: 10, windowMs: 60000 });
+    expect(RATE_LIMITS.elo).toEqual({ maxRequests: 30, windowMs: 60000 });
   });
 
   it("has analyzePrompt config", () => {
     expect(RATE_LIMITS.analyzePrompt).toEqual({
-      maxRequests: 20,
+      maxRequests: 60,
       windowMs: 60000,
     });
   });
 
   it("has generateProblems config", () => {
     expect(RATE_LIMITS.generateProblems).toEqual({
-      maxRequests: 5,
+      maxRequests: 20,
       windowMs: 60000,
     });
   });
 
   it("has profile config", () => {
     expect(RATE_LIMITS.profile).toEqual({
-      maxRequests: 30,
+      maxRequests: 60,
       windowMs: 60000,
     });
   });

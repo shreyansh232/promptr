@@ -9,6 +9,7 @@ import {
 import { logout } from "@/actions/auth";
 import Image from "next/image";
 import Link from "next/link";
+import { User, SignOut } from "@phosphor-icons/react";
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "P";
@@ -48,18 +49,20 @@ export function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-48 border-white/10 bg-[#1a1a1a] text-[#f5efe6]"
+        className="w-48 rounded-none border border-white/10 bg-[#060706] p-1 text-[#f7f2e8]"
       >
-        <DropdownMenuItem className="cursor-pointer text-[#f5efe6] hover:bg-white/10 hover:text-[#f5efe6] focus:bg-white/10 focus:text-[#f5efe6]">
+        <DropdownMenuItem className="flex cursor-pointer items-center gap-2.5 rounded-none px-3 py-2.5 font-mono text-xs uppercase tracking-[0.12em] text-[#abb4a4] hover:bg-[#b7ff5a]/10 hover:text-[#c8ff76] focus:bg-[#b7ff5a]/10 focus:text-[#c8ff76]">
+          <User size={14} className="shrink-0 text-[#b7ff5a]" />
           <Link href="/profile?from=landing" className="w-full">
             View profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => logout()}
-          className="cursor-pointer text-red-400 hover:bg-white/10 hover:text-red-400 focus:bg-white/10 focus:text-red-400"
+          className="flex cursor-pointer items-center gap-2.5 rounded-none px-3 py-2.5 font-mono text-xs uppercase tracking-[0.12em] text-[#ff7777] hover:bg-[#ff5a5a]/10 hover:text-[#ff9b9b] focus:bg-[#ff5a5a]/10 focus:text-[#ff9b9b]"
         >
-          Log out
+          <SignOut size={14} className="shrink-0" />
+          <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

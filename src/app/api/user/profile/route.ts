@@ -22,26 +22,40 @@ export async function GET() {
     // Return profile from MongoDB
     const profileData = user.profile
       ? {
+          id: user.id,
           level: user.profile.level,
           expertise: user.profile.expertise,
           application: user.profile.application,
           learningStyle: user.profile.learningStyle,
           goals: user.profile.goals,
           elo: user.profile.elo,
+          reliabilityScore: user.profile.elo > 100 ? 0 : user.profile.elo,
           subLevel: user.profile.subLevel,
           problemsSolved: user.profile.problemsSolved,
+          missionsCompleted: user.profile.problemsSolved,
           streak: user.profile.streak,
+          builderRole: user.profile.builderRole,
+          frameworks: user.profile.frameworks,
+          workflowFocus: user.profile.workflowFocus,
+          riskFocus: user.profile.riskFocus,
         }
       : {
+          id: user.id,
           level: "beginner",
           expertise: "",
           application: "",
           learningStyle: "",
           goals: [],
           elo: 1000,
+          reliabilityScore: 0,
           subLevel: 1,
           problemsSolved: 0,
+          missionsCompleted: 0,
           streak: 0,
+          builderRole: "",
+          frameworks: [],
+          workflowFocus: "",
+          riskFocus: "",
         };
 
     interface SolvedProblem {
@@ -97,6 +111,11 @@ export async function POST(req: Request) {
       expertise: string;
       application: string;
       goals: string[];
+      learningStyle?: string;
+      builderRole?: string;
+      frameworks?: string[];
+      workflowFocus?: string;
+      riskFocus?: string;
     };
 
     const updatedProfile = await db.userProfile.upsert({
@@ -105,14 +124,24 @@ export async function POST(req: Request) {
         level: data.level,
         expertise: data.expertise,
         application: data.application,
+        learningStyle: data.learningStyle ?? "",
         goals: data.goals ?? [],
+        builderRole: data.builderRole ?? "",
+        frameworks: data.frameworks ?? [],
+        workflowFocus: data.workflowFocus ?? "",
+        riskFocus: data.riskFocus ?? "",
       },
       create: {
         userId: user.id,
         level: data.level,
         expertise: data.expertise,
         application: data.application,
+        learningStyle: data.learningStyle ?? "",
         goals: data.goals ?? [],
+        builderRole: data.builderRole ?? "",
+        frameworks: data.frameworks ?? [],
+        workflowFocus: data.workflowFocus ?? "",
+        riskFocus: data.riskFocus ?? "",
       },
     });
 

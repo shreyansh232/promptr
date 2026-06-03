@@ -1,15 +1,27 @@
 # Promptr
 
-**A practical prompt engineering practice platform.** Write prompts, get scored feedback, and solve personalized practice problems — all tailored to your skill level.
+**The prompt engineering & evaluation platform for AI agent builders.** Practice with curated missions, stress-test your prompts against adversarial scenarios, and level up through a progressive curriculum — from greeting bots to self-evaluating meta-agents.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## What It Does
 
-Promptr helps you learn prompt engineering through hands-on practice:
+Promptr teaches prompt engineering through hands-on practice, not passive tips:
 
-- **Prompt Analysis** — Submit a prompt draft and get scored feedback (STRONG / MODERATE / WEAK) with specific improvement suggestions and rewritten examples.
-- **Practice Problems** — Solve LeetCode-style challenges personalized to your level, expertise, and goals. Each problem includes test cases, examples, and pro tips.
-- **ELO Rating System** — Track your progress with an ELO-based ranking system that adapts problem difficulty as you improve.
-- **Personalized Learning** — Problems and feedback are calibrated to your learner profile (level, expertise, learning style, goals).
+- **25 Curated Missions** — Five progressive levels covering agent basics, tool use, workflow control, guardrails, and evaluation. Each mission includes realistic tools, workflow rules, and adversarial test cases.
+- **Scenario-Based Evaluation** — Every prompt is stress-tested against tool-use correctness, workflow sequencing, guardrail enforcement, and prompt injection resistance.
+- **Rewrite Coaching** — Get scored feedback (STRONG / MODERATE / WEAK), see a stronger version of your prompt, and learn exactly why the patch improves reliability.
+- **Progressive Curriculum** — Start with basic persona control and output formatting. Finish writing meta-agents that generate evaluation test cases for other agents' prompts.
+
+## Mission Curriculum
+
+| Level | Track | What You Learn |
+|-------|-------|----------------|
+| 1 | Agent Basics | Persona, constraints, output formatting, refusal boundaries |
+| 2 | Tool Use | When to call tools, input validation, confirmation gates |
+| 3 | Workflow Control | Multi-step pipelines, fail-fast behavior, error recovery |
+| 4 | Guardrails | Prompt injection defense, PII protection, RBAC, rate limits |
+| 5 | Evals | Confidence calibration, fact-checking, reasoning audit trails |
 
 ## Tech Stack
 
@@ -24,8 +36,9 @@ Promptr helps you learn prompt engineering through hands-on practice:
 ### Backend
 
 - **FastAPI** — Python REST API
-- **OpenAI GPT-4o-mini** — AI analysis and problem generation
+- **Google Gemini** (`gemini-2.0-flash`) — AI analysis and evaluation
 - **Pydantic** — Request/response validation
+- **uv** — Fast Python package management
 
 ### Database
 
@@ -38,7 +51,7 @@ Promptr helps you learn prompt engineering through hands-on practice:
 User → Next.js Frontend (App Router)
      → Server Action / API Route
      → FastAPI Backend (POST /analyze-prompt, /generate-problems)
-     → OpenAI GPT-4o-mini
+     → Google Gemini API
      → Structured JSON response
      → Frontend renders feedback + scoring
 ```
@@ -47,27 +60,32 @@ User → Next.js Frontend (App Router)
 
 ```
 promptr/
-├── backend/                        # FastAPI + OpenAI
+├── backend/                        # FastAPI + Google Gemini AI
 │   ├── main.py                     # FastAPI app entry
 │   ├── routers/analysis.py         # /analyze-prompt & /generate-problems routes
 │   ├── services/llm_service.py     # AI service (prompt analysis + problem generation)
 │   ├── schemas/                    # Pydantic models
-│   └── knowledge-base/             # Prompt engineering reference for problem generation
+│   ├── tests/                      # pytest test suite
+│   ├── Makefile                    # install, test, format, lint commands
+│   └── knowledge-base/             # Prompt engineering reference
 ├── prisma/
 │   └── schema.prisma               # MongoDB + Prisma schema
 ├── src/
 │   ├── app/                        # Next.js App Router pages
 │   │   ├── dashboard/              # Main practice interface
-│   │   ├── problems/               # Practice problems page
+│   │   ├── playground/             # Agent sandbox playground
 │   │   ├── profile/                # User profile & stats
 │   │   ├── onboarding/             # Initial user setup
 │   │   └── api/                    # API route handlers
 │   ├── components/                 # Shared UI components
+│   ├── data/                       # Curated mission data & static data
+│   ├── types/                      # TypeScript interfaces (AgentMission, etc.)
 │   ├── actions/                    # Next.js Server Actions
 │   ├── lib/                        # Prisma client, utilities
-│   └── types/                      # TypeScript interfaces
+│   └── styles/                     # Global CSS
 ├── auth.ts                         # NextAuth v5 configuration
 ├── middleware.ts                   # Route protection
+├── AGENTS.md                       # Guide for agentic coding agents
 └── next.config.js
 ```
 
@@ -79,7 +97,7 @@ promptr/
 - pnpm
 - Python 3.10+
 - MongoDB (local or Atlas)
-- OpenAI API key
+- Google Gemini API key
 
 ### Environment Setup
 
@@ -89,19 +107,14 @@ Copy `.env.example` to `.env` and fill in your values:
 cp .env.example .env
 ```
 
-| Variable               | Description                                 |
-| ---------------------- | ------------------------------------------- |
-| `DATABASE_URL`         | MongoDB connection string                   |
-| `AUTH_SECRET`          | NextAuth secret (`openssl rand -base64 32`) |
-| `GITHUB_CLIENT_ID`     | GitHub OAuth App client ID                  |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret              |
-| `OPENAI_API_KEY`       | OpenAI API key (used by backend)            |
-
-Create `backend/.env` with:
-
-```
-OPENAI_API_KEY=your_openai_api_key
-```
+| Variable                       | Description                                               |
+| ------------------------------ | --------------------------------------------------------- |
+| `DATABASE_URL`                 | MongoDB connection string                                 |
+| `AUTH_SECRET`                  | NextAuth secret (`openssl rand -base64 32`)               |
+| `GITHUB_CLIENT_ID`             | GitHub OAuth App client ID                                |
+| `GITHUB_CLIENT_SECRET`         | GitHub OAuth App client secret                            |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key (frontend AI SDK)                   |
+| `api_key` (backend `.env`)     | Google Gemini API key for FastAPI backend                 |
 
 ### Install Dependencies
 
@@ -119,10 +132,7 @@ make install
 ### Database Setup
 
 ```bash
-# Generate Prisma client
 npx prisma generate
-
-# Push schema to MongoDB
 npx prisma db push
 ```
 
@@ -134,7 +144,7 @@ pnpm dev
 
 # Terminal 2 — Backend (http://localhost:8000)
 cd backend
-make install # ensure dependencies are synced
+make install
 uv run uvicorn main:app --reload --port 8000
 ```
 
@@ -145,15 +155,12 @@ uv run uvicorn main:app --reload --port 8000
 ```bash
 pnpm dev          # Start dev server
 pnpm build        # Production build
-pnpm start        # Start production server
 pnpm lint         # Lint (max 10 warnings)
 npx tsc --noEmit  # Type check
-npx prisma studio # Open Prisma Studio (GUI)
+pnpm test         # Run vitest test suite
 ```
 
 ### Backend
-
-The backend uses a `Makefile` for standardized operations. It is recommended to use [uv](https://astral.sh/uv) for dependency management.
 
 ```bash
 cd backend
@@ -166,63 +173,28 @@ make check-lint   # Check lint without fixing
 
 ## Testing & CI/CD
 
-### Backend Tests
-The backend features a comprehensive test suite using `pytest`.
-- **Unit Tests:** Located in `backend/tests/`.
-- **Mocks:** External API calls to OpenAI are mocked using `unittest.mock`.
-- **Coverage:** Includes router validation, service logic, and fallback mechanisms.
+### Frontend Tests
 
-Run tests locally:
-```bash
-cd backend
-make test
-```
+The frontend uses **Vitest** + **React Testing Library** for component tests located in `src/components/__tests__/`.
+
+### Backend Tests
+
+The backend uses **pytest** with mocked Gemini API calls. Tests are in `backend/tests/`.
 
 ### CI/CD Pipeline
-A GitHub Actions pipeline (`.github/workflows/backend.yml`) automatically runs on every push and pull request to the `main` branch. It ensures:
-1.  **Formatting:** Code matches `ruff` format standards.
-2.  **Linting:** No linting errors are present.
-3.  **Tests:** All 15+ test cases pass in a clean environment.
 
-## How It Works
+GitHub Actions (`.github/workflows/backend.yml`) runs formatting, linting, and tests on every push to `main`.
 
-### Prompt Analysis Flow
+## Contributing
 
-1. User writes a prompt in the editor
-2. Frontend sends the prompt + user profile to the backend
-3. Backend constructs a structured analysis prompt using the learner's profile
-4. OpenAI returns scored feedback with tags, learning points, and improved prompt suggestions
-5. Frontend displays the analysis with visual scoring and ELO update
+Promptr is MIT-licensed and welcomes contributions. Whether it's new missions, UI improvements, or evaluation logic — open a PR or an issue.
 
-### Practice Problem Flow
-
-1. System generates personalized problems based on user level and goals
-2. Problems follow a LeetCode-style format with description, requirements, examples, and test cases
-3. User writes a prompt to solve the problem
-4. The prompt is analyzed and scored against the problem's criteria
-5. ELO is updated; passing scores unlock the next problem
-
-### Knowledge Base
-
-The backend includes a compiled prompt engineering knowledge base (`backend/knowledge-base/prompt-engineering-guide.md`) sourced from the [DAIR.AI Prompt Engineering Guide](https://github.com/dair-ai/prompt-engineering-guide). This reference is embedded in the problem generation prompt to ensure problems teach real concepts — zero-shot, few-shot, chain-of-thought, ReAct, RAG, and more.
-
-## ELO & Level System
-
-| Level        | ELO Range | Focus                                          |
-| ------------ | --------- | ---------------------------------------------- |
-| Beginner     | 0–1199    | Task clarity, specificity, basic structure     |
-| Intermediate | 1200–1499 | Few-shot design, chain-of-thought, constraints |
-| Expert       | 1500+     | Robustness, advanced techniques, evaluation    |
-
-## Deployment
-
-### Vercel (Frontend)
-
-The project is configured for Vercel deployment. The build script includes `prisma generate` to ensure the Prisma client is generated during the build process.
-
-### Backend
-
-The FastAPI backend can be deployed separately on any platform that supports Python (Railway, Render, Fly.io, etc.).
+```bash
+# Fork the repo, then:\ngit clone https://github.com/YOUR_USERNAME/promptr.git
+cd promptr
+pnpm install
+pnpm dev
+```
 
 ## License
 

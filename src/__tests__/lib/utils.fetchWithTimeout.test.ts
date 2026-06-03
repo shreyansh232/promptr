@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from "vitest";
 import { fetchWithTimeout } from "@/lib/utils";
 
 /**
@@ -8,9 +16,10 @@ import { fetchWithTimeout } from "@/lib/utils";
  */
 const typedFetch = (): Mock<
   (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
-> => global.fetch as unknown as Mock<
-  (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
->;
+> =>
+  global.fetch as unknown as Mock<
+    (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  >;
 
 describe("fetchWithTimeout", () => {
   beforeEach(() => {
@@ -33,7 +42,10 @@ describe("fetchWithTimeout", () => {
 
     expect(global.fetch).toHaveBeenCalledWith(
       "http://example.com",
-      expect.objectContaining({ method: "POST", signal: expect.any(AbortSignal) as unknown }),
+      expect.objectContaining({
+        method: "POST",
+        signal: expect.any(AbortSignal) as unknown,
+      }),
     );
     expect(result).toBe(mockResponse);
   });

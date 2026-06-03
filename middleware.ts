@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
 
-const protectedRoutes = ["/dashboard", "/profile", "/battles"];
+const protectedRoutes = ["/profile", "/battles"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
 export default auth((request) => {
@@ -18,7 +18,7 @@ export default auth((request) => {
   }
 
   if (request.auth && isAuthRoute) {
-    const absoluteURL = new URL("/dashboard", request.nextUrl.origin);
+    const absoluteURL = new URL("/missions", request.nextUrl.origin);
     return NextResponse.redirect(absoluteURL.toString());
   }
 

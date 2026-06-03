@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "auth";
-import { backendFetch, type Battle, type CreateBattleRequest } from "@/lib/backend";
+import {
+  backendFetch,
+  type Battle,
+  type CreateBattleRequest,
+} from "@/lib/backend";
 
 export async function POST(request: Request) {
   try {

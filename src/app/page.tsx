@@ -1,18 +1,17 @@
+import { AgentLanding } from "@/components/AgentLanding";
+import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import FeaturesSection from "@/components/FeaturesSection";
-import FAQSection from "@/components/FAQSection";
-import Footer from "@/components/Footer";
+import { auth } from "auth";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session = await auth();
   return (
-    <div className="flex min-h-screen w-full flex-col bg-[#0d0d0d]" id="home">
+    <div
+      className="landing-theme min-h-screen bg-[var(--landing-ink)] text-[var(--landing-paper)]"
+      id="home"
+    >
       <Header />
-      <main className="flex-1">
-        <HeroSection />
-        <FeaturesSection />
-        <FAQSection />
-      </main>
+      <AgentLanding isAuthenticated={!!session?.user} />
       <Footer />
     </div>
   );

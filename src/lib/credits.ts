@@ -41,14 +41,11 @@ export async function deductCredits(
   }
 }
 
-export async function getUserCredits(
-  userId: string,
-): Promise<UserCredits> {
+export async function getUserCredits(userId: string): Promise<UserCredits> {
   try {
-    const response = await fetch(
-      `${env.BACKEND_URL}/profiles/${userId}`,
-      { cache: "no-store" },
-    );
+    const response = await fetch(`${env.BACKEND_URL}/profiles/${userId}`, {
+      cache: "no-store",
+    });
 
     if (!response.ok) {
       return { credits: 0 };

@@ -27,10 +27,12 @@ const StatsSection = () => {
       <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
         {stats.map((stat, index) => (
           <div key={index} className="text-center">
-            <div className="text-[#ff8a3d] mb-2 text-4xl font-bold font-mono">
+            <div className="mb-2 font-mono text-4xl font-bold text-[#ff8a3d]">
               {stat.number}
             </div>
-            <div className="mb-1 text-xl font-semibold text-white">{stat.label}</div>
+            <div className="mb-1 text-xl font-semibold text-white">
+              {stat.label}
+            </div>
             <p className="text-sm text-white/60">{stat.description}</p>
           </div>
         ))}

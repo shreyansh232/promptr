@@ -49,7 +49,7 @@ export default function MainSidebar({
 }: MainSidebarProps) {
   const pathname = usePathname();
   const currentIndex = getLevelIndex(userLevel ?? "beginner");
-  const showPracticeButton = pathname !== "/dashboard";
+  const showPracticeButton = pathname !== "/missions";
 
   return (
     <>
@@ -61,7 +61,7 @@ export default function MainSidebar({
         }`}
       >
         {/* Header — plain wordmark + toggle */}
-        <div className="flex items-center justify-between px-4 py-4 min-h-[64px]">
+        <div className="flex min-h-[64px] items-center justify-between px-4 py-4">
           {isExpanded && (
             <Link
               href="/"
@@ -95,9 +95,7 @@ export default function MainSidebar({
                   <li
                     key={level.id}
                     className={`group relative flex items-center gap-3 rounded-md px-3 py-2 transition-colors duration-150 ${
-                      isActive
-                        ? "bg-white/[0.04]"
-                        : "hover:bg-white/[0.02]"
+                      isActive ? "bg-white/[0.04]" : "hover:bg-white/[0.02]"
                     }`}
                   >
                     {/* Active indicator: 2px left bar */}
@@ -159,20 +157,22 @@ export default function MainSidebar({
 
         {/* Action Buttons */}
         {showPracticeButton && (
-          <div className={`px-4 py-4 border-t border-border ${!isExpanded ? "flex flex-col items-center gap-4" : ""}`}>
+          <div
+            className={`border-t border-border px-4 py-4 ${!isExpanded ? "flex flex-col items-center gap-4" : ""}`}
+          >
             {isExpanded ? (
               <Link
-                href="/dashboard"
-                className="group flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-xs font-mono text-muted-foreground transition-all hover:border-primary/30 hover:bg-secondary hover:text-foreground"
+                href="/missions"
+                className="group flex items-center justify-between rounded-md border border-border bg-card px-3 py-2 font-mono text-xs text-muted-foreground transition-all hover:border-primary/30 hover:bg-secondary hover:text-foreground"
               >
                 <span className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
                   Practice Mode
                 </span>
               </Link>
             ) : (
               <Link
-                href="/dashboard"
+                href="/missions"
                 title="Practice Mode"
                 className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all hover:border-primary/35 hover:bg-secondary hover:text-foreground"
               >

@@ -2,12 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TestCase } from "@/types/problem";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -40,12 +35,12 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
   };
 
   return (
-    <div className="flex h-full flex-col p-4 bg-black">
+    <div className="flex h-full flex-col bg-black p-4">
       <Textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         placeholder="Write your prompt here..."
-        className="mb-4 h-1/2 min-h-[450px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 font-mono text-white placeholder-white/30 focus:border-primary/50 focus:ring-0 focus:outline-none"
+        className="mb-4 h-1/2 min-h-[450px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 font-mono text-white placeholder-white/30 focus:border-primary/50 focus:outline-none focus:ring-0"
       />
       <div className="scroll-none flex-1 space-y-4 overflow-auto">
         {testCases.map((testCase, index) => (
@@ -62,7 +57,10 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
                     className="ml-2"
                   >
                     {results[index].success ? (
-                      <CheckCircle className="mr-1 h-3 w-3 text-black" weight="fill" />
+                      <CheckCircle
+                        className="mr-1 h-3 w-3 text-black"
+                        weight="fill"
+                      />
                     ) : (
                       <XCircle className="mr-1 h-3 w-3" weight="fill" />
                     )}
@@ -77,14 +75,16 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
                   <div className="mb-1 font-mono text-xs text-white/75">
                     Input:
                   </div>
-                  <div className="rounded-md bg-black/40 border border-white/10 p-2 font-mono text-white/95">
+                  <div className="rounded-md border border-white/10 bg-black/40 p-2 font-mono text-white/95">
                     {testCase.input}
                   </div>
                 </div>
                 {results[index] && (
                   <div>
-                    <div className="font-mono text-xs text-white/75">Output:</div>
-                    <div className="rounded-md bg-black/40 border border-white/10 p-2 font-mono text-white/95">
+                    <div className="font-mono text-xs text-white/75">
+                      Output:
+                    </div>
+                    <div className="rounded-md border border-white/10 bg-black/40 p-2 font-mono text-white/95">
                       {results[index].output}
                     </div>
                   </div>
@@ -97,7 +97,7 @@ export function PromptEditor({ testCases }: PromptEditorProps) {
       <div className="mt-4">
         <Button
           onClick={runTests}
-          className="w-full bg-[#ff8a3d] hover:bg-[#ff9b5b] text-black font-semibold rounded-full py-6"
+          className="w-full rounded-full bg-[#ff8a3d] py-6 font-semibold text-black hover:bg-[#ff9b5b]"
           disabled={!prompt.trim() || isRunning}
         >
           {isRunning ? "Running Tests..." : "Run Test Cases"}

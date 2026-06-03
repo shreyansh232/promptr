@@ -41,12 +41,12 @@ export default function FeaturesSection() {
           <div className="text-[11px] uppercase tracking-[0.32em] text-[#f0a067]">
             Features
           </div>
-          <h2 className="font-display mt-5 text-4xl leading-tight text-[#fff5eb] md:text-6xl">
+          <h2 className="mt-5 font-display text-4xl leading-tight text-[#fff5eb] md:text-6xl">
             Hands on approach to learn prompt engineering
           </h2>
           <p className="mt-6 text-lg leading-8 text-[#b8b0a5]">
-            Promptr is built around disciplined prompt iteration, so the
-            product story stays direct: write, score, revise, improve.
+            Promptr is built around disciplined prompt iteration, so the product
+            story stays direct: write, score, revise, improve.
           </p>
         </div>
 
@@ -71,9 +71,7 @@ export default function FeaturesSection() {
               >
                 0{index + 1}
               </div>
-              <h3 className="mt-5 text-3xl leading-tight">
-                {feature.title}
-              </h3>
+              <h3 className="mt-5 text-3xl leading-tight">{feature.title}</h3>
               <p
                 className={`mt-4 text-base leading-7 ${
                   index === 0 ? "text-[#3b2416]" : "text-[#c9c0b5]"

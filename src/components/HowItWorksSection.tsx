@@ -1,7 +1,7 @@
 export default function HowItWorksSection() {
   return (
     <section id="how-it-works" className="container mx-auto px-4 py-20">
-      <h2 className="font-display mb-12 text-center text-5xl md:text-6xl text-[#fff5eb]">
+      <h2 className="mb-12 text-center font-display text-5xl text-[#fff5eb] md:text-6xl">
         How It Works
       </h2>
       <div className="grid gap-8 md:grid-cols-3">
@@ -36,7 +36,7 @@ function StepCard({
 }) {
   return (
     <div className="text-center">
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ff8a3d] text-[#111111] text-2xl font-bold">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ff8a3d] text-2xl font-bold text-[#111111]">
         {number}
       </div>
       <h3 className="mb-2 text-xl font-semibold text-white">{title}</h3>

@@ -74,12 +74,14 @@ const SignIn = () => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[#6a6255]">Email</FormLabel>
+                <FormLabel className="font-mono text-xs uppercase tracking-[0.1em] text-[#8f978b]">
+                  Email
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Enter your email"
                     {...field}
-                    className="h-12 rounded-xl border-white/10 bg-[#0d0d0d] px-4 text-[#f5efe6] placeholder:text-[#4a453d]"
+                    className="h-12 rounded-none border border-white/10 bg-[#060706] px-4 font-mono text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </FormControl>
                 <FormMessage />
@@ -91,13 +93,15 @@ const SignIn = () => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[#6a6255]">Password</FormLabel>
+                <FormLabel className="font-mono text-xs uppercase tracking-[0.1em] text-[#8f978b]">
+                  Password
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="password"
                     placeholder="Enter your password"
                     {...field}
-                    className="h-12 rounded-xl border-white/10 bg-[#0d0d0d] px-4 text-[#f5efe6] placeholder:text-[#4a453d]"
+                    className="h-12 rounded-none border border-white/10 bg-[#060706] px-4 font-mono text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:border-[#b7ff5a]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </FormControl>
                 <FormMessage />

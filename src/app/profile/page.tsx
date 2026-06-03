@@ -30,6 +30,11 @@ export default async function ProfilePage() {
     subLevel: user.profile?.subLevel ?? 1,
     problemsSolved: user.profile?.problemsSolved ?? 0,
     streak: user.profile?.streak ?? 0,
+    builderRole: user.profile?.builderRole ?? user.profile?.expertise ?? "",
+    frameworks: user.profile?.frameworks ?? [],
+    workflowFocus:
+      user.profile?.workflowFocus ?? user.profile?.application ?? "",
+    riskFocus: user.profile?.riskFocus ?? "",
   };
 
   return <ProfileForm initialData={profileData} />;

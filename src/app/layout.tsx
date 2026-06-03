@@ -18,9 +18,44 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Promptr",
-  description: "Learn from best",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  metadataBase: new URL("https://promptrai.vercel.app"),
+  title: {
+    default: "Promptr - Agent Prompting Sandbox",
+    template: "%s | Promptr",
+  },
+  description:
+    "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
+  alternates: {
+    canonical: "./",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
+  appleWebApp: {
+    title: "Promptr",
+  },
+  openGraph: {
+    title: "Promptr - Agent Prompting Sandbox",
+    description:
+      "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
+    url: "https://promptrai.vercel.app",
+    siteName: "Promptr",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Promptr - Agent Prompting Sandbox",
+    description:
+      "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
+  },
 };
 export default async function RootLayout({
   children,
@@ -28,10 +63,38 @@ export default async function RootLayout({
   const session = await auth();
   return (
     <html lang="en" className="dark">
-      <body className={`${sans.variable} ${mono.variable} bg-background text-foreground`}>
+      <body
+        className={`${sans.variable} ${mono.variable} bg-background text-foreground`}
+      >
         <SessionProvider session={session}>
           <GradientBackground>{children}</GradientBackground>
-          <Toaster />
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: "#101510",
+                color: "#f7f2e8",
+                border: "1px solid rgba(247, 242, 232, 0.15)",
+                borderRadius: "0px",
+                fontFamily: "var(--font-mono), monospace",
+                fontSize: "11px",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+              },
+              success: {
+                iconTheme: {
+                  primary: "#b7ff5a",
+                  secondary: "#101510",
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: "#ff8a3d",
+                  secondary: "#101510",
+                },
+              },
+            }}
+          />
           <Analytics />
         </SessionProvider>
       </body>

@@ -13,6 +13,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      auth: path.resolve(__dirname, "./auth.ts"),
+      db: path.resolve(__dirname, "./db.ts"),
     },
   },
 });

@@ -34,7 +34,7 @@ export default function FAQSection() {
           <div className="text-[11px] uppercase tracking-[0.32em] text-[#f0a067]">
             FAQ
           </div>
-          <h2 className="font-display mt-5 text-4xl leading-tight text-[#fff5eb] md:text-6xl">
+          <h2 className="mt-5 font-display text-4xl leading-tight text-[#fff5eb] md:text-6xl">
             Clear answers, same tone as the product.
           </h2>
           <p className="mt-6 max-w-xl text-lg leading-8 text-[#b8b0a5]">

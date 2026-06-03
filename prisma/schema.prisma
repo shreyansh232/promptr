@@ -20,6 +20,7 @@ model User {
   sessions        Session[]
   Authenticator   Authenticator[]
   profile         UserProfile?
+  completedMissions CompletedAgentMission[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 }
@@ -32,6 +33,10 @@ model UserProfile {
   application     String   @default("")
   learningStyle   String   @default("")
   goals           String[]
+  builderRole     String   @default("")
+  frameworks      String[] @default([])
+  workflowFocus   String   @default("")
+  riskFocus       String   @default("")
   elo             Int      @default(1000)
   subLevel        Int      @default(1)
   problemsSolved  Int      @default(0)
@@ -86,3 +91,24 @@ model Authenticator {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, credentialID])
 }
+
+model CompletedAgentMission {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @db.ObjectId
+  userLevel        String
+  subLevel         Int
+  missionId        String
+  missionTitle     String
+  missionJson      String
+  userInstructions String
+  reliabilityScore Int
+  passed           Boolean
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, missionId])
+  @@map("completed_agent_missions")
+}
+

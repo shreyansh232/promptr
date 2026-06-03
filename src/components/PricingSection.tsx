@@ -44,7 +44,7 @@ const PricingSection = () => {
   return (
     <section className="py-16">
       <div className="mb-12 text-center">
-        <h2 className="font-display text-5xl md:text-6xl font-bold mb-4 text-[#fff5eb]">
+        <h2 className="mb-4 font-display text-5xl font-bold text-[#fff5eb] md:text-6xl">
           Simple, Transparent Pricing
         </h2>
         <p className="text-xl text-white/60">
@@ -55,20 +55,26 @@ const PricingSection = () => {
         {plans.map((plan, index) => (
           <div
             key={index}
-            className={`rounded-2xl bg-white/5 border p-8 flex flex-col justify-between ${
-              plan.popular ? "border-[#ff8a3d] ring-1 ring-[#ff8a3d]" : "border-white/10"
+            className={`flex flex-col justify-between rounded-2xl border bg-white/5 p-8 ${
+              plan.popular
+                ? "border-[#ff8a3d] ring-1 ring-[#ff8a3d]"
+                : "border-white/10"
             }`}
           >
             <div>
               {plan.popular ? (
-                <span className="bg-[#ff8a3d] text-black rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                <span className="rounded-full bg-[#ff8a3d] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
                   Most Popular
                 </span>
               ) : (
                 <div className="h-6" /> // spacer to align heights
               )}
-              <h3 className="mt-4 text-2xl font-bold text-white">{plan.name}</h3>
-              <p className="mb-6 mt-4 text-4xl font-bold text-white">{plan.price}</p>
+              <h3 className="mt-4 text-2xl font-bold text-white">
+                {plan.name}
+              </h3>
+              <p className="mb-6 mt-4 text-4xl font-bold text-white">
+                {plan.price}
+              </p>
               <ul className="mb-8 space-y-4 text-white/80">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="flex items-center text-sm">
@@ -94,7 +100,7 @@ const PricingSection = () => {
               className={`w-full rounded-full py-3 text-sm font-semibold transition duration-300 ${
                 plan.popular
                   ? "bg-[#ff8a3d] text-black hover:bg-[#ff9b5b]"
-                  : "bg-white/10 text-white hover:bg-white/15 border border-white/5"
+                  : "border border-white/5 bg-white/10 text-white hover:bg-white/15"
               }`}
             >
               {plan.cta}

@@ -10,7 +10,7 @@ const LoginGoogle = () => {
       <Button
         variant="outline"
         type="button"
-        className="w-full rounded-full border-white/15 bg-transparent py-6 text-[#f7f2ea] hover:bg-white/10 hover:text-[#f7f2ea]"
+        className="h-11 w-full rounded-none border border-white/10 bg-white/[0.02] font-mono text-xs uppercase tracking-[0.12em] text-[#d8ddcf] hover:bg-white/5 hover:text-[#f7f2e8]"
         onClick={() => login("google")}
       >
         <GoogleLogo className="mr-2 h-4 w-4" aria-hidden="true" />

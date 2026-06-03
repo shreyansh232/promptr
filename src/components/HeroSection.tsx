@@ -8,7 +8,7 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen overflow-hidden bg-[#0d0d0d] px-4 pb-20 pt-32 md:px-8 md:pb-28 md:pt-40">
       {/* Ambient glow behind headline */}
-      <div className="pointer-events-none absolute left-1/2 top-[18%] -translate-x-1/2 h-[420px] w-[640px] rounded-full bg-[#ff8a3d]/[0.04] blur-[120px]" />
+      <div className="pointer-events-none absolute left-1/2 top-[18%] h-[420px] w-[640px] -translate-x-1/2 rounded-full bg-[#ff8a3d]/[0.04] blur-[120px]" />
 
       <div className="relative z-10 mx-auto max-w-5xl text-center">
         {/* Pill badge */}
@@ -23,8 +23,7 @@ export default function HeroSection() {
           style={{ letterSpacing: "-0.01em", wordSpacing: "0.04em" }}
         >
           Improve Your AI Efficiency
-          <br className="hidden sm:block" />
-          {" "}by Learning to{" "}
+          <br className="hidden sm:block" /> by Learning to{" "}
           <span className="relative inline-block">
             <span className="relative z-10">Prompt Right</span>
             {/* Accent underline on key phrase */}
@@ -38,8 +37,8 @@ export default function HeroSection() {
           style={{ letterSpacing: "0.01em" }}
         >
           Practice with real prompt challenges. Get instant AI-powered scoring,
-          actionable feedback, and improved suggestions — then level up
-          with personalized problems that grow with you.
+          actionable feedback, and improved suggestions — then level up with
+          personalized problems that grow with you.
         </p>
 
         {/* CTA buttons */}
@@ -53,7 +52,7 @@ export default function HeroSection() {
           <Link href="/#features">
             <Button
               variant="outline"
-              className="rounded-full border-white/12 bg-transparent px-8 py-6 text-[15px] font-medium text-[#f0e8de] transition-colors hover:border-white/20 hover:bg-white/[0.04]"
+              className="border-white/12 rounded-full bg-transparent px-8 py-6 text-[15px] font-medium text-[#f0e8de] transition-colors hover:border-white/20 hover:bg-white/[0.04]"
             >
               See how it works
             </Button>
