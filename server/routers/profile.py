@@ -3,6 +3,7 @@ from motor.core import AgnosticDatabase
 from datetime import datetime, UTC
 from pydantic import BaseModel
 from bson import ObjectId
+from loguru import logger
 
 from core.db import get_db
 from schemas.models import UserProfile
@@ -23,6 +24,7 @@ async def check_is_admin(user_id: str, db: AgnosticDatabase) -> bool:
 
 @router.get("/{user_id}")
 async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
+    logger.info(f"Fetching profile for user: {user_id}")
     profile = await db.profiles.find_one({"userId": user_id})
     is_admin = await check_is_admin(user_id, db)
 
@@ -76,6 +78,7 @@ async def get_profile(user_id: str, db: AgnosticDatabase = Depends(get_db)):
 async def deduct_credits(
     user_id: str, amount: int, db: AgnosticDatabase = Depends(get_db)
 ):
+    logger.info(f"Deducting {amount} credits for user: {user_id}")
     # Ensure profile exists (creates default if missing)
     await get_profile(user_id, db)
 
@@ -102,6 +105,7 @@ async def deduct_credits(
 async def update_profile(
     profile_data: UserProfile, db: AgnosticDatabase = Depends(get_db)
 ):
+    logger.info(f"Updating profile for user: {profile_data.userId}")
     existing = await db.profiles.find_one({"userId": profile_data.userId})
 
     data = profile_data.model_dump(exclude={"id"})

@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from motor.core import AgnosticDatabase
+from loguru import logger
 
 from core.db import get_db
 from schemas.agent import (
@@ -23,6 +24,7 @@ async def generate_mission(
     profile: AgentLearnerProfile, db: DbDep
 ) -> AgentMissionResponse:
     try:
+        logger.info(f"Generating mission for user: {profile.userId}")
         cache_key = {
             "userId": profile.userId,
             "level": profile.level,
@@ -51,6 +53,7 @@ async def generate_mission(
 
         return response
     except Exception as exc:
+        logger.error(f"Error generating mission: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -59,8 +62,12 @@ async def evaluate_instructions(
     request: AgentEvaluationRequest,
 ) -> AgentEvaluationResponse:
     try:
+        logger.info(
+            f"Evaluating agent instructions for mission: {request.mission.title}"
+        )
         return await evaluate_agent_instructions(request)
     except Exception as exc:
+        logger.error(f"Error evaluating agent instructions: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

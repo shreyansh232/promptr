@@ -2,6 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from motor.core import AgnosticDatabase
 from config import get_settings
 from typing import Optional
+from loguru import logger
 
 settings = get_settings()
 
@@ -32,7 +33,7 @@ async def connect_to_mongo():
     if db_client.client is None:
         db_client.client = AsyncIOMotorClient(settings.database_url)
         db_client.db = db_client.client[settings.database_name]
-        print(f"Connected to MongoDB: {settings.database_name}")
+        logger.info(f"Connected to MongoDB: {settings.database_name}")
 
 
 async def close_mongo_connection():
@@ -41,4 +42,4 @@ async def close_mongo_connection():
         db_client.client.close()
         db_client.client = None
         db_client.db = None
-        print("Closed MongoDB connection")
+        logger.info("Closed MongoDB connection")

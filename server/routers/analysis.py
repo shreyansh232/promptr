@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from motor.core import AgnosticDatabase
 from datetime import datetime, UTC
+from loguru import logger
 
 from core.db import get_db
 from schemas.analysis import (
@@ -25,8 +26,10 @@ router = APIRouter()
 @router.post("/analyze-prompt")
 async def analyze_prompt(request: ChatRequest) -> PromptAnalysisResponse:
     try:
+        logger.info(f"Analyzing prompt for user: {request.user_type.userId}")
         return await analyze_prompt_response(request)
     except Exception as exc:
+        logger.error(f"Error analyzing prompt: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -36,6 +39,7 @@ async def generate_problems(
 ) -> PracticeProblemsResponse:
     try:
         if user_info.userId:
+            logger.info(f"Generating problems for user: {user_info.userId}")
             cached = await db.generated_problems.find_one(
                 {
                     "userId": user_info.userId,
@@ -80,6 +84,7 @@ async def generate_problems(
 
         return response
     except Exception as exc:
+        logger.error(f"Error generating problems: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
@@ -88,6 +93,7 @@ async def evaluate_prompt(
     request: TestCaseEvaluationRequest,
 ) -> TestCaseEvaluationResponse:
     try:
+        logger.info(f"Evaluating prompt for problem: {request.problemTitle}")
         test_cases = [tc.model_dump() for tc in request.testCases]
         result = await evaluate_prompt_full(
             request.prompt,
@@ -98,6 +104,7 @@ async def evaluate_prompt(
         )
         return TestCaseEvaluationResponse(**result)
     except Exception as exc:
+        logger.error(f"Error evaluating prompt: {exc}")
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
