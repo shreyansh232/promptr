@@ -46,8 +46,8 @@ async def oauth_login(provider: str, request: Request):
     # Build redirect_uri from the configured backend_url instead of request.url_for().
     # request.url_for() reads the internal host seen by the ASGI server (e.g.
     # localhost:8000 behind Railway/Render) which makes OAuth providers reject the
-    # callback.  settings.backend_url must be set to the real public domain in prod.
-    redirect_uri = f"{settings.backend_url}/api/auth/{provider}/callback"
+    backend_url = settings.backend_url.rstrip("/")
+    redirect_uri = f"{backend_url}/api/auth/{provider}/callback"
     return await client.authorize_redirect(request, redirect_uri)
 
 
@@ -129,5 +129,6 @@ async def oauth_callback(
     is_new = profile is None
 
     # Redirect to frontend with token and is_new flag
-    redirect_url = f"{settings.frontend_url}/oauth/callback?token={access_token}&is_new={'true' if is_new else 'false'}"
+    frontend_url = settings.frontend_url.rstrip("/")
+    redirect_url = f"{frontend_url}/oauth/callback?token={access_token}&is_new={'true' if is_new else 'false'}"
     return RedirectResponse(url=redirect_url)
