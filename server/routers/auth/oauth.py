@@ -43,8 +43,11 @@ async def oauth_login(provider: str, request: Request):
     client = oauth.create_client(provider)
     if not client:
         raise HTTPException(status_code=404, detail="OAuth provider not supported")
-    redirect_uri = request.url_for("oauth_callback", provider=provider)
-    print("REDIRECT URI:", redirect_uri)
+    # Build redirect_uri from the configured backend_url instead of request.url_for().
+    # request.url_for() reads the internal host seen by the ASGI server (e.g.
+    # localhost:8000 behind Railway/Render) which makes OAuth providers reject the
+    # callback.  settings.backend_url must be set to the real public domain in prod.
+    redirect_uri = f"{settings.backend_url}/api/auth/{provider}/callback"
     return await client.authorize_redirect(request, redirect_uri)
 
 

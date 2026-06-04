@@ -5,6 +5,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
+    # Explicit backend base URL — must be set in prod to your deployed domain.
+    # request.url_for() reads the internal proxy host (localhost:8000) and
+    # produces wrong OAuth redirect URIs in hosted environments.
+    backend_url: str = "http://localhost:8000"
     database_url: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/promptr"
     database_name: str = "promptr"
     redis_url: str = "redis://localhost:6379/0"
