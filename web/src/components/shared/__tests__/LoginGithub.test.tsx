@@ -36,9 +36,7 @@ describe("LoginGithub", () => {
     });
     await user.click(button);
 
-    expect(window.location.href).toBe(
-      "http://localhost:8000/api/auth/github/login",
-    );
+    expect(window.location.href).toBe("/api/auth/github/login");
   });
 
   it("has type='button' to prevent accidental form submission", () => {
