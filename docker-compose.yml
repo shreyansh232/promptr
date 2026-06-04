@@ -1,13 +1,27 @@
 version: '3.8'
 
 services:
-  db:
-    image: mongo:6.0
-    container_name: promptr-db
+  postgres:
+    image: postgres:latest
+    container_name: promptr-pg
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=promptr
     ports:
-      - '27017:27017'
+      - '5432:5432'
     volumes:
-      - mongo-data:/data/db
+      - pg-data:/var/lib/postgresql
+    networks:
+      - promptr-network
+
+  redis:
+    image: redis:alpine
+    container_name: promptr-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
     networks:
       - promptr-network
 
@@ -20,12 +34,13 @@ services:
       - '8000:8000'
     environment:
       - FRONTEND_URL=http://localhost:3000
-      - DATABASE_URL=mongodb://db:27017
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/promptr
       - DATABASE_NAME=promptr
     env_file:
       - ./server/.env
     depends_on:
-      - db
+      - postgres
+      - redis
     networks:
       - promptr-network
 
@@ -38,18 +53,19 @@ services:
       - '3000:3000'
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=mongodb://db:27017/promptr
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/promptr
       - BACKEND_URL=http://server:8000
     env_file:
       - ./web/.env
     depends_on:
-      - db
+      - postgres
       - server
     networks:
       - promptr-network
 
 volumes:
-  mongo-data:
+  pg-data:
+  redis-data:
 
 networks:
   promptr-network:

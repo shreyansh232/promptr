@@ -69,6 +69,7 @@ httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via
+    #   server (pyproject.toml)
     #   fastapi
     #   fastapi-cloud-cli
     #   openai
@@ -77,6 +78,8 @@ idna==3.17
     #   anyio
     #   email-validator
     #   httpx
+itsdangerous==2.2.0
+    # via server (pyproject.toml)
 jinja2==3.1.6
     # via fastapi
 jiter==0.15.0
