@@ -21,7 +21,7 @@ export async function auth(): Promise<Session | null> {
   }
 
   try {
-    const user = await backendFetch<User>("/auth/users/me");
+    const user = await backendFetch<User>("/api/auth/users/me");
     if (user) {
       return { user };
     }

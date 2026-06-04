@@ -31,7 +31,6 @@ const formSchema = z.object({
   }),
   // level: z.string().min(1, { message: "Please select your level" }),
   // expertise: z.string().min(1, { message: "Please enter your area of expertise" }),
-  // learningStyle: z.string().min(1, { message: "Please select your learning style" }),
   // goals: z.array(z.string()).min(1, { message: "Please select at least one goal" }),
 });
 

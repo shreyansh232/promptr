@@ -14,7 +14,6 @@ const signedInProfile: AgentProfile = {
   expertise: "developer",
   application: "support automation",
   goals: ["Build reliable agents"],
-  learningStyle: "kinesthetic",
   subLevel: 2,
   reliabilityScore: 91,
   missionsCompleted: 1,

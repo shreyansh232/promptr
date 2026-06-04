@@ -22,9 +22,7 @@ async def test_analyze_prompt_response_success(mock_llm):
     ].message.content = '{"label": "STRONG", "score": 90, "feedback": "G", "motivation": "M", "tags": [], "response": "R", "learning_points": [], "improved_prompts": []}'
 
     request = ChatRequest(
-        user_type=UserType(
-            level="beginner", expertise="E", goals=[], learning_style="visual"
-        ),
+        user_type=UserType(level="beginner", expertise="E", goals=[]),
         messages=[{"role": "user", "content": "test prompt"}],
     )
 
@@ -38,9 +36,7 @@ async def test_analyze_prompt_response_fallback(mock_llm):
     mock_response.choices[0].message.content = "Invalid JSON"
 
     request = ChatRequest(
-        user_type=UserType(
-            level="beginner", expertise="E", goals=[], learning_style="visual"
-        ),
+        user_type=UserType(level="beginner", expertise="E", goals=[]),
         messages=[{"role": "user", "content": "test prompt"}],
     )
 
@@ -105,9 +101,7 @@ def test_check_for_direct_injection_patterns():
 
 async def test_analyze_prompt_response_injection_warning():
     request = ChatRequest(
-        user_type=UserType(
-            level="beginner", expertise="E", goals=[], learning_style="visual"
-        ),
+        user_type=UserType(level="beginner", expertise="E", goals=[]),
         messages=[
             {
                 "role": "user",

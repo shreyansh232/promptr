@@ -76,7 +76,6 @@ def build_problems_prompt(user_info: UserType) -> str:
         - Level: {level}
         - Industry/Expertise: {user_info.expertise}
         {application_context}
-        - Learning style: {user_info.learning_style}
         - Goals: {goals}
 
         Create 1 unique practice problem tailored to this learner's profile.

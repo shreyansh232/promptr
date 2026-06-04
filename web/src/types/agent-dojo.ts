@@ -77,7 +77,6 @@ export interface AgentProfile {
   expertise: string;
   application: string;
   goals: string[];
-  learningStyle: string;
   subLevel: number;
   reliabilityScore: number;
   missionsCompleted: number;

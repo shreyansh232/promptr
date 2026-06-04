@@ -73,8 +73,6 @@ export function checkRateLimit(
  * Rate limit configuration for different endpoints.
  */
 export const RATE_LIMITS = {
-  // ELO updates: 30 per minute (prevents score manipulation)
-  elo: { maxRequests: 30, windowMs: 60 * 1000 },
   // Prompt analysis: 60 per minute (prevents API quota burn)
   analyzePrompt: { maxRequests: 60, windowMs: 60 * 1000 },
   // Problem generation: 20 per minute (expensive AI call).

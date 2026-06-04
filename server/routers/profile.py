@@ -3,12 +3,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_db
 from core.security import get_current_user
-from models.user import User, UserProfile
+from models.user import User, UserProfile, CompletedMission
 from schemas.models import UserProfile as UserProfileSchema
 
 router = APIRouter()
@@ -34,12 +34,23 @@ async def get_my_profile(current_user: UserDep, db: DbDep):
             streak=0,
             expertise="general",
             application="",
-            learning_style="visual",
             goals=[],
+            builder_role="",
+            frameworks=[],
+            workflow_focus="",
+            risk_focus="",
         )
         db.add(profile)
         await db.commit()
         await db.refresh(profile)
+
+    avg_score_res = await db.execute(
+        select(func.avg(CompletedMission.reliability_score)).where(
+            CompletedMission.user_id == current_user.id
+        )
+    )
+    avg_score = avg_score_res.scalar()
+    reliability_score = round(float(avg_score)) if avg_score is not None else 0
 
     return {
         "id": str(profile.id),
@@ -50,8 +61,12 @@ async def get_my_profile(current_user: UserDep, db: DbDep):
         "streak": profile.streak,
         "expertise": profile.expertise,
         "application": profile.application,
-        "learningStyle": profile.learning_style,
         "goals": profile.goals,
+        "builderRole": profile.builder_role,
+        "frameworks": profile.frameworks,
+        "workflowFocus": profile.workflow_focus,
+        "riskFocus": profile.risk_focus,
+        "reliabilityScore": reliability_score,
         "createdAt": profile.created_at.isoformat(),
         "updatedAt": profile.updated_at.isoformat(),
     }
@@ -72,8 +87,11 @@ async def update_profile(
         profile.sub_level = profile_data.subLevel
         profile.expertise = profile_data.expertise
         profile.application = profile_data.application
-        profile.learning_style = profile_data.learningStyle
         profile.goals = profile_data.goals
+        profile.builder_role = profile_data.builderRole
+        profile.frameworks = profile_data.frameworks
+        profile.workflow_focus = profile_data.workflowFocus
+        profile.risk_focus = profile_data.riskFocus
         profile.updated_at = datetime.now(UTC)
     else:
         profile = UserProfile(
@@ -82,13 +100,24 @@ async def update_profile(
             sub_level=profile_data.subLevel,
             expertise=profile_data.expertise,
             application=profile_data.application,
-            learning_style=profile_data.learningStyle,
             goals=profile_data.goals,
+            builder_role=profile_data.builderRole,
+            frameworks=profile_data.frameworks,
+            workflow_focus=profile_data.workflowFocus,
+            risk_focus=profile_data.riskFocus,
         )
         db.add(profile)
 
     await db.commit()
     await db.refresh(profile)
+
+    avg_score_res = await db.execute(
+        select(func.avg(CompletedMission.reliability_score)).where(
+            CompletedMission.user_id == current_user.id
+        )
+    )
+    avg_score = avg_score_res.scalar()
+    reliability_score = round(float(avg_score)) if avg_score is not None else 0
 
     return {
         "id": str(profile.id),
@@ -99,6 +128,10 @@ async def update_profile(
         "streak": profile.streak,
         "expertise": profile.expertise,
         "application": profile.application,
-        "learningStyle": profile.learning_style,
         "goals": profile.goals,
+        "builderRole": profile.builder_role,
+        "frameworks": profile.frameworks,
+        "workflowFocus": profile.workflow_focus,
+        "riskFocus": profile.risk_focus,
+        "reliabilityScore": reliability_score,
     }

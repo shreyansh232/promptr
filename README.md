@@ -41,20 +41,20 @@ Promptr is primarily a prompt evaluation and testing sandbox:
 - **Next.js 14** (App Router) — React framework with server components.
 - **TypeScript** — Strict mode, functional components.
 - **Tailwind CSS** + **shadcn/ui** — Professional, high-contrast dark theme styling.
-- **NextAuth v5** — Authentication (GitHub OAuth + credentials).
+- **Authentication** — Custom session token cookie-based authentication, with JWT tokens forwarded to the backend.
 - **Vercel AI SDK** — Streaming AI responses.
 
 ### Backend (FastAPI)
 
-- **FastAPI** — Python REST API for heavy-duty evaluation logic.
+- **FastAPI** — Python REST API serving all routing, database management, and evaluation logic.
+- **SQLAlchemy & Alembic** — Object Relational Mapper and migration engine for PostgreSQL.
 - **LLM Engine** — AI analysis and evaluation powered by OpenAI.
 - **uv** + **Ruff** — High-performance package management and linting/formatting.
 - **Pydantic** — Robust request/response validation.
 
 ### Database
 
-- **MongoDB** — Primary database for users, missions, and custom scenarios.
-- **Prisma ORM** — Type-safe database client.
+- **PostgreSQL** — Relational database storing users, profiles, completed missions, and custom scenarios. All frontend database requests are strictly proxied through Next.js API routes to this backend storage.
 
 ## Project Structure
 
@@ -63,7 +63,6 @@ Promptr is organized as a monorepo for seamless full-stack development:
 ```
 promptr/
 ├── web/                            # Next.js Frontend
-│   ├── prisma/                     # Database schema & migrations
 │   ├── public/                     # Static assets (images, icons)
 │   └── src/
 │       ├── app/                    # App Router pages
@@ -77,7 +76,7 @@ promptr/
 │       │   ├── playground/         # Editor & lab UI
 │       │   ├── shared/             # Layout, Header, Footer
 │       │   └── ui/                 # shadcn base components
-│       ├── lib/                    # Shared utilities & Prisma client
+│       ├── lib/                    # Shared utilities & backend fetch client
 │       ├── types/                  # TypeScript interfaces
 │       └── styles/                 # Global CSS & Tailwind config
 ├── server/                         # FastAPI Backend
@@ -103,7 +102,7 @@ promptr/
 
 - **Node.js 18+** & **pnpm 9+**
 - **Python 3.12+** (Recommended: [uv](https://astral.sh/uv) for package management)
-- **MongoDB** (Local or Atlas)
+- **PostgreSQL** (Local or cloud database instance)
 - **OpenAI API Key**
 
 ### Installation
@@ -118,14 +117,15 @@ promptr/
 
 2.  **Environment Setup**:
     Copy `.env.example` in both root and `server/` (if applicable) and fill in your values.
-    *   `DATABASE_URL`: Your MongoDB connection string.
-    *   `AUTH_SECRET`: Random string for NextAuth.
+    *   `DATABASE_URL`: Your PostgreSQL connection string.
+    *   `AUTH_SECRET`: Secret key for token generation and session management.
     *   `OPENAI_API_KEY`: Your OpenAI API key.
 
 3.  **Database Migration**:
+    Run Alembic migrations on the backend server:
     ```bash
-    npx prisma generate
-    npx prisma db push
+    cd server
+    uv run alembic upgrade head
     ```
 
 ### Running Locally

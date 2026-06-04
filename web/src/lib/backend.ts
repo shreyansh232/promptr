@@ -39,7 +39,8 @@ export async function backendFetch<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const url = `${env.BACKEND_URL}${path}`;
+  const normalizedPath = path.startsWith("/api") ? path : `/api${path}`;
+  const url = `${env.BACKEND_URL}${normalizedPath}`;
   const cookieStore = cookies();
   const token = cookieStore.get("access_token")?.value;
 
@@ -49,7 +50,7 @@ export async function backendFetch<T>(
   };
 
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(url, {

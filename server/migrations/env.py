@@ -12,6 +12,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from config import get_settings
 from core.db import Base
+import models  # noqa: F401
+
 
 settings = get_settings()
 

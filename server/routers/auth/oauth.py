@@ -44,6 +44,7 @@ async def oauth_login(provider: str, request: Request):
     if not client:
         raise HTTPException(status_code=404, detail="OAuth provider not supported")
     redirect_uri = request.url_for("oauth_callback", provider=provider)
+    print("REDIRECT URI:", redirect_uri)
     return await client.authorize_redirect(request, redirect_uri)
 
 
@@ -66,10 +67,10 @@ async def oauth_callback(
     if provider == "google":
         user_info = token.get("userinfo")
     elif provider == "github":
-        resp = await client.get("user")
+        resp = await client.get("user", token=token)
         user_info = resp.json()
         if not user_info.get("email"):
-            emails_resp = await client.get("user/emails")
+            emails_resp = await client.get("user/emails", token=token)
             emails = emails_resp.json()
             primary_email = next((e["email"] for e in emails if e["primary"]), None)
             user_info["email"] = primary_email
@@ -117,7 +118,13 @@ async def oauth_callback(
         data={"sub": str(user_id)}, expires_delta=access_token_expires
     )
 
-    # Ideally, you'd set this as an HttpOnly cookie or redirect with the token.
-    # For now, returning JSON or redirecting to frontend with a token.
-    redirect_url = f"{settings.frontend_url}/oauth/callback?token={access_token}"
+    # Check if user has a profile to determine if they are new
+    from models.user import UserProfile
+
+    result = await db.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+    profile = result.scalars().first()
+    is_new = profile is None
+
+    # Redirect to frontend with token and is_new flag
+    redirect_url = f"{settings.frontend_url}/oauth/callback?token={access_token}&is_new={'true' if is_new else 'false'}"
     return RedirectResponse(url=redirect_url)

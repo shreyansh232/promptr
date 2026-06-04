@@ -88,10 +88,6 @@ describe("checkRateLimit", () => {
 });
 
 describe("RATE_LIMITS", () => {
-  it("has elo config", () => {
-    expect(RATE_LIMITS.elo).toEqual({ maxRequests: 30, windowMs: 60000 });
-  });
-
   it("has analyzePrompt config", () => {
     expect(RATE_LIMITS.analyzePrompt).toEqual({
       maxRequests: 60,

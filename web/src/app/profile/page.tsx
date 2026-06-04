@@ -5,6 +5,21 @@ import { backendFetch } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 
+interface BackendUserProfile {
+  level: string;
+  subLevel: number;
+  problemsSolved: number;
+  streak: number;
+  expertise: string;
+  application: string;
+  goals: string[];
+  builderRole?: string;
+  frameworks?: string[];
+  workflowFocus?: string;
+  riskFocus?: string;
+  reliabilityScore?: number;
+}
+
 export default async function ProfilePage() {
   const session = await auth();
 
@@ -12,9 +27,9 @@ export default async function ProfilePage() {
     redirect("/sign-in");
   }
 
-  let profile = null;
+  let profile: BackendUserProfile | null = null;
   try {
-    profile = await backendFetch<any>("/profiles/me");
+    profile = await backendFetch<BackendUserProfile>("/profiles/me");
   } catch (error) {
     console.error("Failed to fetch profile:", error);
     redirect("/sign-in");
@@ -29,7 +44,6 @@ export default async function ProfilePage() {
     expertise: profile.expertise ?? "",
     application: profile.application ?? "",
     goals: profile.goals ?? [],
-    elo: 1000, // ELO is deprecated, kept for frontend compat if needed temporarily
     subLevel: profile.subLevel ?? 1,
     problemsSolved: profile.problemsSolved ?? 0,
     streak: profile.streak ?? 0,
@@ -37,6 +51,7 @@ export default async function ProfilePage() {
     frameworks: profile.frameworks ?? [],
     workflowFocus: profile.workflowFocus ?? profile.application ?? "",
     riskFocus: profile.riskFocus ?? "",
+    reliabilityScore: profile.reliabilityScore ?? 0,
   };
 
   return <ProfileForm initialData={profileData} />;

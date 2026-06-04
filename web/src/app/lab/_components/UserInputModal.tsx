@@ -21,16 +21,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface UserInfo {
   level: string;
   subLevel: number;
-  elo: number;
   problemsSolved: number;
   streak: number;
   expertise: string;
-  learningStyle: string;
   goals: string[];
   industry: string;
   application: string;
@@ -41,32 +38,22 @@ interface UserInputModalProps {
   onClose: (data: UserInfo) => void;
 }
 
-const steps = ["Level", "Industry", "Application", "Learning Style", "Goals"];
+const steps = ["Level", "Industry", "Application", "Goals"];
 const goals = [
   "Write clearer prompts",
   "Learn stronger prompt structure",
   "Get more reliable outputs",
   "Explore creative applications",
 ];
-const learningStyles: Array<{ value: string; label: string }> = [
-  { value: "visual", label: "Show examples and side-by-side rewrites" },
-  { value: "auditory", label: "Explain the reasoning in plain language" },
-  { value: "kinesthetic", label: "Give drills and practice moves" },
-];
 
-export default function UserInputModal({
-  isOpen,
-  onClose,
-}: UserInputModalProps) {
+export function UserInputModal({ isOpen, onClose }: UserInputModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [userInfo, setUserInfo] = useState<UserInfo>({
     level: "",
     subLevel: 1,
-    elo: 1000,
     problemsSolved: 0,
     streak: 0,
     expertise: "",
-    learningStyle: "",
     goals: [],
     industry: "",
     application: "",
@@ -160,29 +147,6 @@ export default function UserInputModal({
         return (
           <div className="space-y-4">
             <div className="text-lg font-semibold text-[#f5efe6]">
-              How do you like to learn?
-            </div>
-            <RadioGroup
-              onValueChange={(value) => updateUserInfo("learningStyle", value)}
-              value={userInfo.learningStyle}
-              className="space-y-3"
-            >
-              {learningStyles.map(({ value, label }) => (
-                <label
-                  key={value}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3"
-                >
-                  <RadioGroupItem value={value} id={value} />
-                  <span className="text-sm text-[#d9d1c7]">{label}</span>
-                </label>
-              ))}
-            </RadioGroup>
-          </div>
-        );
-      case 4:
-        return (
-          <div className="space-y-4">
-            <div className="text-lg font-semibold text-[#f5efe6]">
               Choose the outcomes you care about
             </div>
             <div className="space-y-3">
@@ -220,8 +184,7 @@ export default function UserInputModal({
     (currentStep === 0 && !userInfo.level) ||
     (currentStep === 1 && !userInfo.industry.trim()) ||
     (currentStep === 2 && !userInfo.application.trim()) ||
-    (currentStep === 3 && !userInfo.learningStyle) ||
-    (currentStep === 4 && userInfo.goals.length === 0);
+    (currentStep === 3 && userInfo.goals.length === 0);
 
   return (
     <Dialog open={isOpen}>

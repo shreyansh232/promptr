@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:3000"
     database_url: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/promptr"
     database_name: str = "promptr"
+    redis_url: str = "redis://localhost:6379/0"
 
     # Auth
     auth_secret: str = "supersecretkey"

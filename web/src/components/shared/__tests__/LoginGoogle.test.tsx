@@ -1,17 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import LoginGoogle from "@/components/shared/LoginGoogle";
-
-const mockLogin = vi.fn();
-
-vi.mock("@/actions/auth", () => ({
-  login: (...args: unknown[]) => mockLogin(...args) as Promise<void>,
-}));
 
 describe("LoginGoogle", () => {
   beforeEach(() => {
-    mockLogin.mockClear();
+    vi.stubGlobal("location", {
+      href: "",
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("renders the 'Continue with Google' button", () => {
@@ -28,7 +28,7 @@ describe("LoginGoogle", () => {
     expect(svg).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("calls login('google') when clicked", async () => {
+  it("navigates to google login URL when clicked", async () => {
     const user = userEvent.setup();
     render(<LoginGoogle />);
 
@@ -37,8 +37,9 @@ describe("LoginGoogle", () => {
     });
     await user.click(button);
 
-    expect(mockLogin).toHaveBeenCalledOnce();
-    expect(mockLogin).toHaveBeenCalledWith("google");
+    expect(window.location.href).toBe(
+      "http://localhost:8000/api/auth/google/login",
+    );
   });
 
   it("has type='button' to prevent accidental form submission", () => {

@@ -25,16 +25,15 @@ import { toast } from "react-hot-toast";
 import MainSidebar from "./Sidebar";
 import type { CustomScenario } from "./Sidebar";
 import { NewScenarioModal } from "@/components/playground/NewScenarioModal";
+import { logout } from "@/actions/auth";
 
 interface UserInfo {
   level: string;
   subLevel: number;
-  elo: number;
   problemsSolved: number;
   streak: number;
   expertise: string;
   application: string;
-  learningStyle: string;
   goals: string[];
   industry: string;
   credits: number | string;
@@ -194,11 +193,6 @@ export default function ChatInterface() {
     null,
   );
   const [score, setScore] = useState<number | null>(null);
-  const [, setEloResult] = useState<{
-    elo: number;
-    eloChange: number;
-    passed: boolean;
-  } | null>(null);
   const [problemIndex, setProblemIndex] = useState(1);
 
   const [showHint, setShowHint] = useState(false);
@@ -234,7 +228,6 @@ export default function ChatInterface() {
           subLevel: normalizedUserInfo.subLevel,
           expertise: normalizedUserInfo.expertise,
           application: normalizedUserInfo.application,
-          learning_style: normalizedUserInfo.learningStyle,
           goals: normalizedUserInfo.goals,
         }),
         signal: controller.signal,
@@ -265,12 +258,10 @@ export default function ChatInterface() {
           setUserInfo({
             level: "beginner",
             subLevel: 1,
-            elo: 1000,
             problemsSolved: 0,
             streak: 0,
             expertise: "developer",
             application: "support",
-            learningStyle: "visual",
             goals: ["Build reliable agents"],
             industry: "tech",
             credits: 5,
@@ -287,12 +278,10 @@ export default function ChatInterface() {
         setUserInfo({
           level: "beginner",
           subLevel: 1,
-          elo: 1000,
           problemsSolved: 0,
           streak: 0,
           expertise: "developer",
           application: "support",
-          learningStyle: "visual",
           goals: ["Build reliable agents"],
           industry: "tech",
           credits: 5,
@@ -357,7 +346,6 @@ export default function ChatInterface() {
     setPromptAnalysis(null);
     setPromptEvaluation(null);
     setScore(null);
-    setEloResult(null);
     setMessages([]);
 
     setActiveCustomScenarioId(scenario.id);
@@ -469,7 +457,6 @@ export default function ChatInterface() {
     }
     setIsTyping(true);
     setScore(null);
-    setEloResult(null);
     setPromptEvaluation(null);
 
     try {
@@ -512,50 +499,32 @@ export default function ChatInterface() {
         }
 
         // Update progression and save solved problem based on evaluation score (skip for custom scenarios)
-        if (activeProblem.id !== "9999") {
-          const eloRes = await fetch("/api/user/elo", {
+        if (activeProblem.id !== "9999" && evalData.passed) {
+          const nextSubLevel =
+            normalizedUserInfo.subLevel < 5
+              ? normalizedUserInfo.subLevel + 1
+              : 5;
+          const nextProblemsSolved = normalizedUserInfo.problemsSolved + 1;
+
+          await fetch("/api/user/profile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              score: evalData.overallScore,
-              allPassed: evalData.passed,
-              problemId: activeProblem.id,
-              problemTitle: activeProblem.title,
-              problemJson: JSON.stringify(activeProblem),
-              userPrompt: promptText,
+              ...normalizedUserInfo,
+              subLevel: nextSubLevel,
+              problemsSolved: nextProblemsSolved,
             }),
           });
 
-          if (eloRes.ok) {
-            const eloData = (await eloRes.json()) as {
-              elo: number;
-              eloChange: number;
-              level: string;
-              subLevel: number;
-              problemsSolved: number;
-              streak: number;
-              passed: boolean;
-              solvedProblems?: {
-                userLevel: string;
-                subLevel: number;
-                problemTitle: string;
-              }[];
-            };
-            setEloResult(eloData);
-            setUserInfo((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    elo: eloData.elo,
-                    level: eloData.level,
-                    subLevel: eloData.subLevel,
-                    problemsSolved: eloData.problemsSolved,
-                    streak: eloData.streak,
-                    solvedProblems: eloData.solvedProblems,
-                  }
-                : null,
-            );
-          }
+          setUserInfo((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  subLevel: nextSubLevel,
+                  problemsSolved: nextProblemsSolved,
+                }
+              : null,
+          );
         }
 
         setMessages((prev) => [
@@ -583,7 +552,6 @@ export default function ChatInterface() {
           user_type: {
             level: normalizedUserInfo.level,
             expertise: normalizedUserInfo.expertise,
-            learning_style: normalizedUserInfo.learningStyle,
             goals: normalizedUserInfo.goals,
           },
         }),
@@ -643,7 +611,6 @@ export default function ChatInterface() {
     setPromptAnalysis(null);
     setPromptEvaluation(null);
     setScore(null);
-    setEloResult(null);
     setMessages([]);
     setProblemIndex((prev) => prev + 1);
     setIsGenerating(true);
@@ -657,7 +624,6 @@ export default function ChatInterface() {
           subLevel: normalizedUserInfo.subLevel,
           expertise: normalizedUserInfo.expertise,
           application: normalizedUserInfo.application,
-          learning_style: normalizedUserInfo.learningStyle,
           goals: normalizedUserInfo.goals,
           seed: Date.now(), // Add randomness to avoid duplicate AI responses
         }),
@@ -873,7 +839,9 @@ export default function ChatInterface() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => void logout().then(() => window.location.reload())}
+                    onClick={() =>
+                      void logout().then(() => window.location.reload())
+                    }
                     className="cursor-pointer text-red-400 hover:bg-red-500/10 hover:text-red-400 focus:bg-red-500/10 focus:text-red-400"
                   >
                     Log out

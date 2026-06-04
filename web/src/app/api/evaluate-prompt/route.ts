@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendFetch } from "@/lib/backend";
+import { backendFetch, BackendError } from "@/lib/backend";
 
 export async function POST(request: Request) {
   try {
@@ -9,10 +9,10 @@ export async function POST(request: Request) {
       body,
     });
     return NextResponse.json(data);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Backend service is unavailable" },
-      { status: error.status || 502 },
-    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Backend service is unavailable";
+    const status = error instanceof BackendError ? error.status : 502;
+    return NextResponse.json({ error: message }, { status });
   }
 }

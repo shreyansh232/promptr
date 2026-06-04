@@ -1,17 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import LoginGithub from "@/components/shared/LoginGithub";
-
-const mockLogin = vi.fn();
-
-vi.mock("@/actions/auth", () => ({
-  login: (...args: unknown[]) => mockLogin(...args) as Promise<void>,
-}));
 
 describe("LoginGithub", () => {
   beforeEach(() => {
-    mockLogin.mockClear();
+    vi.stubGlobal("location", {
+      href: "",
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("renders the 'Continue with GitHub' button", () => {
@@ -27,7 +27,7 @@ describe("LoginGithub", () => {
     expect(svg).toBeInTheDocument();
   });
 
-  it("calls login('github') when clicked", async () => {
+  it("navigates to github login URL when clicked", async () => {
     const user = userEvent.setup();
     render(<LoginGithub />);
 
@@ -36,8 +36,9 @@ describe("LoginGithub", () => {
     });
     await user.click(button);
 
-    expect(mockLogin).toHaveBeenCalledOnce();
-    expect(mockLogin).toHaveBeenCalledWith("github");
+    expect(window.location.href).toBe(
+      "http://localhost:8000/api/auth/github/login",
+    );
   });
 
   it("has type='button' to prevent accidental form submission", () => {

@@ -4,7 +4,6 @@ from textwrap import dedent
 
 from services.llm_utils import (
     ANALYSIS_RESPONSE_SHAPE,
-    LEARNING_STYLE_GUIDANCE,
     LEVEL_GUIDANCE,
     _format_goals,
     _normalize_level,
@@ -16,10 +15,6 @@ from schemas.user import UserType
 def build_analysis_prompt(user_info: UserType, prompt: str) -> str:
     level = _normalize_level(user_info.level)
     goals = _format_goals(user_info.goals)
-    learning_style = LEARNING_STYLE_GUIDANCE.get(
-        user_info.learning_style,
-        "Keep the teaching style concrete and easy to follow.",
-    )
     response_shape = json.dumps(ANALYSIS_RESPONSE_SHAPE, indent=2)
     boundary_id = uuid.uuid4().hex
 
@@ -37,12 +32,10 @@ def build_analysis_prompt(user_info: UserType, prompt: str) -> str:
         Learner profile:
         - Level: {level}
         - Expertise: {user_info.expertise}
-        - Learning style: {user_info.learning_style}
         - Goals: {goals}
 
         Teaching calibration:
         - {LEVEL_GUIDANCE[level]}
-        - {learning_style}
 
         Analyze the learner's prompt with an honest but supportive tone.
         Keep feedback simple and specific.

@@ -21,5 +21,8 @@ export const SessionProvider = ({
 
 export const useSession = () => {
   const session = useContext(SessionContext);
-  return { data: session, status: session ? "authenticated" : "unauthenticated" };
+  return {
+    data: session,
+    status: session ? "authenticated" : "unauthenticated",
+  };
 };

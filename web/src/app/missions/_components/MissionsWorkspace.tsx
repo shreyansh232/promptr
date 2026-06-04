@@ -481,7 +481,7 @@ export function MissionsWorkspace({
                   onClick={() => setIsNewScenarioModalOpen(true)}
                   className="mb-4 flex w-full shrink-0 items-center justify-center gap-2 bg-[#48d8a4] px-3 py-2.5 font-mono text-sm font-bold text-[#10110f] transition-colors hover:bg-[#62e2b7]"
                 >
-                  + New Prompt Test
+                  + New prompt test
                 </button>
 
                 {customScenarios.length > 0 ? (
@@ -564,7 +564,15 @@ export function MissionsWorkspace({
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#10110f]">
         {/* Global Top Bar */}
         <header className="z-40 flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#080908] px-4">
-          <div className="flex items-center gap-3"></div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 font-mono text-xs text-[#abb4a4] transition-colors hover:text-[#f7f2e8]"
+            >
+              <CaretLeft size={14} />
+              Back to Home
+            </Link>
+          </div>
 
           {/* Right side profile / sign in */}
           <div className="flex items-center gap-4">
@@ -588,7 +596,7 @@ export function MissionsWorkspace({
               <div className="flex items-center gap-2.5">
                 <Link
                   href="/sign-up"
-                  className="bg-[#48d8a4] px-4 py-2 font-mono text-xs font-bold text-[#10110f] transition-colors hover:bg-[#62e2b7]"
+                  className="bg-[#48d8a4] px-4 py-2 font-mono text-sm font-bold text-[#10110f] transition-colors hover:bg-[#62e2b7]"
                 >
                   Save progress
                 </Link>

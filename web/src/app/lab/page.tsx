@@ -18,9 +18,24 @@ export default async function LabPage() {
   const session = await auth();
   let profile: AgentProfile | null = null;
 
+  interface BackendUserProfile {
+    level: string;
+    subLevel: number;
+    problemsSolved: number;
+    streak: number;
+    expertise: string;
+    application: string;
+    goals: string[];
+    builderRole?: string;
+    frameworks?: string[];
+    workflowFocus?: string;
+    riskFocus?: string;
+  }
+
   if (session?.user?.email) {
     try {
-      const userProfile = await backendFetch<any>("/profiles/me");
+      const userProfile =
+        await backendFetch<BackendUserProfile>("/profiles/me");
 
       if (!userProfile) {
         redirect("/onboarding");
@@ -32,15 +47,14 @@ export default async function LabPage() {
         expertise: userProfile.expertise,
         application: userProfile.application,
         goals: userProfile.goals,
-        learningStyle: userProfile.learningStyle,
         subLevel: userProfile.subLevel,
         reliabilityScore: 0, // ELO deprecated
         missionsCompleted: userProfile.problemsSolved,
         streak: userProfile.streak,
-        builderRole: userProfile.builderRole,
-        frameworks: userProfile.frameworks,
-        workflowFocus: userProfile.workflowFocus,
-        riskFocus: userProfile.riskFocus,
+        builderRole: userProfile.builderRole ?? "",
+        frameworks: userProfile.frameworks ?? [],
+        workflowFocus: userProfile.workflowFocus ?? "",
+        riskFocus: userProfile.riskFocus ?? "",
       };
     } catch (error) {
       console.error("Failed to fetch profile", error);

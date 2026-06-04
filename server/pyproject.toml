@@ -17,6 +17,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "pyjwt>=2.8.0",
     "python-dotenv>=1.2.2",
+    "redis>=5.0.0",
     "slowapi>=0.1.9",
     "sqlalchemy>=2.0.30",
     "uvicorn>=0.46.0",

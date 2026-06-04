@@ -152,12 +152,6 @@ LEVEL_GUIDANCE = {
     ),
 }
 
-LEARNING_STYLE_GUIDANCE = {
-    "visual": "Use labels, side-by-side comparisons, and obvious structure.",
-    "auditory": "Explain the reasoning in natural, conversational language.",
-    "kinesthetic": "Give action-oriented drills and concrete next moves to try immediately.",
-}
-
 
 def _normalize_level(level: str) -> str:
     if level == "advanced":

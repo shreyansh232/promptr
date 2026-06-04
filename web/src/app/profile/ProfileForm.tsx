@@ -19,7 +19,6 @@ interface ProfileData {
   expertise: string;
   application: string;
   goals: string[];
-  elo: number;
   subLevel: number;
   problemsSolved: number;
   streak: number;
@@ -27,6 +26,7 @@ interface ProfileData {
   frameworks: string[];
   workflowFocus: string;
   riskFocus: string;
+  reliabilityScore: number;
 }
 
 const frameworkOptions = [
@@ -35,11 +35,12 @@ const frameworkOptions = [
   "CrewAI",
   "Generic tool calling",
 ];
-const riskOptions = [
-  "Tool misuse",
-  "Prompt injection",
-  "Privacy leaks",
-  "Human escalation",
+
+const goalOptions = [
+  "Learn agent prompt basics and tool calling",
+  "Test prompts against adversarial inputs and guardrails",
+  "Evaluate and harden production-grade workflows",
+  "Explore and practice general prompting challenges",
 ];
 
 function useCountUp(target: number, duration = 1200) {
@@ -72,12 +73,21 @@ function useCountUp(target: number, duration = 1200) {
 export function ProfileForm({ initialData }: { initialData: ProfileData }) {
   const searchParams = useSearchParams();
   const fromLanding = searchParams.get("from") === "landing";
-  const [profile, setProfile] = useState<ProfileData>(initialData);
+  const [profile, setProfile] = useState<ProfileData>({
+    ...initialData,
+    workflowFocus:
+      initialData.workflowFocus ||
+      initialData.application ||
+      (goalOptions[0] ?? ""),
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const reliabilityScore = profile.elo > 100 ? 0 : profile.elo;
-  const animatedReliability = useCountUp(reliabilityScore);
+  const currentGoalOptions = [...goalOptions];
+  if (profile.workflowFocus && !goalOptions.includes(profile.workflowFocus)) {
+    currentGoalOptions.push(profile.workflowFocus);
+  }
+
   const animatedCompleted = useCountUp(profile.problemsSolved);
   const animatedStreak = useCountUp(profile.streak);
 
@@ -94,19 +104,29 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
     setIsSaving(true);
     setStatusMessage(null);
 
+    const calculatedLevel = profile.workflowFocus.includes("harden")
+      ? "expert"
+      : profile.workflowFocus.includes("guardrails")
+        ? "intermediate"
+        : "beginner";
+    const calculatedRisk = profile.workflowFocus.includes("guardrails")
+      ? "Prompt injection"
+      : "General";
+
     try {
       const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...profile,
+          level: calculatedLevel,
+          riskFocus: calculatedRisk,
           expertise: profile.builderRole || profile.expertise,
           application: profile.workflowFocus || profile.application,
-          goals:
-            profile.goals.length > 0
-              ? profile.goals
-              : ["Build reliable AI agent workflows"],
-          learningStyle: "kinesthetic",
+          goals: [
+            profile.builderRole || profile.expertise,
+            profile.workflowFocus || profile.application,
+          ],
         }),
       });
 
@@ -150,17 +170,12 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
             Progress
           </div>
           <h1 className="text-5xl font-semibold tracking-tight">
-            Agent builder profile
+            Your Profile
           </h1>
           <div className="mt-6 h-px w-24 bg-[#48d8a4]" />
         </div>
 
-        <div className="mb-16 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Stat
-            label="Reliability Score"
-            value={animatedReliability}
-            suffix="/100"
-          />
+        <div className="mb-16 grid grid-cols-1 gap-3 md:grid-cols-2">
           <Stat label="Missions Completed" value={animatedCompleted} />
           <Stat label="Current Streak" value={animatedStreak} suffix=" days" />
         </div>
@@ -184,54 +199,59 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
           </section>
 
           <section className="space-y-8">
-            <FieldBlock index="01" title="Agent skill level">
-              <Select
-                value={profile.level}
-                onValueChange={(value) =>
-                  setProfile((current) => ({ ...current, level: value }))
+            <FieldBlock index="01" title="What is your role?">
+              <Input
+                value={profile.builderRole}
+                onChange={(event) =>
+                  setProfile((current) => ({
+                    ...current,
+                    builderRole: event.target.value,
+                    expertise: event.target.value,
+                  }))
                 }
+                placeholder="e.g. AI Engineer, Software Developer, Researcher"
+                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </FieldBlock>
+
+            <FieldBlock index="02" title="What is your primary goal?">
+              <Select
+                value={profile.workflowFocus}
+                onValueChange={(value) => {
+                  const calculatedLevel = value.includes("harden")
+                    ? "expert"
+                    : value.includes("guardrails")
+                      ? "intermediate"
+                      : "beginner";
+                  const calculatedRisk = value.includes("guardrails")
+                    ? "Prompt injection"
+                    : "General";
+                  setProfile((current) => ({
+                    ...current,
+                    workflowFocus: value,
+                    application: value,
+                    level: calculatedLevel,
+                    riskFocus: calculatedRisk,
+                  }));
+                }}
               >
                 <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#48d8a4]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
-                  <SelectValue placeholder="Select your level" />
+                  <SelectValue placeholder="Select your primary goal" />
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-[#10110f] text-[#f7f2e8]">
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="expert">Expert</SelectItem>
+                  {currentGoalOptions.map((goal) => (
+                    <SelectItem key={goal} value={goal}>
+                      {goal}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FieldBlock>
 
-            <FieldBlock index="02" title="Builder context">
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input
-                  value={profile.builderRole}
-                  onChange={(event) =>
-                    setProfile((current) => ({
-                      ...current,
-                      builderRole: event.target.value,
-                      expertise: event.target.value,
-                    }))
-                  }
-                  placeholder="full-stack developer"
-                  className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <Input
-                  value={profile.workflowFocus}
-                  onChange={(event) =>
-                    setProfile((current) => ({
-                      ...current,
-                      workflowFocus: event.target.value,
-                      application: event.target.value,
-                    }))
-                  }
-                  placeholder="support triage workflow"
-                  className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </div>
-            </FieldBlock>
-
-            <FieldBlock index="03" title="Framework references">
+            <FieldBlock
+              index="03"
+              title="Primary AI Stack / Framework (Optional)"
+            >
               <div className="grid gap-3 md:grid-cols-2">
                 {frameworkOptions.map((framework) => (
                   <CheckboxRow
@@ -240,33 +260,6 @@ export function ProfileForm({ initialData }: { initialData: ProfileData }) {
                     checked={profile.frameworks.includes(framework)}
                     onChange={() => toggleFramework(framework)}
                   />
-                ))}
-              </div>
-            </FieldBlock>
-
-            <FieldBlock index="04" title="Risk focus">
-              <div className="grid gap-3 md:grid-cols-2">
-                {riskOptions.map((risk) => (
-                  <button
-                    key={risk}
-                    type="button"
-                    onClick={() =>
-                      setProfile((current) => ({
-                        ...current,
-                        riskFocus: risk,
-                      }))
-                    }
-                    className={`flex items-center justify-between border px-4 py-4 text-left transition-colors ${
-                      profile.riskFocus === risk
-                        ? "border-[#48d8a4]/50 bg-[#48d8a4]/10 text-[#f7f2e8]"
-                        : "border-white/10 bg-[#10110f] text-[#abb4a4] hover:border-white/20"
-                    }`}
-                  >
-                    <span>{risk}</span>
-                    {profile.riskFocus === risk && (
-                      <Check size={16} className="text-[#48d8a4]" />
-                    )}
-                  </button>
                 ))}
               </div>
             </FieldBlock>

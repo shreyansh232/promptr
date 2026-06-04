@@ -73,7 +73,6 @@ class UserProfile(Base):
     level: Mapped[str] = mapped_column(String(50), default="beginner")
     expertise: Mapped[str] = mapped_column(String(255), default="")
     application: Mapped[str] = mapped_column(String(255), default="")
-    learning_style: Mapped[str] = mapped_column(String(50), default="")
     goals: Mapped[dict] = mapped_column(JSONB, default=list)
     builder_role: Mapped[str] = mapped_column(String(255), default="")
     frameworks: Mapped[dict] = mapped_column(JSONB, default=list)

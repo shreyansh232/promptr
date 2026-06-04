@@ -43,7 +43,11 @@ async def register(user_data: UserCreate, db: DbDep):
     access_token = create_access_token(
         data={"sub": str(new_user.id)}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "is_new": True,
+    }
 
 
 @router.post("/login", response_model=Token)
@@ -58,8 +62,23 @@ async def login(user_data: UserLogin, db: DbDep):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Check if user has completed onboarding (profile exists and has custom values)
+    from models.user import UserProfile
+
+    profile_result = await db.execute(
+        select(UserProfile).where(UserProfile.user_id == user.id)
+    )
+    profile = profile_result.scalars().first()
+    is_new = True
+    if profile and profile.expertise != "general" and profile.application != "":
+        is_new = False
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "is_new": is_new,
+    }

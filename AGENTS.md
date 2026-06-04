@@ -16,13 +16,12 @@ promptr/
 ├── web/                            # Next.js Frontend
 │   ├── src/app/                    # App Router pages
 │   ├── src/components/             # React components
-│   └── src/lib/                    # Utilities & Prisma client
+│   └── src/lib/                    # Utilities
 ├── server/                         # FastAPI Backend
 │   ├── routers/                    # API Endpoints
 │   ├── services/                   # AI logic (LLM service)
 │   ├── schemas/                    # Pydantic models
 │   └── tests/                      # Python unit & integration tests
-├── prisma/                         # Shared database schema
 ├── Makefile                        # Root orchestrator
 └── package.json                    # Root monorepo scripts
 ```
@@ -87,7 +86,7 @@ Copy `.env.example` to `.env` and fill in values.
 | Variable           | Description                                               |
 | ------------------ | --------------------------------------------------------- |
 | `DATABASE_URL`      | MongoDB connection string                                 |
-| `AUTH_SECRET`       | NextAuth secret (generate with `openssl rand -base64 32`) |
+| `AUTH_SECRET`       | JWT secret for backend session token signing/validation  |
 | `GITHUB_CLIENT_ID`  | GitHub OAuth App client ID                                |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret                            |
 | `OPENAI_API_KEY`    | OpenAI API key for backend evaluations                    |

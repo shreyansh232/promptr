@@ -18,6 +18,7 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    is_new: bool = False
 
 
 class UserResponse(BaseModel):

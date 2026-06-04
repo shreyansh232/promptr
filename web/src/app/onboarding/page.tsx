@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react";
+import { ArrowRight, Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,30 +14,26 @@ import {
 } from "@/components/ui/select";
 import toast from "react-hot-toast";
 
-const steps = ["Level", "Builder", "Stack", "Risk"];
 const frameworkOptions = [
   "OpenAI Agents SDK",
   "LangGraph",
   "CrewAI",
   "Generic tool calling",
 ];
-const riskOptions = [
-  "Tool misuse",
-  "Prompt injection",
-  "Privacy leaks",
-  "Human escalation",
-];
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
-    level: "",
-    builderRole: "",
-    workflowFocus: "",
+    role: "",
+    goal: "",
     frameworks: [] as string[],
-    riskFocus: "",
+  });
+
+  const [touched, setTouched] = useState({
+    role: false,
+    goal: false,
   });
 
   const updateField = (key: string, value: string) => {
@@ -53,9 +49,13 @@ export default function OnboardingPage() {
     }));
   };
 
-  const handleNext = async () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep((s) => s + 1);
+  const handleSubmit = async () => {
+    // Mark all required fields as touched
+    setTouched({ role: true, goal: true });
+
+    // Validate inputs
+    if (!formData.role.trim() || !formData.goal) {
+      toast.error("Please fill out all required fields.");
       return;
     }
 
@@ -65,18 +65,20 @@ export default function OnboardingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          level: formData.level,
-          expertise: formData.builderRole,
-          application: formData.workflowFocus,
-          goals: [
-            `Build reliable ${formData.workflowFocus || "agent"} workflows`,
-            `Improve ${formData.riskFocus || "agent safety"} handling`,
-          ],
-          learningStyle: "kinesthetic",
-          builderRole: formData.builderRole,
+          level: formData.goal.includes("harden")
+            ? "expert"
+            : formData.goal.includes("guardrails")
+              ? "intermediate"
+              : "beginner",
+          expertise: formData.role,
+          application: formData.goal,
+          goals: [formData.role, formData.goal],
+          builderRole: formData.role,
           frameworks: formData.frameworks,
-          workflowFocus: formData.workflowFocus,
-          riskFocus: formData.riskFocus,
+          workflowFocus: formData.goal,
+          riskFocus: formData.goal.includes("guardrails")
+            ? "Prompt injection"
+            : "General",
         }),
       });
 
@@ -84,8 +86,7 @@ export default function OnboardingPage() {
         throw new Error("Failed to save profile");
       }
 
-      router.refresh();
-      router.push("/");
+      setIsSubmitted(true);
     } catch {
       toast.error("Failed to save your agent profile. Please try again.");
     } finally {
@@ -93,221 +94,219 @@ export default function OnboardingPage() {
     }
   };
 
-  const isNextDisabled =
-    (currentStep === 0 && !formData.level) ||
-    (currentStep === 1 &&
-      (!formData.builderRole.trim() || !formData.workflowFocus.trim())) ||
-    (currentStep === 2 && formData.frameworks.length === 0) ||
-    (currentStep === 3 && !formData.riskFocus);
+  const roleError = touched.role && !formData.role.trim();
+  const goalError = touched.goal && !formData.goal;
 
   return (
     <div className="flex min-h-screen bg-[#080908] text-[#f7f2e8]">
+      {/* Left panel: Info */}
       <div className="hidden w-1/2 flex-col justify-between border-r border-white/10 bg-[#0d0f0c] px-12 py-10 lg:flex">
         <div className="text-lg font-semibold">Promptr</div>
 
         <div className="max-w-md">
-          <div className="mb-5 inline-flex border border-[#48d8a4]/30 bg-[#48d8a4]/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-[#6be0b9]">
-            Agent profile
+          <div className="mb-5 inline-flex border border-[#48d8a4]/30 bg-[#48d8a4]/10 px-3 py-1.5 font-mono text-[11px] text-[#6be0b9]">
+            Workspace profile
           </div>
           <h1 className="text-5xl font-semibold leading-tight">
-            Calibrate your Playground missions.
+            {isSubmitted
+              ? "Welcome to Promptr."
+              : "Set up your developer profile."}
           </h1>
           <p className="mt-5 text-base leading-7 text-[#abb4a4]">
-            Promptr will tune missions around your agent stack, workflows, and
-            highest-risk failure modes.
+            {isSubmitted
+              ? "Your profile has been saved. You're ready to start writing, testing, and hardening your agent instructions."
+              : "Tell us a bit about your role and goals so we can understand your developer needs and get your workspace ready."}
           </p>
         </div>
 
-        <div className="font-mono text-xs uppercase tracking-[0.16em] text-[#71786d]">
-          Step {currentStep + 1} / {steps.length}
+        <div className="font-mono text-xs text-[#71786d]">
+          Initial calibration
         </div>
       </div>
 
+      {/* Right panel: Form / Choice */}
       <div className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-1/2 lg:px-16">
-        <div className="w-full max-w-md">
-          <div className="mb-10 h-1.5 w-full bg-white/10">
-            <div
-              className="h-1.5 bg-[#48d8a4] transition-all duration-300"
-              style={{
-                width: `${((currentStep + 1) / steps.length) * 100}%`,
-              }}
-            />
-          </div>
+        {isSubmitted ? (
+          <div className="w-full max-w-md space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold">Calibration complete!</h2>
+              <p className="mt-2 text-sm text-[#abb4a4]">
+                Choose where you would like to start:
+              </p>
+            </div>
 
-          {currentStep === 0 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold">
-                  How experienced are you with agents?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
-                  This controls mission complexity and how much scaffolding you
-                  get.
-                </p>
-              </div>
-              <Select
-                onValueChange={(value) => updateField("level", value)}
-                value={formData.level}
+            <div className="flex flex-col gap-3 pt-4">
+              <Button
+                onClick={() => {
+                  router.refresh();
+                  router.push("/lab");
+                }}
+                className="w-full rounded-none bg-[#48d8a4] py-6 font-mono text-xs text-[#10110f] hover:bg-[#62e2b7]"
               >
-                <SelectTrigger className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] focus:border-[#48d8a4]/40 focus:outline-none focus:ring-0 focus:ring-offset-0">
-                  <SelectValue placeholder="Select level" />
-                </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#10110f] text-[#f7f2e8]">
-                  <SelectItem value="beginner">
-                    Beginner - learning agent basics
-                  </SelectItem>
-                  <SelectItem value="intermediate">
-                    Intermediate - building tool workflows
-                  </SelectItem>
-                  <SelectItem value="expert">
-                    Expert - hardening production agents
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+                Go to Lab (Sandbox)
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
 
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold">
-                  What kind of agent are you building?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
-                  Be concrete: support automation, coding agent, sales ops,
-                  research workflow.
-                </p>
-              </div>
-              <Input
-                value={formData.builderRole}
-                onChange={(event) =>
-                  updateField("builderRole", event.target.value)
-                }
-                placeholder="Example: full-stack developer"
-                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-              <Input
-                value={formData.workflowFocus}
-                onChange={(event) =>
-                  updateField("workflowFocus", event.target.value)
-                }
-                placeholder="Example: support triage workflow"
-                className="h-14 rounded-none border border-white/10 bg-[#10110f] text-base text-[#f7f2e8] placeholder:text-[#71786d] focus-visible:border-[#48d8a4]/40 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
+              <Button
+                onClick={() => {
+                  router.refresh();
+                  router.push("/missions");
+                }}
+                variant="outline"
+                className="w-full rounded-none border border-[#48d8a4]/30 bg-[#48d8a4]/5 py-6 font-mono text-xs text-[#48d8a4] hover:bg-[#48d8a4]/10 hover:text-[#f7f2e8]"
+              >
+                Go to Missions
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold">
-                  Which stack should examples reference?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
-                  Promptr stays framework-agnostic but can use familiar terms.
-                </p>
-              </div>
-              <div className="space-y-3">
-                {frameworkOptions.map((framework) => (
-                  <CheckboxRow
-                    key={framework}
-                    label={framework}
-                    checked={formData.frameworks.includes(framework)}
-                    onChange={() => toggleFramework(framework)}
-                  />
-                ))}
-              </div>
+          </div>
+        ) : (
+          <div className="w-full max-w-md space-y-8">
+            <div>
+              <h2 className="text-2xl font-semibold">Profile details</h2>
+              <p className="mt-2 text-sm text-[#abb4a4]">
+                Complete your profile details to configure the workspace.
+              </p>
             </div>
-          )}
 
-          {currentStep === 3 && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold">
-                  What failure mode matters most?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[#abb4a4]">
-                  Missions will bias toward the risk you most need to control.
-                </p>
+              {/* Field 1: Role */}
+              <div className="space-y-2">
+                <label className="font-mono text-sm text-[#8f978b]">
+                  What is your role?
+                  <sup
+                    className={`ml-0.5 transition-colors ${
+                      roleError ? "font-bold text-red-500" : "text-[#8f978b]"
+                    }`}
+                    title="Required"
+                  >
+                    *
+                  </sup>
+                </label>
+                <Input
+                  value={formData.role}
+                  onChange={(event) => updateField("role", event.target.value)}
+                  onBlur={() => setTouched((prev) => ({ ...prev, role: true }))}
+                  placeholder="e.g. AI Engineer, Software Developer, Researcher"
+                  className={`h-12 rounded-none border bg-[#10110f] text-sm text-[#f7f2e8] placeholder:text-[#555d52] focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                    roleError
+                      ? "border-red-500 focus-visible:border-red-500"
+                      : "border-white/10 focus-visible:border-[#48d8a4]/40"
+                  }`}
+                />
+                {roleError && (
+                  <p className="mt-1 text-xs text-red-400">Role is required.</p>
+                )}
               </div>
-              <div className="space-y-3">
-                {riskOptions.map((risk) => (
-                  <button
-                    key={risk}
-                    type="button"
-                    onClick={() => updateField("riskFocus", risk)}
-                    className={`flex w-full items-center justify-between border px-4 py-4 text-left transition-colors ${
-                      formData.riskFocus === risk
-                        ? "border-[#48d8a4]/50 bg-[#48d8a4]/10 text-[#f7f2e8]"
-                        : "border-white/10 bg-[#10110f] text-[#abb4a4] hover:border-white/20"
+
+              {/* Field 2: Goal */}
+              <div className="space-y-2">
+                <label className="font-mono text-sm text-[#8f978b]">
+                  What is your primary goal?
+                  <sup
+                    className={`ml-0.5 transition-colors ${
+                      goalError ? "font-bold text-red-500" : "text-[#8f978b]"
+                    }`}
+                    title="Required"
+                  >
+                    *
+                  </sup>
+                </label>
+                <Select
+                  onValueChange={(value) => {
+                    updateField("goal", value);
+                    setTouched((prev) => ({ ...prev, goal: true }));
+                  }}
+                  value={formData.goal}
+                >
+                  <SelectTrigger
+                    className={`h-12 rounded-none border bg-[#10110f] text-sm text-[#f7f2e8] focus:outline-none focus:ring-0 focus:ring-offset-0 ${
+                      goalError
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-white/10 focus:border-[#48d8a4]/40"
                     }`}
                   >
-                    <span>{risk}</span>
-                    {formData.riskFocus === risk && (
-                      <Check size={16} className="text-[#48d8a4]" />
-                    )}
-                  </button>
-                ))}
+                    <SelectValue placeholder="Select your primary goal" />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#10110f] text-[#f7f2e8]">
+                    <SelectItem value="Learn agent prompt basics and tool calling">
+                      Learn agent prompt basics and tool calling
+                    </SelectItem>
+                    <SelectItem value="Test prompts against adversarial inputs and guardrails">
+                      Test prompts against adversarial inputs and guardrails
+                    </SelectItem>
+                    <SelectItem value="Evaluate and harden production-grade workflows">
+                      Evaluate and harden production-grade workflows
+                    </SelectItem>
+                    <SelectItem value="Explore and practice general prompting challenges">
+                      Explore and practice general prompting challenges
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {goalError && (
+                  <p className="mt-1 text-xs text-red-400">
+                    Primary goal is required.
+                  </p>
+                )}
+              </div>
+
+              {/* Field 3: AI Stack (Optional) */}
+              <div className="space-y-2">
+                <div className="flex flex-col">
+                  <label className="font-mono text-sm text-[#8f978b]">
+                    Primary AI Stack / Framework (Optional)
+                  </label>
+                  <span className="mt-0.5 text-[11px] text-[#71786d]">
+                    Select the frameworks you build with, if any.
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
+                  {frameworkOptions.map((framework) => {
+                    const checked = formData.frameworks.includes(framework);
+                    return (
+                      <button
+                        key={framework}
+                        type="button"
+                        onClick={() => toggleFramework(framework)}
+                        className={`flex items-center gap-3 border px-3 py-3 text-left transition-colors ${
+                          checked
+                            ? "border-[#48d8a4]/50 bg-[#48d8a4]/5 text-[#f7f2e8]"
+                            : "border-white/10 bg-[#10110f] text-[#abb4a4] hover:border-white/20"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
+                            checked
+                              ? "border-[#48d8a4] bg-[#48d8a4]"
+                              : "border-white/20 bg-transparent"
+                          }`}
+                        >
+                          {checked && (
+                            <Check size={11} className="text-[#10110f]" />
+                          )}
+                        </span>
+                        <span className="text-xs">{framework}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          )}
 
-          <div className="mt-10 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
-              disabled={currentStep === 0}
-              className="rounded-none text-[#8f978b] hover:bg-white/5 hover:text-[#f7f2e8] disabled:opacity-30"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={isNextDisabled || isSaving}
-              className="rounded-none bg-[#48d8a4] px-6 py-6 font-mono text-xs uppercase tracking-[0.12em] text-[#10110f] hover:bg-[#62e2b7] disabled:opacity-40"
-            >
-              {isSaving
-                ? "Saving"
-                : currentStep === steps.length - 1
-                  ? "Open Playground"
-                  : "Continue"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            {/* Action button */}
+            <div className="mt-8">
+              <Button
+                onClick={handleSubmit}
+                disabled={isSaving}
+                className="w-full rounded-none bg-[#48d8a4] py-6 font-mono text-xs text-[#10110f] hover:bg-[#62e2b7] disabled:opacity-40"
+              >
+                {isSaving ? "Saving..." : "Submit"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
-  );
-}
-
-function CheckboxRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-4 border border-white/10 bg-[#10110f] px-4 py-4 text-[#abb4a4] transition-colors hover:border-white/20">
-      <span
-        className={`flex h-5 w-5 items-center justify-center border ${
-          checked
-            ? "border-[#48d8a4] bg-[#48d8a4]"
-            : "border-white/20 bg-transparent"
-        }`}
-      >
-        {checked && <Check size={13} className="text-[#10110f]" />}
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
-      <span className={checked ? "text-[#f7f2e8]" : undefined}>{label}</span>
-    </label>
   );
 }

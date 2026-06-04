@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "auth";
+import type { NextRequest } from "next/server";
 
-const protectedRoutes = ["/profile", "/battles"];
+const protectedRoutes = ["/profile", "/missions", "/lab"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
-export default auth((request) => {
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get("access_token")?.value;
+
   const isProtected = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route),
   );
@@ -12,18 +14,18 @@ export default auth((request) => {
     request.nextUrl.pathname.startsWith(route),
   );
 
-  if (!request.auth && isProtected) {
+  if (!token && isProtected) {
     const absoluteURL = new URL("/sign-in", request.nextUrl.origin);
     return NextResponse.redirect(absoluteURL.toString());
   }
 
-  if (request.auth && isAuthRoute) {
+  if (token && isAuthRoute) {
     const absoluteURL = new URL("/", request.nextUrl.origin);
     return NextResponse.redirect(absoluteURL.toString());
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],

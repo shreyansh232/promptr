@@ -87,7 +87,7 @@ async def test_critical_failure_prevents_pass(mock_llm):
     assert result.results[0].criticalFailure is True
 
 
-def test_agent_mission_generation_db_cache(client, mock_llm):
+def test_agent_mission_generation_no_cache(client, mock_llm):
     mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[0].message.content = (
         '{"mission": ' + AGENT_MISSION_FALLBACK.model_dump_json() + "}"
@@ -98,7 +98,6 @@ def test_agent_mission_generation_db_cache(client, mock_llm):
         "level": "beginner",
         "expertise": "developer",
         "goals": ["Build reliable agents"],
-        "learning_style": "visual",
         "subLevel": 1,
         "builderRole": "full-stack developer",
         "frameworks": ["OpenAI Agents SDK"],
@@ -106,10 +105,10 @@ def test_agent_mission_generation_db_cache(client, mock_llm):
         "riskFocus": "tool safety",
     }
 
-    first = client.post("/agent-missions/generate", json=profile)
-    second = client.post("/agent-missions/generate", json=profile)
+    first = client.post("/api/agent-missions/generate", json=profile)
+    second = client.post("/api/agent-missions/generate", json=profile)
 
     assert first.status_code == 200
     assert second.status_code == 200
     assert second.json()["mission"]["title"] == "Customer Support Bot"
-    assert mock_llm.chat.completions.create.call_count == 1
+    assert mock_llm.chat.completions.create.call_count == 2

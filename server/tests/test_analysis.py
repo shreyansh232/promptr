@@ -16,12 +16,11 @@ def test_analyze_prompt(client, mock_llm):
             "level": "beginner",
             "expertise": "marketing",
             "goals": ["writing"],
-            "learning_style": "visual",
         },
         "messages": [{"role": "user", "content": "Write a blog post about coffee."}],
     }
 
-    response = client.post("/analyze-prompt", json=request_data)
+    response = client.post("/api/analyze-prompt", json=request_data)
 
     assert response.status_code == 200
     data = response.json()
@@ -40,10 +39,9 @@ def test_generate_problems(client, mock_llm):
         "level": "beginner",
         "expertise": "marketing",
         "goals": ["writing"],
-        "learning_style": "visual",
     }
 
-    response = client.post("/generate-problems", json=user_info)
+    response = client.post("/api/generate-problems", json=user_info)
 
     assert response.status_code == 200
     data = response.json()
@@ -67,13 +65,13 @@ def test_evaluate_prompt(client, mock_llm):
     # For now let's see if it works with a simple mock
     # Wait, evaluate_prompt_full likely returns a dict that is then wrapped in TestCaseEvaluationResponse
 
-    response = client.post("/evaluate-prompt", json=request_data)
+    response = client.post("/api/evaluate-prompt", json=request_data)
 
     # If it fails due to mock mismatch, I'll adjust
     assert response.status_code in [200, 500]
 
 
-def test_generate_problems_db_cache(client, mock_llm, mock_db):
+def test_generate_problems_no_cache(client, mock_llm):
     # Setup mock for first call (LLM call)
     mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
@@ -85,32 +83,29 @@ def test_generate_problems_db_cache(client, mock_llm, mock_db):
         "level": "beginner",
         "expertise": "marketing",
         "goals": ["writing"],
-        "learning_style": "visual",
         "subLevel": 1,
     }
 
-    # 1. First call - should call mock_llm and save to DB
-    response1 = client.post("/generate-problems", json=user_info)
+    # 1. First call - should call mock_llm
+    response1 = client.post("/api/generate-problems", json=user_info)
     assert response1.status_code == 200
     data1 = response1.json()
     assert len(data1["problems"]) == 1
     assert data1["problems"][0]["title"] == "Fresh Problem"
     assert mock_llm.chat.completions.create.call_count == 1
 
-    # 2. Modify mock_llm response to prove it doesn't get called again
+    # 2. Modify mock_llm response to prove it gets called again
     mock_response.choices[
         0
     ].message.content = '{"problems": [{"id": 2, "title": "New Mock Problem", "difficulty": "Easy", "description": "Desc", "goal": "Goal", "examples": [], "testCases": [], "proTips": []}]}'
 
     # 3. Second call with same userId, level, subLevel
-    response2 = client.post("/generate-problems", json=user_info)
+    response2 = client.post("/api/generate-problems", json=user_info)
     assert response2.status_code == 200
     data2 = response2.json()
-    # It should load from DB cache, so it should still be "Fresh Problem"
     assert len(data2["problems"]) == 1
-    assert data2["problems"][0]["title"] == "Fresh Problem"
-    # Call count should still be 1 (meaning OpenAI chat completion was NOT called on the second request)
-    assert mock_llm.chat.completions.create.call_count == 1
+    assert data2["problems"][0]["title"] == "New Mock Problem"
+    assert mock_llm.chat.completions.create.call_count == 2
 
 
 def test_generate_custom_scenario(client, mock_llm):
@@ -128,7 +123,7 @@ def test_generate_custom_scenario(client, mock_llm):
 
     request_data = {"agentDescription": "A helpful agent", "tools": "my_tool(param)"}
 
-    response = client.post("/generate-custom-scenario", json=request_data)
+    response = client.post("/api/generate-custom-scenario", json=request_data)
 
     assert response.status_code == 200
     data = response.json()

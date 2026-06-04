@@ -15,14 +15,14 @@ const mockInitialData = {
   expertise: "tech",
   application: "coding",
   goals: ["Write clearer prompts"],
-  elo: 1000,
   subLevel: 1,
   problemsSolved: 0,
   streak: 0,
   builderRole: "developer",
-  frameworks: ["OpenAI Agents SDK"],
+  frameworks: ["LLM Agents SDK"],
   workflowFocus: "coding agents",
   riskFocus: "Tool misuse",
+  reliabilityScore: 0,
 };
 
 describe("ProfileForm Navigation", () => {
