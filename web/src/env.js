@@ -12,7 +12,6 @@ export const env = createEnv({
     GITHUB_CLIENT_ID: z.string().min(1).optional(),
     GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
-    BACKEND_URL: z.string().url().default("http://localhost:8000"),
   },
 
   /**
@@ -21,7 +20,9 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // Must be NEXT_PUBLIC_ prefixed so Next.js bundles it into the browser build.
+    // Server-side BACKEND_URL is never visible to client components.
+    NEXT_PUBLIC_BACKEND_URL: z.string().url().default("http://localhost:8000"),
   },
 
   /**
@@ -34,8 +35,8 @@ export const env = createEnv({
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    BACKEND_URL: process.env.BACKEND_URL ?? "http://localhost:8000",
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    NEXT_PUBLIC_BACKEND_URL:
+      process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000",
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

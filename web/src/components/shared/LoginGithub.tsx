@@ -1,10 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { GithubLogoIcon } from "@phosphor-icons/react";
+import { env } from "@/env";
 
 const LoginGithub = () => {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+  const backendUrl = env.NEXT_PUBLIC_BACKEND_URL;
   return (
     <div className="mt-3">
       <Button
