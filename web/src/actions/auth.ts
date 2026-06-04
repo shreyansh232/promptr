@@ -1,11 +1,9 @@
 "use server";
 
-import { signIn, signOut } from "auth";
-import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { hash } from "bcryptjs";
-import { AuthError } from "next-auth";
 import { z } from "zod";
+import { cookies } from "next/headers";
+import { env } from "@/env";
 
 const AuthSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -13,27 +11,14 @@ const AuthSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),
 });
 
-const getUserByEmail = async (email: string) => {
-  try {
-    const user = await db.user.findUnique({
-      where: {
-        email,
-      },
-    });
-    return user;
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
-};
-
 export const login = async (provider: string) => {
-  await signIn(provider, { redirectTo: "/" });
-  revalidatePath("/");
+  // Since we are not using next-auth, redirect to the FastAPI OAuth endpoints
+  // However, Next.js server actions can't easily do client redirects directly unless using next/navigation's redirect.
+  // We'll handle this in the client components directly by rendering an <a> tag to the backend.
 };
 
 export const logout = async () => {
-  await signOut({ redirectTo: "/" });
+  cookies().delete("access_token");
   revalidatePath("/");
 };
 
@@ -46,10 +31,7 @@ export const loginWithCreds = async (
   const validatedFields = AuthSchema.pick({
     email: true,
     password: true,
-  }).safeParse({
-    email,
-    password,
-  });
+  }).safeParse({ email, password });
 
   if (!validatedFields.success) {
     return {
@@ -57,29 +39,30 @@ export const loginWithCreds = async (
     };
   }
 
-  const { email: normalizedEmail, password: normalizedPassword } =
-    validatedFields.data;
-
   try {
-    await signIn("credentials", {
-      email: normalizedEmail,
-      password: normalizedPassword,
-      redirect: true,
-      redirectTo: "/",
+    const res = await fetch(`${env.BACKEND_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(validatedFields.data),
     });
-    return { success: true };
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return { error: "Invalid credentials" };
-        default:
-          return { error: "Something went wrong during sign in" };
-      }
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { error: errorData.detail || "Invalid credentials" };
     }
 
-    // Re-throw the error so Next.js can handle redirects (which are technically errors)
-    throw error;
+    const data = await res.json();
+    cookies().set("access_token", data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Login error:", error);
+    return { error: "Something went wrong during sign in" };
   }
 };
 
@@ -88,11 +71,7 @@ export const registerWithCreds = async (formData: FormData): Promise<void> => {
   const password = formData.get("password");
   const name = formData.get("name");
 
-  const validatedFields = AuthSchema.safeParse({
-    email,
-    password,
-    name,
-  });
+  const validatedFields = AuthSchema.safeParse({ email, password, name });
 
   if (!validatedFields.success) {
     throw new Error(
@@ -100,32 +79,23 @@ export const registerWithCreds = async (formData: FormData): Promise<void> => {
     );
   }
 
-  const {
-    email: normalizedEmail,
-    password: normalizedPassword,
-    name: normalizedName,
-  } = validatedFields.data;
-
-  const existingUser = await getUserByEmail(normalizedEmail);
-
-  if (existingUser) {
-    throw new Error("Email already exists");
-  }
-
-  await db.user.create({
-    data: {
-      name: normalizedName,
-      email: normalizedEmail,
-      hashedPassword: await hash(normalizedPassword, 10),
-      // UserProfile will be created by the backend or via an event/hook
-    },
+  const res = await fetch(`${env.BACKEND_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(validatedFields.data),
   });
 
-  await signIn("credentials", {
-    email: normalizedEmail,
-    password: normalizedPassword,
-    redirect: true,
-    redirectTo: "/",
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Registration failed");
+  }
+
+  const data = await res.json();
+  cookies().set("access_token", data.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: "/",
   });
 
   revalidatePath("/");

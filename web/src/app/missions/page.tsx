@@ -1,10 +1,10 @@
-import { auth } from "auth";
-import { db } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { CURRICULUM_MISSIONS } from "@/data/missions";
 import type { AgentProfile } from "@/types/agent-dojo";
 import { MissionsWorkspace } from "./_components/MissionsWorkspace";
 import type { Metadata } from "next";
+import { backendFetch } from "@/lib/backend";
 
 export const metadata: Metadata = {
   title: "Missions",
@@ -20,36 +20,35 @@ export default async function PlaygroundPage() {
   let initialMission = CURRICULUM_MISSIONS[0]!;
 
   if (session?.user?.email) {
-    const user = await db.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
-    });
+    try {
+      const userProfile = await backendFetch<any>("/profiles/me");
 
-    if (user && !user.profile) {
-      redirect("/onboarding");
-    }
+      if (!userProfile) {
+        redirect("/onboarding");
+      }
 
-    if (user?.profile) {
       profile = {
-        id: user.id,
-        level: user.profile.level,
-        expertise: user.profile.expertise,
-        application: user.profile.application,
-        goals: user.profile.goals,
-        learningStyle: user.profile.learningStyle,
-        subLevel: user.profile.subLevel,
-        reliabilityScore: user.profile.elo > 100 ? 0 : user.profile.elo,
-        missionsCompleted: user.profile.problemsSolved,
-        streak: user.profile.streak,
-        builderRole: user.profile.builderRole,
-        frameworks: user.profile.frameworks,
-        workflowFocus: user.profile.workflowFocus,
-        riskFocus: user.profile.riskFocus,
+        id: session.user.id,
+        level: userProfile.level,
+        expertise: userProfile.expertise,
+        application: userProfile.application,
+        goals: userProfile.goals,
+        learningStyle: userProfile.learningStyle,
+        subLevel: userProfile.subLevel,
+        reliabilityScore: 0, // ELO deprecated
+        missionsCompleted: userProfile.problemsSolved,
+        streak: userProfile.streak,
+        builderRole: userProfile.builderRole,
+        frameworks: userProfile.frameworks,
+        workflowFocus: userProfile.workflowFocus,
+        riskFocus: userProfile.riskFocus,
       };
 
-      const nextIndex = Math.min(user.profile.problemsSolved ?? 0, 24);
+      const nextIndex = Math.min(userProfile.problemsSolved ?? 0, 24);
       initialMission = (CURRICULUM_MISSIONS[nextIndex] ??
         CURRICULUM_MISSIONS[0])!;
+    } catch (error) {
+      console.error("Failed to fetch profile", error);
     }
   }
 

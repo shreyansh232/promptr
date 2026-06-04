@@ -101,7 +101,7 @@ def test_agent_mission_generation_db_cache(client, mock_llm):
         "learning_style": "visual",
         "subLevel": 1,
         "builderRole": "full-stack developer",
-        "frameworks": ["LLM Agents SDK"],
+        "frameworks": ["OpenAI Agents SDK"],
         "workflowFocus": "support automation",
         "riskFocus": "tool safety",
     }

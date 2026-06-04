@@ -16,7 +16,7 @@ import toast from "react-hot-toast";
 
 const steps = ["Level", "Builder", "Stack", "Risk"];
 const frameworkOptions = [
-  "LLM Agents SDK",
+  "OpenAI Agents SDK",
   "LangGraph",
   "CrewAI",
   "Generic tool calling",

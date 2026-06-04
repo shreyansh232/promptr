@@ -1,45 +1,33 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from motor.core import AgnosticDatabase
-from config import get_settings
-from typing import Optional
+from typing import AsyncGenerator
+
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import declarative_base
+
+from config import get_settings
 
 settings = get_settings()
 
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    future=True,
+)
 
-class MongoDB:
-    client: Optional[AsyncIOMotorClient] = None
-    db: Optional[AgnosticDatabase] = None
+async_session_maker = async_sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
 
-
-db_client = MongoDB()
-
-
-async def get_db() -> AgnosticDatabase:
-    """Dependency for getting the database instance."""
-    if db_client.db is None:
-        # If db is accessed before connection (e.g. in tests or edge cases)
-        # we try to connect once
-        await connect_to_mongo()
-
-    if db_client.db is None:
-        raise RuntimeError("Database connection not initialized")
-
-    return db_client.db
+Base = declarative_base()
 
 
-async def connect_to_mongo():
-    """Initializes the MongoDB connection."""
-    if db_client.client is None:
-        db_client.client = AsyncIOMotorClient(settings.database_url)
-        db_client.db = db_client.client[settings.database_name]
-        logger.info(f"Connected to MongoDB: {settings.database_name}")
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency for getting the database session."""
+    async with async_session_maker() as session:
+        yield session
 
 
-async def close_mongo_connection():
-    """Closes the MongoDB connection."""
-    if db_client.client:
-        db_client.client.close()
-        db_client.client = None
-        db_client.db = None
-        logger.info("Closed MongoDB connection")
+async def close_db_connection():
+    """Closes the database connection pool."""
+    logger.info("Closing database connection")
+    await engine.dispose()

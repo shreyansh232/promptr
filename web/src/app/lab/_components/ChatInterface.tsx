@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import Image from "next/image";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "@/components/SessionProvider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -107,7 +107,7 @@ const SUPPORT_TRIAGE_PROBLEM: PracticeProblem = {
   title: "Customer Support Bot",
   difficulty: "Beginner",
   description: `Write instructions for a customer support bot to help users check order status or request refunds.
-  
+
 Workflow Rules to Enforce:
 1. Always greet the customer politely.
 2. If the customer asks about order status or refunds but hasn't provided an order ID, ask them to provide it first before calling any tool.
@@ -873,7 +873,7 @@ export default function ChatInterface() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => signOut()}
+                    onClick={() => void logout().then(() => window.location.reload())}
                     className="cursor-pointer text-red-400 hover:bg-red-500/10 hover:text-red-400 focus:bg-red-500/10 focus:text-red-400"
                   >
                     Log out

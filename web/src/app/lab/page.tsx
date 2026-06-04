@@ -1,10 +1,10 @@
-import { auth } from "auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/prisma";
 import { PUBLIC_AGENT_MISSION } from "@/data/agent-dojo";
 import type { AgentProfile } from "@/types/agent-dojo";
 import { MissionsWorkspace } from "../missions/_components/MissionsWorkspace";
 import type { Metadata } from "next";
+import { backendFetch } from "@/lib/backend";
 
 export const metadata: Metadata = {
   title: "Lab",
@@ -19,32 +19,31 @@ export default async function LabPage() {
   let profile: AgentProfile | null = null;
 
   if (session?.user?.email) {
-    const user = await db.user.findUnique({
-      where: { email: session.user.email },
-      include: { profile: true },
-    });
+    try {
+      const userProfile = await backendFetch<any>("/profiles/me");
 
-    if (user && !user.profile) {
-      redirect("/onboarding");
-    }
+      if (!userProfile) {
+        redirect("/onboarding");
+      }
 
-    if (user?.profile) {
       profile = {
-        id: user.id,
-        level: user.profile.level,
-        expertise: user.profile.expertise,
-        application: user.profile.application,
-        goals: user.profile.goals,
-        learningStyle: user.profile.learningStyle,
-        subLevel: user.profile.subLevel,
-        reliabilityScore: user.profile.elo > 100 ? 0 : user.profile.elo,
-        missionsCompleted: user.profile.problemsSolved,
-        streak: user.profile.streak,
-        builderRole: user.profile.builderRole,
-        frameworks: user.profile.frameworks,
-        workflowFocus: user.profile.workflowFocus,
-        riskFocus: user.profile.riskFocus,
+        id: session.user.id,
+        level: userProfile.level,
+        expertise: userProfile.expertise,
+        application: userProfile.application,
+        goals: userProfile.goals,
+        learningStyle: userProfile.learningStyle,
+        subLevel: userProfile.subLevel,
+        reliabilityScore: 0, // ELO deprecated
+        missionsCompleted: userProfile.problemsSolved,
+        streak: userProfile.streak,
+        builderRole: userProfile.builderRole,
+        frameworks: userProfile.frameworks,
+        workflowFocus: userProfile.workflowFocus,
+        riskFocus: userProfile.riskFocus,
       };
+    } catch (error) {
+      console.error("Failed to fetch profile", error);
     }
   }
 

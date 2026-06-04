@@ -1,8 +1,8 @@
 import "@/styles/globals.css";
 import { type Metadata } from "next";
 import GradientBackground from "@/components/ui/gradient-background";
-import { SessionProvider } from "next-auth/react";
-import { auth } from "auth";
+import { SessionProvider } from "@/components/SessionProvider";
+import { auth } from "@/lib/auth";
 import { Toaster } from "react-hot-toast";
 import { Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";

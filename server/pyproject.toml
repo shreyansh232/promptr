@@ -5,13 +5,21 @@ description = "Promptr FastAPI backend"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.13.1",
+    "asyncpg>=0.29.0",
+    "authlib>=1.3.1",
     "fastapi[standard]>=0.136.1",
-    "motor>=3.6.0",
+    "greenlet>=3.5.1",
+    "httpx>=0.28.1",
+    "itsdangerous>=2.2.0",
+    "loguru>=0.7.2",
     "openai>=2.33.0",
+    "passlib[bcrypt]>=1.7.4",
+    "pyjwt>=2.8.0",
     "python-dotenv>=1.2.2",
     "slowapi>=0.1.9",
+    "sqlalchemy>=2.0.30",
     "uvicorn>=0.46.0",
-    "loguru>=0.7.2",
 ]
 
 [project.scripts]

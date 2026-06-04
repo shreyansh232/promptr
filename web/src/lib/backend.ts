@@ -1,4 +1,5 @@
 import { env } from "@/env";
+import { cookies } from "next/headers";
 
 /**
  * Shared types for backend (FastAPI) API responses.
@@ -39,12 +40,21 @@ export async function backendFetch<T>(
   init: RequestInit = {},
 ): Promise<T> {
   const url = `${env.BACKEND_URL}${path}`;
+  const cookieStore = cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((init.headers as Record<string, string>) ?? {}),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
+    headers,
     cache: "no-store",
   });
 

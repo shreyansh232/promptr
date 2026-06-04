@@ -12,7 +12,8 @@ from schemas.agent import (
     AgentTool,
     AgentLearnerProfile,
 )
-from services.llm_service import _parse_llm_json, _send_prompt
+from services.llm_service import _send_prompt
+from services.llm_utils import _parse_llm_json
 
 
 AGENT_MISSION_FALLBACK = AgentMission(
@@ -133,7 +134,7 @@ def _build_agent_mission_prompt(profile: AgentLearnerProfile) -> str:
         - Include 3 test cases covering normal behavior, an edge case, and a failure/adversarial case.
         - At least one test case must check tool choice or escalation.
         - Keep the brief and workflow rules concrete.
-        - Use framework-agnostic terms, but examples can mention LLM Agents SDK, LangGraph, CrewAI, or generic tool calling.
+        - Use framework-agnostic terms, but examples can mention OpenAI Agents SDK, LangGraph, CrewAI, or generic tool calling.
 
         Return valid JSON only. No markdown fences. Use this exact shape:
         {json.dumps(response_shape, indent=2)}

@@ -1,8 +1,8 @@
 from services.llm_service import (
     analyze_prompt_response,
     evaluate_prompt_full,
-    _parse_llm_json,
 )
+from services.llm_utils import _parse_llm_json
 from schemas.analysis import ChatRequest
 from schemas.user import UserType
 

@@ -1,7 +1,8 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
-from motor.core import AgnosticDatabase
-from datetime import datetime, UTC
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_db
 from schemas.analysis import (
@@ -16,11 +17,12 @@ from schemas.user import UserType
 from services.llm_service import (
     analyze_prompt_response,
     evaluate_prompt_full,
-    generate_practice_problems,
     generate_custom_scenario,
+    generate_practice_problems,
 )
 
 router = APIRouter()
+DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
 @router.post("/analyze-prompt")
@@ -34,54 +36,11 @@ async def analyze_prompt(request: ChatRequest) -> PromptAnalysisResponse:
 
 
 @router.post("/generate-problems")
-async def generate_problems(
-    user_info: UserType, db: AgnosticDatabase = Depends(get_db)
-) -> PracticeProblemsResponse:
+async def generate_problems(user_info: UserType, db: DbDep) -> PracticeProblemsResponse:
     try:
-        if user_info.userId:
-            logger.info(f"Generating problems for user: {user_info.userId}")
-            cached = await db.generated_problems.find_one(
-                {
-                    "userId": user_info.userId,
-                    "level": user_info.level,
-                    "subLevel": user_info.subLevel,
-                }
-            )
-            if cached and "problems" in cached:
-                problems = cached["problems"]
-                # Skip cache if it contains ONLY the fallback problem so the user can get a real generated problem
-                if not (
-                    problems
-                    and len(problems) == 1
-                    and problems[0].get("title") == "Fix a vague prompt"
-                ):
-                    return PracticeProblemsResponse(problems=problems)
-
+        logger.info(f"Generating problems for user: {user_info.userId}")
+        # Caching removed for now, we'll rely on redis in the future
         response = await generate_practice_problems(user_info)
-
-        if user_info.userId and response.problems:
-            # Do NOT save fallback problems to the database cache
-            if not (
-                len(response.problems) == 1
-                and response.problems[0].title == "Fix a vague prompt"
-            ):
-                db_doc = {
-                    "userId": user_info.userId,
-                    "level": user_info.level,
-                    "subLevel": user_info.subLevel,
-                    "problems": [p.model_dump() for p in response.problems],
-                    "createdAt": datetime.now(UTC),
-                }
-                await db.generated_problems.replace_one(
-                    {
-                        "userId": user_info.userId,
-                        "level": user_info.level,
-                        "subLevel": user_info.subLevel,
-                    },
-                    db_doc,
-                    upsert=True,
-                )
-
         return response
     except Exception as exc:
         logger.error(f"Error generating problems: {exc}")

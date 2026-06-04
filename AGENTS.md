@@ -106,6 +106,8 @@ Copy `.env.example` to `.env` and fill in values.
 
 ### Python (Backend)
 
+- **Strict 300-line limit**: NO code file should ever exceed 300 lines. This ensures high readability and forces modularization of complex services (e.g., separating prompts into dedicated files).
+- Try to always follow SOLID principles wherever possible
 - Use Pydantic `BaseModel` for all request/response bodies
 - Use `async def` for all route handlers
 - Parse LLM JSON responses defensively using `_parse_llm_json`

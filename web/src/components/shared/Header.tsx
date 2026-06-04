@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { GithubLogo, Star } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
-import { auth } from "auth";
+import { auth } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
 import { PromptrLogo } from "./PromptrLogo";
 

@@ -20,7 +20,7 @@ const signedInProfile: AgentProfile = {
   missionsCompleted: 1,
   streak: 3,
   builderRole: "full-stack developer",
-  frameworks: ["LLM Agents SDK"],
+  frameworks: ["OpenAI Agents SDK"],
   workflowFocus: "support automation",
   riskFocus: "Tool misuse",
 };

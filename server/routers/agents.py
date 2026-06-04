@@ -2,10 +2,13 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from motor.core import AgnosticDatabase
 from loguru import logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_db
+from core.security import get_current_user
+from models.user import CompletedMission, User
 from schemas.agent import (
     AgentEvaluationRequest,
     AgentEvaluationResponse,
@@ -16,7 +19,8 @@ from schemas.agent import (
 from services.agent_service import evaluate_agent_instructions, generate_agent_mission
 
 router = APIRouter()
-DbDep = Annotated[AgnosticDatabase, Depends(get_db)]
+DbDep = Annotated[AsyncSession, Depends(get_db)]
+UserDep = Annotated[User, Depends(get_current_user)]
 
 
 @router.post("/agent-missions/generate")
@@ -25,32 +29,8 @@ async def generate_mission(
 ) -> AgentMissionResponse:
     try:
         logger.info(f"Generating mission for user: {profile.userId}")
-        cache_key = {
-            "userId": profile.userId,
-            "level": profile.level,
-            "subLevel": profile.subLevel,
-            "workflowFocus": profile.workflowFocus or profile.application,
-            "riskFocus": profile.riskFocus,
-        }
-
-        if profile.userId:
-            cached = await db.generated_agent_missions.find_one(cache_key)
-            if cached and "mission" in cached:
-                return AgentMissionResponse(mission=cached["mission"])
-
+        # Cache is disabled; in future, we'll use Redis for this
         response = await generate_agent_mission(profile)
-
-        if profile.userId and response.mission:
-            await db.generated_agent_missions.replace_one(
-                cache_key,
-                {
-                    **cache_key,
-                    "mission": response.mission.model_dump(),
-                    "createdAt": datetime.now(UTC),
-                },
-                upsert=True,
-            )
-
         return response
     except Exception as exc:
         logger.error(f"Error generating mission: {exc}")
@@ -73,27 +53,73 @@ async def evaluate_instructions(
 
 @router.post("/agent-missions/completed")
 async def save_completed_mission(
-    request_data: CompletedAgentMissionRequest, db: DbDep
+    request_data: CompletedAgentMissionRequest, current_user: UserDep, db: DbDep
 ) -> dict:
-    query = {
-        "userId": request_data.userId,
-        "userLevel": request_data.userLevel,
-        "subLevel": request_data.subLevel,
-        "missionId": request_data.missionId,
-    }
-    data = request_data.model_dump()
-    data["createdAt"] = datetime.now(UTC)
+    if not request_data.passed:
+        return {"success": True, "message": "Failed mission not saved"}
 
-    await db.completed_agent_missions.replace_one(query, data, upsert=True)
-    return {"success": True}
+    try:
+        # Check if already exists
+        result = await db.execute(
+            select(CompletedMission).where(
+                CompletedMission.user_id == current_user.id,
+                CompletedMission.mission_id == request_data.missionId,
+            )
+        )
+        existing = result.scalars().first()
+
+        if existing:
+            existing.user_level = request_data.userLevel
+            existing.sub_level = request_data.subLevel
+            existing.mission_title = request_data.missionTitle
+            existing.mission_json = request_data.missionJson
+            existing.user_instructions = request_data.userInstructions
+            existing.reliability_score = request_data.reliabilityScore
+            existing.passed = request_data.passed
+            existing.updated_at = datetime.now(UTC)
+        else:
+            new_mission = CompletedMission(
+                user_id=current_user.id,
+                mission_id=request_data.missionId,
+                user_level=request_data.userLevel,
+                sub_level=request_data.subLevel,
+                mission_title=request_data.missionTitle,
+                mission_json=request_data.missionJson,
+                user_instructions=request_data.userInstructions,
+                reliability_score=request_data.reliabilityScore,
+                passed=request_data.passed,
+                tool_trajectory=[],
+                results=[],
+            )
+            db.add(new_mission)
+
+        await db.commit()
+        return {"success": True}
+    except Exception as exc:
+        await db.rollback()
+        logger.error(f"Error saving completed mission: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.get("/agent-missions/completed/{user_id}")
-async def get_completed_missions(user_id: str, db: DbDep) -> list[dict]:
-    cursor = db.completed_agent_missions.find({"userId": user_id})
-    completed = await cursor.to_list(length=100)
-    for item in completed:
-        item["id"] = str(item.pop("_id"))
-        if "createdAt" in item and isinstance(item["createdAt"], datetime):
-            item["createdAt"] = item["createdAt"].isoformat()
-    return completed
+@router.get("/agent-missions/completed")
+async def get_completed_missions(current_user: UserDep, db: DbDep) -> list[dict]:
+    result = await db.execute(
+        select(CompletedMission).where(CompletedMission.user_id == current_user.id)
+    )
+    completed = result.scalars().all()
+
+    return [
+        {
+            "id": str(mission.id),
+            "missionId": mission.mission_id,
+            "userLevel": mission.user_level,
+            "subLevel": mission.sub_level,
+            "missionTitle": mission.mission_title,
+            "missionJson": mission.mission_json,
+            "userInstructions": mission.user_instructions,
+            "reliabilityScore": mission.reliability_score,
+            "passed": mission.passed,
+            "createdAt": mission.created_at.isoformat(),
+        }
+        for mission in completed
+    ]
