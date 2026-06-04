@@ -21,6 +21,17 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Automatically create database tables if they do not exist in the database.
+    # This ensures production and serverless environments initialize the schema on boot.
+    try:
+        from core.db import Base, engine
+        import models  # noqa: F401
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"Database auto-creation log: {e}")
+
     yield
     await close_db_connection()
 
