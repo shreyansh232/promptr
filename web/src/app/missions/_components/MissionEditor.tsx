@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   BracketsCurly,
   CircleNotch,
@@ -11,7 +12,24 @@ import {
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { AgentMission } from "@/types/agent-dojo";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { AgentMission, AgentTestCase } from "@/types/agent-dojo";
 import { usePathname } from "next/navigation";
 import { parseBrief } from "@/lib/brief-formatter";
 
@@ -26,6 +44,7 @@ interface MissionEditorProps {
   onTabChange: (tab: EditorTab) => void;
   onRun: () => void;
   isLabMode?: boolean;
+  onAddCustomScenario?: (newTestCase: AgentTestCase) => void;
 }
 
 export function MissionEditor({
@@ -37,8 +56,51 @@ export function MissionEditor({
   onTabChange,
   onRun,
   isLabMode: _isLabMode = false,
+  onAddCustomScenario,
 }: MissionEditorProps) {
   const pathname = usePathname();
+
+  // Add Custom Scenario States
+  const [isAddScenarioOpen, setIsAddScenarioOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [expectedBehavior, setExpectedBehavior] = useState("");
+  const [simulatedContext, setSimulatedContext] = useState("");
+  const [failureType, setFailureType] = useState("workflow-control");
+  const [expectedToolCalls, setExpectedToolCalls] = useState("");
+  const [forbiddenToolCalls, setForbiddenToolCalls] = useState("");
+
+  const handleAddTestCase = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || !expectedBehavior.trim()) return;
+
+    const newTestCase: AgentTestCase = {
+      id: simulatedContext.trim(),
+      input: input.trim(),
+      simulatedContext: simulatedContext.trim(),
+      expectedBehavior: expectedBehavior.trim(),
+      expectedToolCalls: expectedToolCalls
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      forbiddenToolCalls: forbiddenToolCalls
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      failureType,
+      hidden: false,
+    };
+
+    onAddCustomScenario?.(newTestCase);
+
+    // Reset state
+    setInput("");
+    setSimulatedContext("");
+    setExpectedBehavior("");
+    setExpectedToolCalls("");
+    setForbiddenToolCalls("");
+    setFailureType("workflow-control");
+    setIsAddScenarioOpen(false);
+  };
 
   return (
     <main className="flex h-full min-h-0 flex-col bg-[#10110f]">
@@ -195,33 +257,191 @@ export function MissionEditor({
         )}
 
         {activeTab === "scenarios" && (
-          <div className="grid gap-3">
-            {mission.testCases
-              .filter((scenario) => !scenario.hidden)
-              .map((scenario) => (
-                <article
-                  key={scenario.id}
-                  className="border border-white/10 bg-black/20 p-4"
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <span className="font-mono text-xs text-[#abb4a4]">
+                Active Scenarios (
+                {mission.testCases.filter((s) => !s.hidden).length})
+              </span>
+              {onAddCustomScenario && (
+                <Button
+                  onClick={() => setIsAddScenarioOpen(true)}
+                  className="h-8 rounded-none border border-[#48d8a4]/30 bg-[#48d8a4]/5 px-3 font-mono text-[11px] text-[#48d8a4] hover:bg-[#48d8a4]/10 hover:text-[#48d8a4]"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="font-mono text-sm text-[#f7f2e8]">
-                      {scenario.id}
-                    </h2>
-                    <span className="border border-white/10 px-2 py-1 font-mono text-[10px] text-[#8f978b]">
-                      {scenario.failureType}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-[#d8ddcf]">
-                    {scenario.input}
-                  </p>
-                  <p className="mt-3 border-l border-[#48d8a4]/40 pl-3 text-sm leading-6 text-[#abb4a4]">
-                    {scenario.expectedBehavior}
-                  </p>
-                </article>
-              ))}
+                  + Add Custom Scenario
+                </Button>
+              )}
+            </div>
+
+            <div className="grid gap-3">
+              {mission.testCases
+                .filter((scenario) => !scenario.hidden)
+                .map((scenario) => (
+                  <article
+                    key={scenario.id}
+                    className="border border-white/10 bg-black/20 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h2 className="font-mono text-sm text-[#f7f2e8]">
+                        {scenario.id}
+                      </h2>
+                      <span className="border border-white/10 px-2 py-1 font-mono text-[10px] text-[#8f978b]">
+                        {scenario.failureType}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-[#d8ddcf]">
+                      {scenario.input}
+                    </p>
+                    <p className="mt-3 border-l border-[#48d8a4]/40 pl-3 text-sm leading-6 text-[#abb4a4]">
+                      {scenario.expectedBehavior}
+                    </p>
+                  </article>
+                ))}
+            </div>
           </div>
         )}
       </div>
+
+      <Dialog
+        open={isAddScenarioOpen}
+        onOpenChange={(open) => !open && setIsAddScenarioOpen(false)}
+      >
+        <DialogContent className="max-w-xl rounded-none border border-white/10 bg-[#111111] p-0 text-[#f5efe6] shadow-[0_30px_80px_rgba(0,0,0,0.5)] sm:rounded-none">
+          <DialogHeader className="px-6 py-5">
+            <DialogTitle className="font-mono text-xl font-semibold tracking-tight text-[#f5efe6]">
+              Add Custom Scenario
+            </DialogTitle>
+            <DialogDescription className="mt-1 text-xs text-[#a0978a]">
+              Add a custom test case to stress-test your agent instructions.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleAddTestCase}>
+            <div className="space-y-4 px-6 py-4 font-mono text-xs">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="scen-context"
+                  className="text-[10px] font-semibold text-[#abb4a4]"
+                >
+                  Simulated Context / Setup Description
+                </Label>
+                <Input
+                  id="scen-context"
+                  value={simulatedContext}
+                  onChange={(e) => setSimulatedContext(e.target.value)}
+                  placeholder="e.g. User wants to check status of order ORD-9931 (which exists and is shipped)"
+                  className="rounded-none border-white/10 bg-[#0d0d0d] font-mono text-xs text-[#f5efe6] placeholder:text-[#4a453d] focus-visible:ring-[#48d8a4]/50"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="scen-input"
+                    className="text-[10px] font-semibold text-[#abb4a4]"
+                  >
+                    User Query (Input)
+                  </Label>
+                  <Input
+                    id="scen-input"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="e.g. Can you check status of ORD-9931?"
+                    className="rounded-none border-white/10 bg-[#0d0d0d] font-mono text-xs text-[#f5efe6] placeholder:text-[#4a453d] focus-visible:ring-[#48d8a4]/50"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-semibold text-[#abb4a4]">
+                    Failure Type / Category
+                  </Label>
+                  <Select value={failureType} onValueChange={setFailureType}>
+                    <SelectTrigger className="rounded-none border-white/10 bg-[#0d0d0d] font-mono text-xs text-[#f5efe6]">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none border-white/10 bg-[#111111] font-mono text-xs text-[#f5efe6]">
+                      <SelectItem value="workflow-control">
+                        Workflow Control
+                      </SelectItem>
+                      <SelectItem value="guardrails">Guardrails</SelectItem>
+                      <SelectItem value="tool-use">Tool Use</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="scen-behavior"
+                  className="text-[10px] font-semibold text-[#abb4a4]"
+                >
+                  Expected Behavior / Output Description
+                </Label>
+                <Textarea
+                  id="scen-behavior"
+                  value={expectedBehavior}
+                  onChange={(e) => setExpectedBehavior(e.target.value)}
+                  placeholder="e.g. Call check_order_status with order_id='ORD-9931' and report that it is shipped."
+                  className="min-h-[70px] rounded-none border-white/10 bg-[#0d0d0d] font-mono text-xs text-[#f5efe6] placeholder:text-[#4a453d] focus-visible:ring-[#48d8a4]/50"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="scen-exp-tools"
+                    className="text-[10px] font-semibold text-[#abb4a4]"
+                  >
+                    Expected Tool Calls (comma-separated)
+                  </Label>
+                  <Input
+                    id="scen-exp-tools"
+                    value={expectedToolCalls}
+                    onChange={(e) => setExpectedToolCalls(e.target.value)}
+                    placeholder="e.g. check_order_status, lookup_customer"
+                    className="rounded-none border-white/10 bg-[#0d0d0d] font-mono text-xs text-[#f5efe6] placeholder:text-[#4a453d] focus-visible:ring-[#48d8a4]/50"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="scen-forb-tools"
+                    className="text-[10px] font-semibold text-[#abb4a4]"
+                  >
+                    Forbidden Tool Calls (comma-separated)
+                  </Label>
+                  <Input
+                    id="scen-forb-tools"
+                    value={forbiddenToolCalls}
+                    onChange={(e) => setForbiddenToolCalls(e.target.value)}
+                    placeholder="e.g. request_refund"
+                    className="rounded-none border-white/10 bg-[#0d0d0d] font-mono text-xs text-[#f5efe6] placeholder:text-[#4a453d] focus-visible:ring-[#48d8a4]/50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex-row justify-end gap-3 px-6 py-4 sm:space-x-0">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsAddScenarioOpen(false)}
+                className="rounded-none border border-[#ff3b30] bg-[#ff3b30]/10 font-mono text-xs text-[#ff8b8b] hover:bg-[#ff3b30]/20 hover:text-[#ff8b8b]"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!input.trim() || !expectedBehavior.trim()}
+                className="rounded-none bg-[#48d8a4] font-mono text-sm font-bold text-[#10110f] hover:bg-[#62e2b7] disabled:bg-white/10 disabled:text-[#4a453d]"
+              >
+                Add Scenario
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

@@ -231,7 +231,9 @@ export function MissionsWorkspace({
             ? (tc.forbiddenToolCalls as string[])
             : [],
           failureType:
-            typeof tc.failureType === "string"
+            typeof tc.failureType === "string" &&
+            tc.failureType.trim() !== "" &&
+            tc.failureType.toLowerCase() !== "none"
               ? tc.failureType
               : "workflow-control",
           hidden: typeof tc.hidden === "boolean" ? tc.hidden : false,
@@ -326,6 +328,14 @@ export function MissionsWorkspace({
     } finally {
       setIsGeneratingCustomScenario(false);
     }
+  };
+
+  const handleAddCustomScenario = (newTestCase: AgentTestCase) => {
+    setMission((prev) => ({
+      ...prev,
+      testCases: [...prev.testCases, newTestCase],
+    }));
+    toast.success("Custom scenario added to this mission!");
   };
 
   const handleDeleteCustomScenario = (id: string, e: React.MouseEvent) => {
@@ -620,6 +630,7 @@ export function MissionsWorkspace({
               onTabChange={setActiveTab}
               onRun={runEvaluation}
               isLabMode={isLabMode}
+              onAddCustomScenario={handleAddCustomScenario}
             />
           </div>
 
