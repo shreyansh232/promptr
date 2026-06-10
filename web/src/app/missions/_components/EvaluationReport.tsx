@@ -58,7 +58,8 @@ export function EvaluationReport({
     let statusIdx = 0;
     const logInterval = setInterval(() => {
       if (statusIdx < statuses.length) {
-        setLogMessages((prev) => [...prev, statuses[statusIdx]]);
+        const status = statuses[statusIdx] ?? "";
+        setLogMessages((prev) => [...prev, status]);
         statusIdx++;
       }
     }, 1200);
