@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_db
@@ -68,9 +68,42 @@ async def save_completed_mission(
         )
         existing = result.scalars().first()
 
+        from models.user import UserProfile
+
+        # Check if user profile exists, create if not
+        profile_result = await db.execute(
+            select(UserProfile).where(UserProfile.user_id == current_user.id)
+        )
+        profile = profile_result.scalars().first()
+        if not profile:
+            profile = UserProfile(
+                user_id=current_user.id,
+                level="beginner",
+                sub_level=1,
+                problems_solved=0,
+                streak=0,
+                expertise="general",
+                application="",
+                goals=[],
+                builder_role="",
+                frameworks=[],
+                workflow_focus="",
+                risk_focus="",
+            )
+            db.add(profile)
+            await db.flush()
+
+        user_level = request_data.userLevel
+        sub_level = request_data.subLevel
+
+        if not user_level:
+            user_level = profile.level
+        if sub_level == 0:
+            sub_level = profile.sub_level
+
         if existing:
-            existing.user_level = request_data.userLevel
-            existing.sub_level = request_data.subLevel
+            existing.user_level = user_level
+            existing.sub_level = sub_level
             existing.mission_title = request_data.missionTitle
             existing.mission_json = request_data.missionJson
             existing.user_instructions = request_data.userInstructions
@@ -81,8 +114,8 @@ async def save_completed_mission(
             new_mission = CompletedMission(
                 user_id=current_user.id,
                 mission_id=request_data.missionId,
-                user_level=request_data.userLevel,
-                sub_level=request_data.subLevel,
+                user_level=user_level,
+                sub_level=sub_level,
                 mission_title=request_data.missionTitle,
                 mission_json=request_data.missionJson,
                 user_instructions=request_data.userInstructions,
@@ -92,9 +125,35 @@ async def save_completed_mission(
                 results=[],
             )
             db.add(new_mission)
+            profile.problems_solved += 1
 
         await db.commit()
-        return {"success": True}
+
+        # Get count of completed missions
+        missions_count_res = await db.execute(
+            select(func.count(CompletedMission.id)).where(
+                CompletedMission.user_id == current_user.id
+            )
+        )
+        missions_completed = missions_count_res.scalar() or 0
+
+        # Calculate average reliability score
+        avg_score_res = await db.execute(
+            select(func.avg(CompletedMission.reliability_score)).where(
+                CompletedMission.user_id == current_user.id
+            )
+        )
+        avg_score = avg_score_res.scalar()
+        reliability_score = round(float(avg_score)) if avg_score is not None else 0
+
+        return {
+            "success": True,
+            "reliabilityScore": reliability_score,
+            "level": profile.level,
+            "subLevel": profile.sub_level,
+            "missionsCompleted": missions_completed,
+            "streak": profile.streak,
+        }
     except Exception as exc:
         await db.rollback()
         logger.error(f"Error saving completed mission: {exc}")

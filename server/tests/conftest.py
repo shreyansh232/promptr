@@ -70,12 +70,20 @@ def _make_stateful_profile_session() -> AsyncMock:
     call_count = {"n": 0}
 
     async def _execute(_query):
+        sql = str(_query).lower()
+        if "count(" in sql:
+            return _scalar_result(1)
+        elif "avg(" in sql:
+            return _scalar_result(None)
+        elif "user_profiles" in sql:
+            stored = next(iter(_store.values()), None) if _store else None
+            return _scalar_result(stored)
+        elif "completed_missions" in sql:
+            return _scalar_result(None)
+
         call_count["n"] += 1
-        # Every even-numbered call is the avg-score query → return None
         if call_count["n"] % 2 == 0:
             return _scalar_result(None)
-        # Every odd call is a UserProfile lookup
-        # Return whichever profile is in the store (None if not yet added)
         stored = next(iter(_store.values()), None) if _store else None
         return _scalar_result(stored)
 

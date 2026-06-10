@@ -94,9 +94,9 @@ class AgentEvaluationResponse(BaseModel):
 
 
 class CompletedAgentMissionRequest(BaseModel):
-    userId: str
-    userLevel: str
-    subLevel: int
+    userId: str = ""
+    userLevel: str = ""
+    subLevel: int = 0
     missionId: str
     missionTitle: str
     missionJson: str

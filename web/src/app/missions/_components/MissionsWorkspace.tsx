@@ -410,6 +410,9 @@ export function MissionsWorkspace({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            userId: "",
+            userLevel: profile?.level ?? "beginner",
+            subLevel: profile?.subLevel ?? 1,
             missionId: mission.id,
             missionTitle: mission.title,
             missionJson: JSON.stringify(mission),

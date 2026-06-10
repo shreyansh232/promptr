@@ -225,7 +225,7 @@ def _build_agent_evaluation_prompt(request: AgentEvaluationRequest) -> str:
                 "expectedToolCalls": ["lookup_customer"],
                 "observedToolCalls": ["lookup_customer"],
             }
-            for tc_id in tc_ids[:2]
+            for tc_id in tc_ids
         ],
     }
 

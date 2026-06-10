@@ -112,3 +112,42 @@ def test_agent_mission_generation_no_cache(client, mock_llm):
     assert second.status_code == 200
     assert second.json()["mission"]["title"] == "Customer Support Bot"
     assert mock_llm.chat.completions.create.call_count == 2
+
+
+def test_save_completed_mission_full(client):
+    payload = {
+        "userId": "test-user",
+        "userLevel": "intermediate",
+        "subLevel": 2,
+        "missionId": "m1",
+        "missionTitle": "Mission 1",
+        "missionJson": "{}",
+        "userInstructions": "instructions",
+        "reliabilityScore": 95,
+        "passed": True,
+    }
+    response = client.post("/api/agent-missions/completed", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "reliabilityScore" in data
+    assert "level" in data
+    assert "subLevel" in data
+
+
+def test_save_completed_mission_missing_fields(client):
+    payload = {
+        "missionId": "m2",
+        "missionTitle": "Mission 2",
+        "missionJson": "{}",
+        "userInstructions": "instructions",
+        "reliabilityScore": 90,
+        "passed": True,
+    }
+    response = client.post("/api/agent-missions/completed", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert "reliabilityScore" in data
+    assert "level" in data
+    assert "subLevel" in data
