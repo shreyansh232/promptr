@@ -1,20 +1,26 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import jwt
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import get_settings
 from core.db import get_db
 from core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
+    ALGORITHM,
+    blacklist_token,
     create_access_token,
     get_password_hash,
     verify_password,
 )
 from models.user import User
 from schemas.auth import Token, UserCreate, UserLogin
+
+settings = get_settings()
 
 router = APIRouter()
 DbDep = Annotated[AsyncSession, Depends(get_db)]
@@ -48,6 +54,31 @@ async def register(user_data: UserCreate, db: DbDep):
         "token_type": "bearer",
         "is_new": True,
     }
+
+
+@router.post("/logout")
+async def logout(authorization: str | None = Header(None)):
+    """Blacklist the current JWT token."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid authorization header",
+        )
+    token = authorization.removeprefix("Bearer ")
+    try:
+        payload = jwt.decode(
+            token,
+            settings.auth_secret,
+            algorithms=[ALGORITHM],
+            options={"verify_exp": False},
+        )
+        jti: str | None = payload.get("jti")
+        exp: int = payload.get("exp", 0)
+        if jti:
+            await blacklist_token(jti, exp)
+    except jwt.PyJWTError:
+        pass  # Already invalid — nothing to blacklist
+    return {"success": True}
 
 
 @router.post("/login", response_model=Token)

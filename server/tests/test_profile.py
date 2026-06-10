@@ -51,23 +51,25 @@ def test_update_profile(client, mock_auth_user):
 
 
 def test_rate_limit_middleware_allowed(client):
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import patch
 
-    with patch(
-        "core.middleware.redis_client.eval", new_callable=AsyncMock
-    ) as mock_eval:
-        mock_eval.return_value = 1
+    with patch("core.middleware.limiter._check_request_limit") as mock_check:
+        mock_check.return_value = None
         response = client.get("/")
         assert response.status_code == 200
 
 
 def test_rate_limit_middleware_denied(client):
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import patch
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.wrappers import Limit
+    from limits.util import parse_many
 
-    with patch(
-        "core.middleware.redis_client.eval", new_callable=AsyncMock
-    ) as mock_eval:
-        mock_eval.return_value = 0
+    item = list(parse_many("60/minute"))[0]
+    limit = Limit(item, lambda: "key", None, False, None, None, None, 1, False)
+
+    with patch("core.middleware.limiter._check_request_limit") as mock_check:
+        mock_check.side_effect = RateLimitExceeded(limit)
         response = client.get("/")
         assert response.status_code == 429
         assert response.json() == {
@@ -76,11 +78,9 @@ def test_rate_limit_middleware_denied(client):
 
 
 def test_rate_limit_middleware_fail_open(client):
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import patch
 
-    with patch(
-        "core.middleware.redis_client.eval", new_callable=AsyncMock
-    ) as mock_eval:
-        mock_eval.side_effect = Exception("Redis connection refused")
+    with patch("core.middleware.limiter._check_request_limit") as mock_check:
+        mock_check.side_effect = Exception("Storage connection error")
         response = client.get("/")
         assert response.status_code == 200

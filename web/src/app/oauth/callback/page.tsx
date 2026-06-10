@@ -1,32 +1,37 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CircleNotch } from "@phosphor-icons/react";
+import { exchangeOAuthCode } from "@/actions/auth";
 
 function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const isNew = searchParams.get("is_new") === "true";
+  const code = searchParams.get("code");
+
+  const handleCodeExchange = useCallback(
+    async (code: string) => {
+      const result = await exchangeOAuthCode(code);
+      if (result?.redirectTo) {
+        router.push(result.redirectTo);
+        router.refresh();
+      } else {
+        router.push("/sign-in");
+      }
+    },
+    [router],
+  );
 
   useEffect(() => {
-    if (token) {
-      // Set the access token cookie using standard document.cookie on client-side
-      const secure = process.env.NODE_ENV === "production" ? "; secure" : "";
-      document.cookie = `access_token=${token}; max-age=${60 * 60 * 24 * 7}; path=/${secure}`;
-
-      // Redirect to onboarding if new user, else home
-      if (isNew) {
-        router.push("/onboarding");
-      } else {
-        router.push("/");
-      }
-      router.refresh();
+    if (code) {
+      handleCodeExchange(code).catch(() => {
+        router.push("/sign-in");
+      });
     } else {
       router.push("/sign-in");
     }
-  }, [token, isNew, router]);
+  }, [code, router, handleCodeExchange]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#10110f] text-[#f7f2e8]">

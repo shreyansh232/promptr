@@ -19,7 +19,25 @@ export const login = async (_provider: string) => {
 };
 
 export const logout = async () => {
-  cookies().delete("access_token");
+  const cookieStore = cookies();
+  const token = cookieStore.get("access_token")?.value;
+
+  // Blacklist the token on the backend before deleting it
+  if (token) {
+    try {
+      await fetch(`${env.BACKEND_URL}/api/auth/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch {
+      // Fail-open: backend unreachable, still delete local cookie
+    }
+  }
+
+  cookieStore.delete("access_token");
   revalidatePath("/");
 };
 
@@ -79,6 +97,40 @@ export const loginWithCreds = async (
       throw error;
     }
     console.error("Login error:", error);
+    return { error: "Something went wrong during sign in" };
+  }
+};
+
+interface ExchangeCodeResponse {
+  access_token: string;
+  is_new?: boolean;
+}
+
+export const exchangeOAuthCode = async (
+  code: string,
+): Promise<{ error?: string; redirectTo?: string }> => {
+  try {
+    const res = await fetch(`${env.BACKEND_URL}/api/auth/exchange-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+
+    if (!res.ok) {
+      return { error: "Failed to exchange OAuth code" };
+    }
+
+    const data = (await res.json()) as ExchangeCodeResponse;
+    cookies().set("access_token", data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+
+    return { redirectTo: data.is_new ? "/onboarding" : "/" };
+  } catch (error) {
+    console.error("OAuth code exchange error:", error);
     return { error: "Something went wrong during sign in" };
   }
 };

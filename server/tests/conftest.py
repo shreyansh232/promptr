@@ -141,6 +141,9 @@ def mock_llm():
 @pytest.fixture(autouse=True)
 def mock_redis():
     """Prevent any real Redis calls in every test (fail-open = allow)."""
-    with patch("core.middleware.redis_client") as mock:
+    with patch("services.redis.redis_client") as mock:
         mock.eval = AsyncMock(return_value=1)
+        mock.get = AsyncMock(return_value=None)
+        mock.set = AsyncMock(return_value=None)
+        mock.setex = AsyncMock(return_value=None)
         yield mock
