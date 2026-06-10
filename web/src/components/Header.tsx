@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
-import LogOut from "@/components/LogOut";
+import LogOut from "@/components/shared/LogOut";
 import Image from "next/image";
 
 export async function Header() {

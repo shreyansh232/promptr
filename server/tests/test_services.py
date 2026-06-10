@@ -19,7 +19,7 @@ async def test_analyze_prompt_response_success(mock_llm):
     mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
-    ].message.content = '{"label": "STRONG", "score": 90, "feedback": "G", "motivation": "M", "tags": [], "response": "R", "learning_points": [], "improved_prompts": []}'
+    ].message.content = '{"label": "STRONG", "score": 90, "feedback": "G", "motivation": "M", "tags": [], "content": "R", "learning_points": [], "improved_prompts": []}'
 
     request = ChatRequest(
         user_type=UserType(level="beginner", expertise="E", goals=[]),

@@ -9,7 +9,7 @@ def test_analyze_prompt(client, mock_llm):
     mock_response = mock_llm.chat.completions.create.return_value
     mock_response.choices[
         0
-    ].message.content = '{"label": "STRONG", "score": 90, "feedback": "Great!", "motivation": "Keep going", "tags": ["test"], "response": "OK", "learning_points": [], "improved_prompts": []}'
+    ].message.content = '{"label": "STRONG", "score": 90, "feedback": "Great!", "motivation": "Keep going", "tags": ["test"], "content": "OK", "learning_points": [], "improved_prompts": []}'
 
     request_data = {
         "user_type": {

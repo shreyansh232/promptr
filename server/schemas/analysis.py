@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from schemas.user import UserType
 
@@ -81,9 +83,59 @@ class TestCaseResult(BaseModel):
     testCase: str = ""
 
 
+class TestCaseEvaluationResult(BaseModel):
+    """Raw LLM response shape for single test case evaluation."""
+
+    score: int
+    passed: bool
+    reasoning: str
+    missing_elements: list[str] = []
+    strengths: list[str] = []
+
+
 class TestCaseEvaluationResponse(BaseModel):
     overallScore: int
     passed: bool
     testCasesPassed: int
     testCasesTotal: int
     results: list[TestCaseResult]
+
+
+class ScenarioTool(BaseModel):
+    name: str
+    description: str
+    inputSchema: dict[str, Any] = Field(default_factory=dict)
+    riskLevel: str = "low"
+    sideEffects: str = ""
+    expectedUsage: str = ""
+
+
+class ScenarioExample(BaseModel):
+    input: str
+    expectedBehavior: str
+    explanation: str
+
+
+class ScenarioTestCase(BaseModel):
+    id: str
+    input: str
+    simulatedContext: str = ""
+    expectedBehavior: str
+    expectedToolCalls: list[str] = Field(default_factory=list)
+    forbiddenToolCalls: list[str] = Field(default_factory=list)
+    failureType: str = ""
+    hidden: bool = False
+
+
+class CustomScenarioResponse(BaseModel):
+    title: str
+    difficulty: str
+    description: str
+    goal: str = ""
+    availableTools: list[ScenarioTool] = Field(default_factory=list)
+    workflowRules: list[str] = Field(default_factory=list)
+    visibleExamples: list[ScenarioExample] = Field(default_factory=list)
+    testCases: list[ScenarioTestCase] = Field(default_factory=list)
+    proTips: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    hint: str = ""

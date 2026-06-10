@@ -1,5 +1,5 @@
 import Link from "next/link";
-import MaxWidthWrapper from "./MaxWidthWrapper";
+import MaxWidthWrapper from "@/components/shared/MaxWidthWrapper";
 
 const Footer = () => {
   return (

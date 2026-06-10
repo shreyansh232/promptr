@@ -1,5 +1,8 @@
+import json
 import uuid
 from textwrap import dedent
+
+from services.llm_utils import EVALUATION_RESPONSE_SHAPE
 
 
 def build_evaluation_prompt(
@@ -55,13 +58,7 @@ def build_evaluation_prompt(
         - 0-49: The prompt completely fails to address the core problem requirements.
 
         Return valid JSON only. No markdown fences. Use this exact shape:
-        {{
-            "score": 75,
-            "passed": true,
-            "reasoning": "Exactly one extremely concise, direct sentence telling the user exactly how to write or adjust their prompt to pass (e.g. 'Instruct the model to perform a web search first and then output exactly three bullet points'). Avoid any vague or academic explanations.",
-            "missing_elements": ["List a short, direct missing element (e.g. 'Add search instruction') - max 3-4 items total"],
-            "strengths": ["List a short strength (e.g. 'Good role definition')"]
-        }}
+        {json.dumps(EVALUATION_RESPONSE_SHAPE, indent=2)}
 
         Additional instruction:
         - Keep the 'missing_elements' array list extremely concise and focused. Do NOT include more than 3-4 items.

@@ -13,6 +13,7 @@ from models.user import User, CustomScenario
 from schemas.analysis import (
     ChatRequest,
     CustomScenarioRequest,
+    CustomScenarioResponse,
     PracticeProblemsResponse,
     PromptAnalysisResponse,
     TestCaseEvaluationRequest,
@@ -99,7 +100,7 @@ async def evaluate_prompt(
 @router.post("/generate-custom-scenario")
 async def generate_custom_scenario_endpoint(
     request: CustomScenarioRequest,
-) -> dict:
+) -> CustomScenarioResponse:
     try:
         return await generate_custom_scenario(request.agentDescription, request.tools)
     except Exception as exc:
@@ -136,17 +137,17 @@ async def create_custom_scenario(
         )
         db_scenario = CustomScenario(
             user_id=current_user.id,
-            title=problem.get("title", "Custom Scenario"),
-            difficulty=problem.get("difficulty", "Intermediate"),
-            description=problem.get("description", ""),
-            goal=problem.get("goal", ""),
+            title=problem.title,
+            difficulty=problem.difficulty,
+            description=problem.description,
+            goal=problem.goal,
             agent_description=request.agentDescription,
-            tools=problem.get("availableTools", []),
-            examples=problem.get("visibleExamples", []),
-            test_cases=problem.get("testCases", []),
-            pro_tips=problem.get("proTips", []),
-            tags=problem.get("tags", []),
-            hint=problem.get("hint", ""),
+            tools=[t.model_dump() for t in problem.availableTools],
+            examples=[e.model_dump() for e in problem.visibleExamples],
+            test_cases=[tc.model_dump() for tc in problem.testCases],
+            pro_tips=problem.proTips,
+            tags=problem.tags,
+            hint=problem.hint or "",
         )
         db.add(db_scenario)
         await db.commit()

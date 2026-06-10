@@ -11,12 +11,16 @@ from prompts.problems import build_problems_prompt
 from prompts.scenario import build_scenario_prompt
 from schemas.analysis import (
     ChatRequest,
+    CustomScenarioResponse,
     PracticeProblemsResponse,
     PromptAnalysisResponse,
+    TestCaseEvaluationResult,
 )
 from schemas.user import UserType
 from services.llm_utils import (
+    CUSTOM_SCENARIO_FALLBACK,
     PROBLEMS_FALLBACK,
+    SCENARIO_INJECTION_FALLBACK,
     _analysis_response_fallback,
     _parse_llm_json,
 )
@@ -97,7 +101,7 @@ async def analyze_prompt_response(request: ChatRequest) -> PromptAnalysisRespons
                 "feedback": analysis["feedback"],
                 "motivation": analysis.get("motivation", "Keep iterating."),
                 "tags": analysis["tags"],
-                "content": analysis["response"],
+                "content": analysis["content"],
                 "learning_points": analysis.get("learning_points", []),
                 "improved_prompts": analysis["improved_prompts"],
             }
@@ -116,35 +120,20 @@ async def generate_practice_problems(user_info: UserType) -> PracticeProblemsRes
         return PROBLEMS_FALLBACK
 
 
-async def generate_custom_scenario(agent_desc: str, tools_desc: str) -> dict:
+async def generate_custom_scenario(
+    agent_desc: str, tools_desc: str
+) -> CustomScenarioResponse:
+    is_injection, reason = check_for_direct_injection_patterns(agent_desc)
+    if not is_injection and tools_desc:
+        is_injection, reason = check_for_direct_injection_patterns(tools_desc)
+    if is_injection:
+        return SCENARIO_INJECTION_FALLBACK
+
     raw_response = await _send_prompt(build_scenario_prompt(agent_desc, tools_desc))
     try:
-        return _parse_llm_json(raw_response)
+        return CustomScenarioResponse.model_validate(_parse_llm_json(raw_response))
     except (json.JSONDecodeError, KeyError, ValueError):
-        return {
-            "title": "Custom Agent Scenario",
-            "difficulty": "Intermediate",
-            "description": f"Test instructions for an agent described as: {agent_desc}",
-            "goal": "Create prompt instructions that satisfy the custom agent behavior.",
-            "availableTools": [],
-            "workflowRules": ["Follow all operational constraints."],
-            "visibleExamples": [],
-            "testCases": [
-                {
-                    "id": "basic-check",
-                    "input": "Test input 1",
-                    "simulatedContext": "Verify basic request handling",
-                    "expectedBehavior": "Correct agent output matching description",
-                    "expectedToolCalls": [],
-                    "forbiddenToolCalls": [],
-                    "failureType": "workflow-control",
-                    "hidden": False,
-                }
-            ],
-            "proTips": ["Define a clear system role and persona."],
-            "tags": ["custom-agent"],
-            "hint": "Make sure to explicitly write instructions for the specific role described.",
-        }
+        return CUSTOM_SCENARIO_FALLBACK
 
 
 async def evaluate_prompt_against_test_case(
@@ -158,13 +147,13 @@ async def evaluate_prompt_against_test_case(
 ) -> dict:
     is_injection, reason = check_for_direct_injection_patterns(user_prompt)
     if is_injection:
-        return {
-            "score": 0,
-            "passed": False,
-            "reasoning": f"Security warning: ({reason})",
-            "missing_elements": ["Security: valid prompt instructions required"],
-            "strengths": [],
-        }
+        return TestCaseEvaluationResult(
+            score=0,
+            passed=False,
+            reasoning=f"Security warning: ({reason})",
+            missing_elements=["Security: valid prompt instructions required"],
+            strengths=[],
+        ).model_dump()
 
     raw_response = await _send_prompt(
         build_evaluation_prompt(
@@ -178,22 +167,16 @@ async def evaluate_prompt_against_test_case(
         )
     )
     try:
-        result = _parse_llm_json(raw_response)
-        return {
-            "score": result.get("score", 50),
-            "passed": result.get("passed", False),
-            "reasoning": result.get("reasoning", ""),
-            "missing_elements": result.get("missing_elements", []),
-            "strengths": result.get("strengths", []),
-        }
+        result = TestCaseEvaluationResult.model_validate(_parse_llm_json(raw_response))
+        return result.model_dump()
     except (json.JSONDecodeError, KeyError, ValueError):
-        return {
-            "score": 50,
-            "passed": False,
-            "reasoning": "Could not evaluate. Please try again.",
-            "missing_elements": [],
-            "strengths": [],
-        }
+        return TestCaseEvaluationResult(
+            score=50,
+            passed=False,
+            reasoning="Could not evaluate. Please try again.",
+            missing_elements=[],
+            strengths=[],
+        ).model_dump()
 
 
 async def evaluate_prompt_full(

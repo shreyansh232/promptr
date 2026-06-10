@@ -2,13 +2,30 @@ import json
 import re
 
 from schemas.analysis import (
+    CustomScenarioResponse,
     PracticeExample,
     PracticeProblem,
     PracticeProblemsResponse,
     PracticeTestCase,
     PromptAnalysisResponse,
     PromptSuggestion,
+    ScenarioTestCase,
 )
+
+
+EVALUATION_RESPONSE_SHAPE = {
+    "score": 75,
+    "passed": True,
+    "reasoning": (
+        "Exactly one extremely concise, direct sentence telling the user exactly how to write or adjust "
+        "their prompt to pass (e.g. 'Instruct the model to perform a web search first and then output "
+        "exactly three bullet points'). Avoid any vague or academic explanations."
+    ),
+    "missing_elements": [
+        "List a short, direct missing element (e.g. 'Add search instruction') - max 3-4 items total"
+    ],
+    "strengths": ["List a short strength (e.g. 'Good role definition')"],
+}
 
 ANALYSIS_RESPONSE_SHAPE = {
     "label": "MODERATE",
@@ -16,7 +33,7 @@ ANALYSIS_RESPONSE_SHAPE = {
     "feedback": "Explain in plain language what is working and what is missing.",
     "motivation": "Encourage the learner with one honest next step.",
     "tags": ["task-clarity", "context", "constraints", "output-format"],
-    "response": "Describe the kind of answer this prompt would likely produce.",
+    "content": "Describe the kind of answer this prompt would likely produce.",
     "learning_points": [
         "One short lesson",
         "A second short lesson",
@@ -164,6 +181,60 @@ def _format_goals(goals: list[str]) -> str:
     if cleaned_goals:
         return ", ".join(cleaned_goals)
     return "Build stronger prompts"
+
+
+CUSTOM_SCENARIO_FALLBACK = CustomScenarioResponse(
+    title="Custom Agent Scenario",
+    difficulty="Intermediate",
+    description="Test instructions for a custom agent. Provide valid agent and tool descriptions to get a tailored scenario.",
+    goal="Create prompt instructions that satisfy the custom agent behavior.",
+    availableTools=[],
+    workflowRules=["Follow all operational constraints."],
+    visibleExamples=[],
+    testCases=[
+        ScenarioTestCase(
+            id="basic-check",
+            input="Test input 1",
+            simulatedContext="Verify basic request handling",
+            expectedBehavior="Correct agent output matching description",
+            expectedToolCalls=[],
+            forbiddenToolCalls=[],
+            failureType="workflow-control",
+            hidden=False,
+        )
+    ],
+    proTips=["Define a clear system role and persona."],
+    tags=["custom-agent"],
+    hint="Make sure to explicitly write instructions for the specific role described.",
+)
+
+
+SCENARIO_INJECTION_FALLBACK = CustomScenarioResponse(
+    title="Security Violation Detected",
+    difficulty="Expert",
+    description=(
+        "Prompt injection or system instruction override attempt detected. "
+        "Please provide valid agent and tool descriptions."
+    ),
+    goal="Security violation - provide valid input.",
+    availableTools=[],
+    workflowRules=[],
+    visibleExamples=[],
+    testCases=[
+        ScenarioTestCase(
+            id="security-check",
+            input="Test input",
+            simulatedContext="Verify basic functionality",
+            expectedBehavior="Navigate security requirements",
+            expectedToolCalls=[],
+            forbiddenToolCalls=[],
+            failureType="guardrails",
+        )
+    ],
+    proTips=[],
+    tags=["security-violation"],
+    hint="",
+)
 
 
 def _analysis_response_fallback(prompt: str) -> PromptAnalysisResponse:
