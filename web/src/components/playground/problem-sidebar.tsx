@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CheckCircle, CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarHeader,
@@ -31,16 +32,20 @@ export function ProblemSidebar({
   setIsSidebarOpen,
 }: ProblemSidebarProps) {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
 
   return (
     <SidebarProvider>
       <motion.div
         initial={false}
         animate={{
-          width: isSidebarOpen ? "240px" : "60px",
+          width: isSidebarOpen ? "240px" : (isMobile ? "0px" : "60px"),
           transition: { duration: 0.3 },
         }}
-        className="overflow-hidden border-r border-white/10 bg-black"
+        className={cn(
+          "overflow-hidden border-white/10 bg-black",
+          isMobile ? "absolute left-0 top-0 h-full z-50 shadow-2xl border-r" : "relative border-r"
+        )}
       >
         <Sidebar
           className={`h-full bg-black ${isSidebarOpen ? "w-[400px]" : "w-[80px]"}`}

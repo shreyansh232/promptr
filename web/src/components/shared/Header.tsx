@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
 import { PromptrLogo } from "./PromptrLogo";
+import { MobileMenu } from "./MobileMenu";
 
 import { navLinks } from "@/config/navigation";
 
@@ -48,16 +49,21 @@ export async function Header() {
               aria-hidden="true"
             />
           </a>
-          {!session?.user ? (
-            <Button
-              asChild
-              className="h-10 rounded-none bg-[var(--landing-signal)] px-4 font-mono text-xs uppercase tracking-[0.1em] text-[var(--landing-ink)] shadow-none hover:bg-[var(--landing-signal-strong)]"
-            >
-              <Link href="/sign-in">Sign in</Link>
-            </Button>
-          ) : (
-            <UserMenu name={session?.user?.name} image={session?.user?.image} />
-          )}
+          
+          <div className="hidden lg:block">
+            {!session?.user ? (
+              <Button
+                asChild
+                className="h-10 rounded-none bg-[var(--landing-signal)] px-4 font-mono text-xs uppercase tracking-[0.1em] text-[var(--landing-ink)] shadow-none hover:bg-[var(--landing-signal-strong)]"
+              >
+                <Link href="/sign-in">Sign in</Link>
+              </Button>
+            ) : (
+              <UserMenu name={session?.user?.name} image={session?.user?.image} />
+            )}
+          </div>
+
+          <MobileMenu session={session} />
         </div>
       </div>
     </header>

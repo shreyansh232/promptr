@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/resizable";
 import { notFound } from "next/navigation";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ProblemPage() {
   const params = useParams<{ id: string }>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const problem = problems[Number(params.id)];
 
@@ -30,7 +32,18 @@ export default function ProblemPage() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-      <ResizablePanelGroup direction="horizontal" className="flex">
+      {isMobile && !isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="fixed bottom-6 left-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#ff8a3d] text-black shadow-[0_4px_20px_rgba(255,138,61,0.4)] hover:bg-[#ff9b5b] transition-all hover:scale-105 active:scale-95"
+          title="View Problems"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
+      <ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"} className="flex">
         <ResizablePanel defaultSize={50} className="overflow-auto">
           <ProblemDescription problem={problem} />
         </ResizablePanel>

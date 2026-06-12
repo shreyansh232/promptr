@@ -112,6 +112,8 @@ export function MissionsWorkspace({
   const [evaluation, setEvaluation] = useState<AgentEvaluation | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [workspaceTab, setWorkspaceTab] = useState<"editor" | "report">("editor");
+  const [isLargeScreen, setIsLargeScreen] = useState(true);
 
   const queryClient = useQueryClient();
 
@@ -141,11 +143,16 @@ export function MissionsWorkspace({
 
   const completedCount = profile?.missionsCompleted ?? 0;
 
-  // Set default sidebar open on desktop
+  // Set default sidebar open on desktop, and track screen size
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-      setIsSidebarOpen(true);
-    }
+    const handleResize = () => {
+      const isLg = window.innerWidth >= 1024;
+      setIsLargeScreen(isLg);
+      setIsSidebarOpen(isLg);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Map CustomScenario from DB into AgentMission structure for the workspace
@@ -388,6 +395,9 @@ export function MissionsWorkspace({
     }
 
     setIsEvaluating(true);
+    if (!isLargeScreen) {
+      setWorkspaceTab("report");
+    }
     try {
       const response = await fetch("/api/agent-instructions/evaluate", {
         method: "POST",
@@ -460,11 +470,12 @@ export function MissionsWorkspace({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#10110f] text-[#f7f2e8]">
-      {/* Sidebar (Full Height) */}
       <aside
-        className={`z-40 flex h-full flex-col border-r border-white/10 bg-[#080908] transition-all duration-300 ${
-          isSidebarOpen ? "w-[260px]" : "w-[60px]"
-        }`}
+        className={`z-40 flex h-full flex-col border-white/10 bg-[#080908] transition-all duration-300 ${
+          !isLargeScreen
+            ? "absolute left-0 top-14 h-[calc(100%-3.5rem)] z-50 shadow-2xl border-r"
+            : "relative border-r"
+        } ${isSidebarOpen ? "w-[260px]" : (isLargeScreen ? "w-[60px]" : "w-0 overflow-hidden")}`}
       >
         {/* Sidebar Header with Toggle Chevron */}
         <div
@@ -583,9 +594,44 @@ export function MissionsWorkspace({
               className="flex items-center gap-1.5 font-mono text-xs text-[#abb4a4] transition-colors hover:text-[#f7f2e8]"
             >
               <CaretLeft size={14} />
-              Back to Home
+              <span className="hidden sm:inline">Back to Home</span>
+              <span className="sm:hidden">Home</span>
             </Link>
+            {!isLargeScreen && !isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-sm bg-transparent text-[#abb4a4] hover:text-[#f7f2e8] focus-visible:outline-none"
+                title="Open list"
+              >
+                <CaretRight size={16} />
+              </button>
+            )}
           </div>
+
+          {!isLargeScreen && (
+            <div className="flex rounded-none border border-white/10 bg-[#0b0c0a] p-0.5">
+              <button
+                onClick={() => setWorkspaceTab("editor")}
+                className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                  workspaceTab === "editor"
+                    ? "bg-[#48d8a4] text-[#10110f] font-bold"
+                    : "text-[#abb4a4] hover:text-[#f7f2e8]"
+                }`}
+              >
+                Editor
+              </button>
+              <button
+                onClick={() => setWorkspaceTab("report")}
+                className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+                  workspaceTab === "report"
+                    ? "bg-[#48d8a4] text-[#10110f] font-bold"
+                    : "text-[#abb4a4] hover:text-[#f7f2e8]"
+                }`}
+              >
+                Report {evaluation && <span className="ml-1 text-[9px] text-[#48d8a4]">•</span>}
+              </button>
+            </div>
+          )}
 
           {/* Right side profile / sign in */}
           <div className="flex items-center gap-4">
@@ -622,30 +668,62 @@ export function MissionsWorkspace({
 
         {/* Workspace Layout */}
         <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
-          {/* Middle Editor */}
-          <div className="relative h-full min-h-0 min-w-0 flex-1">
-            <MissionEditor
-              mission={mission}
-              instructions={instructions}
-              activeTab={activeTab}
-              isEvaluating={isEvaluating}
-              onInstructionsChange={setInstructions}
-              onTabChange={setActiveTab}
-              onRun={runEvaluation}
-              isLabMode={isLabMode}
-              onAddCustomScenario={handleAddCustomScenario}
-            />
-          </div>
+          {isLargeScreen ? (
+            <>
+              {/* Middle Editor */}
+              <div className="relative h-full min-h-0 min-w-0 flex-1">
+                <MissionEditor
+                  mission={mission}
+                  instructions={instructions}
+                  activeTab={activeTab}
+                  isEvaluating={isEvaluating}
+                  onInstructionsChange={setInstructions}
+                  onTabChange={setActiveTab}
+                  onRun={runEvaluation}
+                  isLabMode={isLabMode}
+                  onAddCustomScenario={handleAddCustomScenario}
+                />
+              </div>
 
-          {/* Right Report */}
-          <div className="h-full min-h-0 w-[360px] shrink-0 border-l border-white/10">
-            <EvaluationReport
-              mission={mission}
-              evaluation={evaluation}
-              isEvaluating={isEvaluating}
-              isAuthenticated={isAuthenticated}
-            />
-          </div>
+              {/* Right Report */}
+              <div className="h-full min-h-0 w-[360px] shrink-0 border-l border-white/10">
+                <EvaluationReport
+                  mission={mission}
+                  evaluation={evaluation}
+                  isEvaluating={isEvaluating}
+                  isAuthenticated={isAuthenticated}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {workspaceTab === "editor" && (
+                <div className="relative h-full min-h-0 min-w-0 flex-1">
+                  <MissionEditor
+                    mission={mission}
+                    instructions={instructions}
+                    activeTab={activeTab}
+                    isEvaluating={isEvaluating}
+                    onInstructionsChange={setInstructions}
+                    onTabChange={setActiveTab}
+                    onRun={runEvaluation}
+                    isLabMode={isLabMode}
+                    onAddCustomScenario={handleAddCustomScenario}
+                  />
+                </div>
+              )}
+              {workspaceTab === "report" && (
+                <div className="relative h-full min-h-0 w-full flex-1">
+                  <EvaluationReport
+                    mission={mission}
+                    evaluation={evaluation}
+                    isEvaluating={isEvaluating}
+                    isAuthenticated={isAuthenticated}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
