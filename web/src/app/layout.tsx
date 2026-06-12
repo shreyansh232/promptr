@@ -21,7 +21,7 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://promptrai.vercel.app"),
   title: {
-    default: "Promptr - Agent Prompting Sandbox",
+    default: "Promptr – Test Your AI Agent Prompts",
     template: "%s | Promptr",
   },
   description:
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "Promptr",
   },
   openGraph: {
-    title: "Promptr - Agent Prompting Sandbox",
+    title: "Promptr – Test Your AI Agent Prompts",
     description:
       "Evaluate your AI agent prompts before they break in production. Run adversarial scenario tests, get a reliability score, and receive a targeted rewrite — in seconds.",
     url: "https://promptrai.vercel.app",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/landing-preview.png",
+        url: "https://promptrai.vercel.app/landing-preview.png",
         width: 2800,
         height: 1669,
         alt: "Promptr – Test and evaluate your AI agent prompts",
@@ -61,10 +61,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Promptr - Agent Prompting Sandbox",
+    title: "Promptr – Test Your AI Agent Prompts",
     description:
       "Evaluate your AI agent prompts before they break in production. Run adversarial scenario tests, get a reliability score, and receive a targeted rewrite — in seconds.",
-    images: ["/landing-preview.png"],
+    images: ["https://promptrai.vercel.app/landing-preview.png"],
   },
 };
 export default async function RootLayout({
