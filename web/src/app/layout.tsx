@@ -50,12 +50,21 @@ export const metadata: Metadata = {
     siteName: "Promptr",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/readme/home.png",
+        width: 1200,
+        height: 630,
+        alt: "Promptr – Agent Prompting Sandbox",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Promptr - Agent Prompting Sandbox",
     description:
       "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
+    images: ["/readme/home.png"],
   },
 };
 export default async function RootLayout({
