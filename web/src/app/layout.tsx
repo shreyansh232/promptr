@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | Promptr",
   },
   description:
-    "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
+    "Evaluate your AI agent prompts before they break in production. Run adversarial scenario tests, get a reliability score, and receive a targeted rewrite — in seconds.",
   alternates: {
     canonical: "./",
   },
@@ -45,17 +45,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Promptr - Agent Prompting Sandbox",
     description:
-      "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
+      "Evaluate your AI agent prompts before they break in production. Run adversarial scenario tests, get a reliability score, and receive a targeted rewrite — in seconds.",
     url: "https://promptrai.vercel.app",
     siteName: "Promptr",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/readme/home.png",
-        width: 1200,
-        height: 630,
-        alt: "Promptr – Agent Prompting Sandbox",
+        url: "/landing-preview.png",
+        width: 2800,
+        height: 1669,
+        alt: "Promptr – Test and evaluate your AI agent prompts",
       },
     ],
   },
@@ -63,8 +63,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Promptr - Agent Prompting Sandbox",
     description:
-      "Test your prompts before seeing them fail in production, and learn the fundamentals of creating prompts that are stress-tested and work perfectly in production through our curated missions.",
-    images: ["/readme/home.png"],
+      "Evaluate your AI agent prompts before they break in production. Run adversarial scenario tests, get a reliability score, and receive a targeted rewrite — in seconds.",
+    images: ["/landing-preview.png"],
   },
 };
 export default async function RootLayout({
